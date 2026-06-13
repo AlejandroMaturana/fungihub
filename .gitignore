@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+.agents/
+.example/
+dist/
+build/
+
+# Environment & variables
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+
+# IDEs & editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build systems
+firmware/config.h
+firmware/.pio/
+firmware/.clang_complete
+firmware/.gdbinit
+firmware/.pioenvs/
+firmware/.piolib/
+f
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# Secrets
+**/config.h
+**/secrets.h
