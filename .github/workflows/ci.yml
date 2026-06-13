@@ -1,0 +1,118 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  firmware:
+    name: Firmware build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Create config.h
+        run: |
+          cd firmware
+          echo '#ifndef CONFIG_H
+          #define CONFIG_H
+          #define WIFI_SSID_1 ""
+          #define WIFI_PASSWORD_1 ""
+          #define WIFI_SSID_2 ""
+          #define WIFI_PASSWORD_2 ""
+          #define TS_HOST "api.thingspeak.com"
+          #define TS_PORT 80
+          #define TS_API_KEY ""
+          #define MQTT_BROKER "test.mosquitto.org"
+          #define MQTT_PORT 1883
+          #define MQTT_BROKER_FALLBACK "broker.hivemq.com"
+          #define MQTT_PORT_FALLBACK 1883
+          #define DEVICE_ID "ci_build"
+          #define SENSOR_INTERVAL 10000
+          #define TS_INTERVAL 15000
+          #define SSR_ACTIVE_HIGH 1
+          #define SSR1_PIN D2
+          #define SSR2_PIN D4
+          #define SSR3_PIN D6
+          #define DEFAULT_TEMP_MIN 20.0
+          #define DEFAULT_TEMP_MAX 24.0
+          #define DEFAULT_HUM_MIN 85.0
+          #define DEFAULT_HUM_MAX 95.0
+          #define DEFAULT_CO2_MAX 1200
+          #endif' > src/config.h
+
+      - name: Build firmware
+        run: cd firmware && pio run
+
+  backend:
+    name: Backend test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mush2_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: cd backend && pnpm install
+
+      - name: Run tests
+        run: cd backend && node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.js
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mush2_test
+          NODE_ENV: test
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: cd frontend && pnpm install
+
+      - name: Build
+        run: cd frontend && pnpm run build
