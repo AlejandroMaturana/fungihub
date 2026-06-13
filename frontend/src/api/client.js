@@ -1,0 +1,107 @@
+import axios from 'axios'
+
+const client = axios.create({
+  baseURL: '/api/v1',
+  timeout: 10000,
+  headers: { 'Content-Type': 'application/json' },
+})
+
+client.interceptors.request.use((config) => {
+  const token = sessionStorage.getItem('mush2_access_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+client.interceptors.response.use(
+  (res) => res,
+  async (err) => {
+    if (err.response?.status === 401 && err.response?.data?.code === 'TOKEN_EXPIRED') {
+      const refreshToken = sessionStorage.getItem('mush2_refresh_token')
+      if (refreshToken) {
+        try {
+          const { data } = await axios.post('/api/v1/auth/refresh', { refreshToken })
+          sessionStorage.setItem('mush2_access_token', data.token.accessToken)
+          sessionStorage.setItem('mush2_refresh_token', data.token.refreshToken)
+          err.config.headers.Authorization = `Bearer ${data.token.accessToken}`
+          return client(err.config)
+        } catch {
+          sessionStorage.removeItem('mush2_user')
+          sessionStorage.removeItem('mush2_access_token')
+          sessionStorage.removeItem('mush2_refresh_token')
+          window.location.href = '/login'
+        }
+      }
+    }
+    return Promise.reject(err)
+  }
+)
+
+export async function getDevices() {
+  const { data } = await client.get('/devices')
+  return data.data
+}
+
+export async function getDevice(id) {
+  const { data } = await client.get(`/devices/${id}`)
+  return data
+}
+
+export async function getLatestTelemetry(deviceId) {
+  const { data } = await client.get(`/devices/${deviceId}/telemetry/latest`)
+  return data
+}
+
+export async function getActuators(deviceId) {
+  const { data } = await client.get(`/devices/${deviceId}/actuators`)
+  return data.data
+}
+
+export async function setActuator(deviceId, channel, command) {
+  const { data } = await client.patch(`/devices/${deviceId}/actuators/${channel}`, { command })
+  return data
+}
+
+export async function getRecipes() {
+  const { data } = await client.get('/recipes')
+  return data.data
+}
+
+export async function getRecipe(id) {
+  const { data } = await client.get(`/recipes/${id}`)
+  return data
+}
+
+export async function createRecipe(recipe) {
+  const { data } = await client.post('/recipes', recipe)
+  return data
+}
+
+export async function updateRecipe(id, recipe) {
+  const { data } = await client.put(`/recipes/${id}`, recipe)
+  return data
+}
+
+export async function getCycles() {
+  const { data } = await client.get('/cycles')
+  return data.data
+}
+
+export async function login(username, password) {
+  const { data } = await client.post('/auth/login', { username, password })
+  return data
+}
+
+export async function refreshToken() {
+  const token = sessionStorage.getItem('mush2_refresh_token')
+  const { data } = await client.post('/auth/refresh', { refreshToken: token })
+  return data
+}
+
+export async function getMe() {
+  const { data } = await client.get('/auth/me')
+  return data
+}
+
+export default client
