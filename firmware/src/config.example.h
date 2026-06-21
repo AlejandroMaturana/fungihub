@@ -22,8 +22,9 @@
 #define MQTT_KEEPALIVE 30
 
 #define SSR_ACTIVE_HIGH 1
-#define SSR1_PIN D2
-#define SSR2_PIN D4
-#define SSR3_PIN D6
+#define SSR1_PIN D5  // CH1 — Ventilación
+#define SSR2_PIN D7  // CH2 — Calefacción (evita conflicto LED_BUILTIN en D4)
+#define SSR3_PIN D6  // CH3 — Humidificación
+#define SSR4_PIN D0  // CH4 — Humidificación
 
 #endif
