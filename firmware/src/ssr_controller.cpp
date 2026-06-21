@@ -5,6 +5,7 @@ SSRController::SSRController() {
   channels[0] = {SSR1_PIN, 0, 0, 3000, 0};
   channels[1] = {SSR2_PIN, 0, 0, 3000, 0};
   channels[2] = {SSR3_PIN, 0, 0, 3000, 0};
+  channels[3] = {SSR4_PIN, 0, 0, 3000, 0};
   activeHigh = true;
 }
 

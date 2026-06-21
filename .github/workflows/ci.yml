@@ -46,9 +46,10 @@ jobs:
           #define SENSOR_INTERVAL 10000
           #define TS_INTERVAL 15000
           #define SSR_ACTIVE_HIGH 1
-          #define SSR1_PIN D2
-          #define SSR2_PIN D4
+          #define SSR1_PIN D5
+          #define SSR2_PIN D7
           #define SSR3_PIN D6
+          #define SSR4_PIN D0
           #define DEFAULT_TEMP_MIN 20.0
           #define DEFAULT_TEMP_MAX 24.0
           #define DEFAULT_HUM_MIN 85.0

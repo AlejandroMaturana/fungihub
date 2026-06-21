@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { setActuator } from '../../api/client.js'
 
-const CHANNEL_LABELS = { 1: 'Calefacción', 2: 'Ventilación', 3: 'Humedad' }
+const CHANNEL_LABELS = { 1: 'Ventilación', 2: 'Calefacción', 3: 'Humedad', 4: 'Humedad' }
 
 function ActuatorControl({ deviceId, actuator, onCommandSent }) {
   const [sending, setSending] = useState(false)

@@ -1,32 +1,34 @@
 // =============================================
-//  PRUEBA SSR 3 CANALES - WeMos D1 R1 (ESP8266)
-//  Pines: D5, D4, D6 (según config.h del firmware)
-//  Ch4 dejado fuera de momento
-//  NOTA: D14/SDA/D3 y D13/SCLK/D4 conflictos con I2C
+//  PRUEBA SSR 4 CANALES - WeMos D1 R1 (ESP8266)
+//  Pines: D5, D7, D6, D0 (según nueva config.h)
+//  CH2 movido de D4 a D7 para evitar conflicto LED_BUILTIN
+//  CH4 añadido en D0 (GPIO16) para segundo humidificador
 // =============================================
 
-#define SSR1  14  // D5  (GPIO14) - Cambiado de D2 para evitar conflicto I2C
-#define SSR2  2   // D4  (GPIO2) - Ojo: D4 tiene LED integrado en algunas placas
-#define SSR3  12  // D6  (GPIO12)
-// Ch4 dejado fuera - no definido
+#define SSR1  14  // D5  (GPIO14) - Ventilación
+#define SSR2  13  // D7  (GPIO13) - Calefacción (evita LED_BUILTIN en D4)
+#define SSR3  12  // D6  (GPIO12) - Humidificación
+#define SSR4  16  // D0  (GPIO16) - Iluminación (fototropismo)
 
 void setup() {
   Serial.begin(115200);
   delay(500);
   
-  Serial.println("\n=== Prueba SSR 3 Canales - WeMos D1 R1 ===");
-  Serial.println("Pines usados: D5, D4, D6");
-  Serial.println("Ch4 dejado fuera");
-  Serial.println("Nota: SSR1 en D5 (no D2) para evitar conflicto I2C");
+  Serial.println("\n=== Prueba SSR 4 Canales - WeMos D1 R1 ===");
+  Serial.println("Pines usados: D5(SSR1), D7(SSR2), D6(SSR3), D0(SSR4)");
+  Serial.println("CH2 movido de D4 a D7 para evitar conflicto con LED_BUILTIN");
+  Serial.println("CH4 añadido en D0 (GPIO16) para segundo humidificador");
 
   pinMode(SSR1, OUTPUT);
   pinMode(SSR2, OUTPUT);
   pinMode(SSR3, OUTPUT);
+  pinMode(SSR4, OUTPUT);
 
   // Apagar todos al inicio
   digitalWrite(SSR1, HIGH);
   digitalWrite(SSR2, HIGH);
   digitalWrite(SSR3, HIGH);
+  digitalWrite(SSR4, HIGH);
 
   Serial.println("Todos los SSR apagados.");
   delay(1000);
@@ -44,9 +46,9 @@ void loop() {
 // ===================== FUNCIONES =====================
 
 void pruebaIndividual() {
-  int pines[] = {SSR1, SSR2, SSR3};
+  int pines[] = {SSR1, SSR2, SSR3, SSR4};
   
-  for(int i = 0; i < 3; i++) {
+  for(int i = 0; i < 4; i++) {
     Serial.print("Activando SSR ");
     Serial.print(i + 1);
     Serial.print(" (GPIO");
@@ -61,17 +63,19 @@ void pruebaIndividual() {
 }
 
 void pruebaTodosJuntos() {
-  Serial.println("Activando TODOS los SSR (1, 2, 3)...");
+  Serial.println("Activando TODOS los SSR (1, 2, 3, 4)...");
   
   digitalWrite(SSR1, LOW);
   digitalWrite(SSR2, LOW);
   digitalWrite(SSR3, LOW);
+  digitalWrite(SSR4, LOW);
   
   delay(3500);
   
   digitalWrite(SSR1, HIGH);
   digitalWrite(SSR2, HIGH);
   digitalWrite(SSR3, HIGH);
+  digitalWrite(SSR4, HIGH);
   
   Serial.println("Todos los SSR apagados.");
 }

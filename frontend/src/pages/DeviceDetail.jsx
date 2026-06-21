@@ -114,7 +114,7 @@ function DeviceDetail() {
       <section>
         <h3>Actuadores</h3>
         <div className="actuators-grid">
-          {[1, 2, 3].map(ch => {
+          {[1, 2, 3, 4].map(ch => {
             const act = actuators.find(a => a.channel === ch) || { channel: ch, state: 'OFF', mode: 'LOCAL' }
             return (
               <ActuatorControl

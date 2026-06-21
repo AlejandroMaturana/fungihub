@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-#define SSR_CHANNELS 3
+#define SSR_CHANNELS 4
 
 struct SSRChannel {
   uint8_t pin;
