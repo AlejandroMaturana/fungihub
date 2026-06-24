@@ -120,7 +120,11 @@ async function handleBoot(deviceId, payload) {
 async function handleOnline(deviceId, payload) {
   try {
     const status = payload.status === 'ONLINE' ? 'ONLINE' : 'OFFLINE';
-    await Device.update({ status, lastSeen: new Date() }, { where: { deviceId } });
+    const [device] = await Device.findOrCreate({
+      where: { deviceId },
+      defaults: { deviceId, status, lastSeen: new Date() },
+    });
+    if (device) await device.update({ status, lastSeen: new Date() });
   } catch (err) {
     console.error('[MQTT] Error handling online:', err.message);
   }
@@ -128,8 +132,10 @@ async function handleOnline(deviceId, payload) {
 
 async function handleAck(deviceId, payload) {
   try {
-    const device = await Device.findOne({ where: { deviceId } });
-    if (!device) return;
+    const [device] = await Device.findOrCreate({
+      where: { deviceId },
+      defaults: { deviceId, status: 'ONLINE', lastSeen: new Date() },
+    });
 
     if (payload.actuatorState && payload.actuatorState.channel) {
       const { channel, state } = payload.actuatorState;
@@ -161,8 +167,11 @@ async function handleAlarm(deviceId, payload) {
 
 async function handleDeviceState(deviceId, payload) {
   try {
-    const device = await Device.findOne({ where: { deviceId } });
-    if (!device || !payload.actuators) return;
+    const [device] = await Device.findOrCreate({
+      where: { deviceId },
+      defaults: { deviceId, status: 'ONLINE', lastSeen: new Date() },
+    });
+    if (!payload.actuators) return;
 
     for (const act of payload.actuators) {
       const [actuator] = await Actuator.findOrCreate({
