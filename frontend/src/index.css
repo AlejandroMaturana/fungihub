@@ -46,6 +46,17 @@ body {
 .metric-card .unit { font-size: 14px; color: var(--text2); }
 .metric-card .ts { font-size: 11px; color: var(--text2); margin-top: 8px; font-family: monospace; }
 
+.device-selector-row {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 4px;
+}
+.device-selector {
+  background: var(--surface); border: 1px solid var(--surface2); border-radius: 8px;
+  color: var(--text); padding: 8px 14px; font-size: 14px; cursor: pointer;
+  min-width: 200px;
+}
+.device-selector:focus { outline: none; border-color: var(--accent); }
+.section-title { font-size: 18px; }
+.device-card--active { border-color: var(--accent); }
 .device-link { text-decoration: none; color: inherit; }
 .device-card {
   background: var(--surface); border-radius: var(--radius); padding: 20px;

@@ -6,10 +6,12 @@ import MetricCard from '../components/dashboard/MetricCard.jsx'
 
 function Dashboard() {
   const [devices, setDevices] = useState([])
+  const [selectedId, setSelectedId] = useState(null)
   const [telemetry, setTelemetry] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [alarms, setAlarms] = useState([])
+  const [aggregate, setAggregate] = useState(null)
 
   useEffect(() => {
     let interval
@@ -17,9 +19,31 @@ function Dashboard() {
       try {
         const devs = await getDevices()
         setDevices(devs)
+
         if (devs.length > 0) {
-          const tel = await getLatestTelemetry(devs[0].id)
+          const targetId = selectedId || devs[0].id
+          if (!selectedId) setSelectedId(targetId)
+          const tel = await getLatestTelemetry(targetId)
           setTelemetry(tel)
+
+          const allTel = await Promise.all(
+            devs.map(d => getLatestTelemetry(d.id).catch(() => null))
+          )
+          const valid = allTel.filter(t => t && (t.temperature != null || t.humidity != null))
+          if (valid.length > 1) {
+            const avg = { devices: valid.length }
+            const tVals = valid.filter(t => t.temperature != null).map(t => t.temperature)
+            const hVals = valid.filter(t => t.humidity != null).map(t => t.humidity)
+            if (tVals.length > 0) avg.tempAvg = tVals.reduce((a, b) => a + b, 0) / tVals.length
+            if (hVals.length > 0) avg.humAvg = hVals.reduce((a, b) => a + b, 0) / hVals.length
+            setAggregate(avg)
+          } else {
+            setAggregate(null)
+          }
+        } else {
+          setSelectedId(null)
+          setTelemetry({})
+          setAggregate(null)
         }
         setError(null)
       } catch (err) {
@@ -31,26 +55,31 @@ function Dashboard() {
     fetchData()
     interval = setInterval(fetchData, 10000)
     return () => clearInterval(interval)
-  }, [])
+  }, [selectedId])
 
   useSSE(useCallback((type, data) => {
     if (type === 'telemetry') {
-      setTelemetry(prev => ({
-        ...prev,
-        temperature: data.sensors?.temperature,
-        humidity: data.sensors?.humidity,
-        co2: data.sensors?.co2,
-        voc: data.sensors?.voc,
-        ts: new Date().toISOString(),
-      }))
+      const dev = devices.find(d => d.deviceId === data.deviceId)
+      if (dev && dev.id === selectedId) {
+        setTelemetry(prev => ({
+          ...prev,
+          temperature: data.sensors?.temperature,
+          humidity: data.sensors?.humidity,
+          co2: data.sensors?.co2,
+          voc: data.sensors?.voc,
+          ts: new Date().toISOString(),
+        }))
+      }
     }
-    if (type === 'ack') {
-      setDevices(prev => [...prev])
+    if (type === 'alarm') {
+      setAlarms(prev => [{ reason: data.reason, ts: data.ts }, ...prev].slice(0, 10))
     }
-  }, []))
+  }, [devices, selectedId]))
 
   if (loading) return <div className="loading">Conectando...</div>
   if (error && devices.length === 0) return <div className="error-state">{error}</div>
+
+  const selectedDevice = devices.find(d => d.id === selectedId)
 
   return (
     <div className="dashboard">
@@ -68,10 +97,38 @@ function Dashboard() {
         </section>
       )}
 
-      {telemetry && Object.keys(telemetry).length > 0 && (
+      {aggregate && (
         <section>
-          <h2 style={{ marginBottom: 16, fontSize: 18 }}>Última lectura</h2>
+          <h2 className="section-title">Promedio ({aggregate.devices} cámaras)</h2>
           <div className="metrics">
+            {aggregate.tempAvg != null && (
+              <MetricCard label="Temp. Promedio" value={aggregate.tempAvg} unit="°C" />
+            )}
+            {aggregate.humAvg != null && (
+              <MetricCard label="HR Promedio" value={aggregate.humAvg} unit="%" />
+            )}
+          </div>
+        </section>
+      )}
+
+      <section>
+        <div className="device-selector-row">
+          <h2 className="section-title">Cámara</h2>
+          <select
+            className="device-selector"
+            value={selectedId || ''}
+            onChange={e => setSelectedId(Number(e.target.value))}
+          >
+            {devices.map(d => (
+              <option key={d.id} value={d.id}>
+                {d.chamberName || d.deviceId}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {telemetry && Object.keys(telemetry).length > 0 && (
+          <div className="metrics" style={{ marginTop: 16 }}>
             {telemetry.temperature != null && (
               <MetricCard label="Temperatura" value={telemetry.temperature} unit="°C" ts={telemetry.ts} />
             )}
@@ -85,11 +142,17 @@ function Dashboard() {
               <MetricCard label="VOC" value={telemetry.voc} unit="ppb" ts={telemetry.ts} />
             )}
           </div>
-        </section>
-      )}
+        )}
+
+        {selectedDevice && (
+          <Link to={`/devices/${selectedDevice.id}`} className="device-link" style={{ display: 'inline-block', marginTop: 12 }}>
+            <span className="nav-link">Ver detalle →</span>
+          </Link>
+        )}
+      </section>
 
       <section>
-        <h2 style={{ marginBottom: 16, fontSize: 18 }}>Dispositivos</h2>
+        <h2 className="section-title">Dispositivos</h2>
         {devices.length === 0 ? (
           <div className="empty-state">
             <p>No hay dispositivos registrados</p>
@@ -99,9 +162,10 @@ function Dashboard() {
           <div className="metrics">
             {devices.map((d) => (
               <Link key={d.id} to={`/devices/${d.id}`} className="device-link">
-                <div className="device-card">
-                  <h3>{d.deviceId}</h3>
+                <div className={`device-card${d.id === selectedId ? ' device-card--active' : ''}`}>
+                  <h3>{d.chamberName || d.deviceId}</h3>
                   <span className={`status ${d.status}`}>{d.status}</span>
+                  {d.chamberName && <div className="device-meta"><span>ID: {d.deviceId}</span></div>}
                   <div className="device-meta">
                     <span>FW: {d.firmwareVersion}</span>
                     <span>MAC: {d.macAddress}</span>
