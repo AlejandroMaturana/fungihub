@@ -168,7 +168,7 @@ function Dashboard() {
                   {d.chamberName && <div className="device-meta"><span>ID: {d.deviceId}</span></div>}
                   <div className="device-meta">
                     <span>FW: {d.firmwareVersion}</span>
-                    <span>MAC: {d.macAddress}</span>
+                    <span>MAC: {d.macAddress || '—'}</span>
                   </div>
                 </div>
               </Link>

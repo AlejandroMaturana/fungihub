@@ -1,9 +1,22 @@
 import app from './app.js';
 import { env } from './config/env.js';
 import sequelize from './config/database.js';
+import { Device, Actuator, Telemetry } from './models/index.js';
 import { connectMQTT } from './services/mqttService.js';
 import { startControlEngine } from './services/controlEngine.js';
-import './models/index.js';
+
+const STALE_DEVICE_IDS = ['esp8266_001'];
+
+async function cleanupStaleDevices() {
+  for (const deviceId of STALE_DEVICE_IDS) {
+    const device = await Device.findOne({ where: { deviceId } });
+    if (!device) continue;
+    await Actuator.destroy({ where: { deviceId: device.id } });
+    await Telemetry.destroy({ where: { deviceId: device.id } });
+    await device.destroy();
+    console.log(`[DB] Dispositivo obsoleto eliminado: ${deviceId}`);
+  }
+}
 
 async function start() {
   try {
@@ -14,6 +27,8 @@ async function start() {
       await sequelize.sync({ alter: true });
       console.log('[DB] Modelos sincronizados');
     }
+
+    await cleanupStaleDevices();
 
     connectMQTT();
     startControlEngine();

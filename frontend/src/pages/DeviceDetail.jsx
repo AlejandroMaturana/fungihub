@@ -87,7 +87,7 @@ function DeviceDetail() {
         </div>
         <div className="device-meta">
           <span>FW: {device.firmwareVersion}</span>
-          <span>MAC: {device.macAddress}</span>
+          <span>MAC: {device.macAddress || '—'}</span>
         </div>
       </div>
 

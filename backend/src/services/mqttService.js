@@ -60,12 +60,7 @@ async function handleTelemetry(deviceId, payload) {
   try {
     const [device] = await Device.findOrCreate({
       where: { deviceId },
-      defaults: {
-        deviceId,
-        macAddress: payload.deviceId || deviceId,
-        status: 'ONLINE',
-        lastSeen: new Date(),
-      },
+      defaults: { deviceId, status: 'ONLINE', lastSeen: new Date() },
     });
     await device.update({ lastSeen: new Date(), status: 'ONLINE' });
 
@@ -104,7 +99,7 @@ async function handleBoot(deviceId, payload) {
   try {
     const [device] = await Device.findOrCreate({
       where: { deviceId },
-      defaults: { deviceId, macAddress: payload.mac || deviceId, status: 'ONLINE', lastSeen: new Date() },
+      defaults: { deviceId, status: 'ONLINE', lastSeen: new Date() },
     });
     await device.update({
       firmwareVersion: payload.fwVersion || device.firmwareVersion,
@@ -122,7 +117,7 @@ async function handleOnline(deviceId, payload) {
     const status = payload.status === 'ONLINE' ? 'ONLINE' : 'OFFLINE';
     const [device] = await Device.findOrCreate({
       where: { deviceId },
-      defaults: { deviceId, macAddress: deviceId, status, lastSeen: new Date() },
+      defaults: { deviceId, status, lastSeen: new Date() },
     });
     if (device) await device.update({ status, lastSeen: new Date() });
   } catch (err) {
@@ -134,7 +129,7 @@ async function handleAck(deviceId, payload) {
   try {
     const [device] = await Device.findOrCreate({
       where: { deviceId },
-      defaults: { deviceId, macAddress: deviceId, status: 'ONLINE', lastSeen: new Date() },
+      defaults: { deviceId, status: 'ONLINE', lastSeen: new Date() },
     });
 
     if (payload.actuatorState && payload.actuatorState.channel) {
@@ -169,7 +164,7 @@ async function handleDeviceState(deviceId, payload) {
   try {
     const [device] = await Device.findOrCreate({
       where: { deviceId },
-      defaults: { deviceId, macAddress: deviceId, status: 'ONLINE', lastSeen: new Date() },
+      defaults: { deviceId, status: 'ONLINE', lastSeen: new Date() },
     });
     if (!payload.actuators) return;
 
