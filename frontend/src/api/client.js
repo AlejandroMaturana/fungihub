@@ -63,6 +63,11 @@ export async function setActuator(deviceId, channel, command) {
   return data
 }
 
+export async function setActuatorDirect(deviceId, channel, command) {
+  const { data } = await client.patch(`/actuators/${channel}`, { deviceId, command })
+  return data
+}
+
 export async function getRecipes() {
   const { data } = await client.get('/recipes')
   return data.data

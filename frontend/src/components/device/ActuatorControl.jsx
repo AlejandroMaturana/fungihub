@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { setActuator } from '../../api/client.js'
+import { setActuatorDirect } from '../../api/client.js'
 
-const CHANNEL_LABELS = { 1: 'Ventilación', 2: 'Calefacción', 3: 'Humedad', 4: 'Humedad' }
+const CHANNEL_LABELS = { 1: 'Ventilación', 2: 'Calefacción', 3: 'Humedad', 4: 'Iluminación' }
 
 function ActuatorControl({ deviceId, actuator, onCommandSent }) {
   const [sending, setSending] = useState(false)
@@ -12,15 +12,13 @@ function ActuatorControl({ deviceId, actuator, onCommandSent }) {
     setSending(true)
     setCmdError(null)
     try {
-      await setActuator(deviceId, actuator.channel, newState)
+      await setActuatorDirect(deviceId, actuator.channel, newState)
       if (onCommandSent) onCommandSent(actuator.channel, newState)
     } catch (err) {
       console.error('Error sending command:', err)
       const status = err.response?.status
       const serverMsg = err.response?.data?.message || err.response?.data?.error
-      if (status === 503) {
-        setCmdError('MQTT desconectado — reintenta en unos segundos')
-      } else if (status === 401) {
+      if (status === 401) {
         setCmdError('Sesión expirada — recarga la página')
       } else if (serverMsg) {
         setCmdError(serverMsg)

@@ -119,7 +119,7 @@ function DeviceDetail() {
             return (
               <ActuatorControl
                 key={ch}
-                deviceId={id}
+                deviceId={device.deviceId}
                 actuator={act}
                 onCommandSent={(channel, newState) => {
                   setActuators(prev => prev.map(a =>
