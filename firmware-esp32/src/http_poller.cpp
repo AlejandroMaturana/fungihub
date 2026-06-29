@@ -95,8 +95,7 @@ void HTTPPoller::runConnect() {
   }
 
   if (!client.connected()) {
-    client.setTimeout(3000);
-    int result = client.connect(host.c_str(), port);
+    int result = client.connect(host.c_str(), port, 5000);
     if (!client.connected()) {
       if (result == 0) {
         Serial.printf("[POLL] Fallo connect() a %s:%u (timeout o RST)\n", host.c_str(), port);
