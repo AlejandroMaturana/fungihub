@@ -8,6 +8,10 @@
 #include "state_machine.h"
 #include "http_poller.h"
 #include "ota_handler.h"
+#include "ota_decisor.h"
+#include "ota_shutdown.h"
+#include "ota_executor.h"
+#include "ota_postboot.h"
 #include "aht_sensor.h"
 #include "ens160_sensor.h"
 #include "ssr_controller.h"
@@ -21,6 +25,10 @@ StateMachine sm;
 DeviceManager deviceManager;
 HTTPPoller httpPoller;
 OTAHandler ota;
+OTASelector otaselector;
+OTAShutdown otaShutdown;
+OTAExecutor otaExecutor;
+OTAConfirmation otaConfirmacion;
 AHTSensor aht;
 EnsSensor ens;
 SSRController ssr;
@@ -496,6 +504,12 @@ void setup() {
     httpPoller.init(deviceManager.getDeviceId().c_str(), BACKEND_HOST, BACKEND_PORT);
     ota.init(deviceManager.getDeviceId().c_str());
   }
+
+  // NUEVO: Inicializar componentes de la Fase 1 OTA (Decisor)
+  otaselector = OTASelector();
+  otaShutdown = OTAShutdown();
+  otaExecutor = OTAExecutor();
+  otaConfirmacion = OTAConfirmation();
 
   bootTime = millis();
   lightCycleStart = bootTime;
