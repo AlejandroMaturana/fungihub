@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { env } from './config/env.js';
-import { events } from './services/mqttService.js';
+import { events } from './services/eventBus.js';
 import router from './routes/index.js';
 
 const app = express();
@@ -31,6 +31,7 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Demasiadas solicitudes, intente más tarde' },
+  skip: (req) => req.method === 'GET' && req.originalUrl.startsWith('/api/v1/actuators'),
 });
 app.use('/api/', limiter);
 

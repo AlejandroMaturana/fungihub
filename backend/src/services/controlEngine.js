@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 import { Device, Telemetry, Recipe, CultivationCycle, CycleState, Actuator } from '../models/index.js';
-import { events, publishCommand } from './mqttService.js';
+import { events } from './eventBus.js';
 
 const PHASE_SEQUENCE = ['INCUBATION', 'FRUITING', 'MAINTENANCE', 'COMPLETED'];
 const EVAL_INTERVAL = 60000;
@@ -244,14 +244,13 @@ async function evaluateCycle(cycle) {
       } catch (err) {
         console.error(`[CONTROL] Error updating actuator ${cmd.channel}:`, err.message);
       }
-      publishCommand(device.deviceId, { target: 'actuator', channel: cmd.channel, command: cmd.command });
     }
 
     if (commands.length > 0) {
       console.log(`[CONTROL] ${device.deviceId} → ${commands.map(c => `CH${c.channel}=${c.command}(${c.reason})`).join(' | ')}`);
     }
 
-    const mqttEvent = {
+    const evalEvent = {
       deviceId: device.deviceId,
       cycleId: cycle.id,
       phase: cycle.currentPhase,
@@ -260,7 +259,7 @@ async function evaluateCycle(cycle) {
       deviations,
       actuatorCommands: commands.map(c => ({ channel: c.channel, command: c.command, reason: c.reason })),
     };
-    events.emit('control_eval', mqttEvent);
+    events.emit('control_eval', evalEvent);
 
     if (thresholds.durationDays && cycle.startDate) {
       const start = new Date(cycle.startDate);
@@ -281,7 +280,7 @@ async function evaluateCycle(cycle) {
             co2Max: recipe[`${nextPhase.toLowerCase()}Co2Max`],
             mode: 'LOCAL',
           };
-          publishCommand(device.deviceId, configCmd);
+          console.log(`[CONTROL] Phase transition config updated in DB:`, configCmd);
 
           events.emit('control_eval', {
             deviceId: device.deviceId,
@@ -293,9 +292,14 @@ async function evaluateCycle(cycle) {
 
           if (nextPhase === 'COMPLETED') {
             await cycle.update({ status: 'COMPLETED' });
-            publishCommand(device.deviceId, { target: 'actuator', channel: 1, command: 'OFF' });
-            publishCommand(device.deviceId, { target: 'actuator', channel: 2, command: 'OFF' });
-            publishCommand(device.deviceId, { target: 'actuator', channel: 3, command: 'OFF' });
+            for (const ch of [1, 2, 3]) {
+              try {
+                const [act] = await Actuator.findOrCreate({ where: { deviceId: device.id, channel: ch }, defaults: { deviceId: device.id, channel: ch } });
+                await act.update({ state: 'OFF', mode: 'REMOTE', lastSeen: new Date() });
+              } catch (e) {
+                console.error(`[CONTROL] Error turning off ch${ch}:`, e.message);
+              }
+            }
           }
         }
       }

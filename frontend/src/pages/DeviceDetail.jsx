@@ -87,7 +87,7 @@ function DeviceDetail() {
         </div>
         <div className="device-meta">
           <span>FW: {device.firmwareVersion}</span>
-          <span>MAC: {device.macAddress}</span>
+          <span>MAC: {device.macAddress || '—'}</span>
         </div>
       </div>
 
@@ -119,7 +119,7 @@ function DeviceDetail() {
             return (
               <ActuatorControl
                 key={ch}
-                deviceId={id}
+                deviceId={device.deviceId}
                 actuator={act}
                 onCommandSent={(channel, newState) => {
                   setActuators(prev => prev.map(a =>

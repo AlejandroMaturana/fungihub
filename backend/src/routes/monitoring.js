@@ -2,7 +2,6 @@ import { Op } from 'sequelize';
 import { Router } from 'express';
 import { Device, Telemetry, Event, User, CultivationCycle, AuditLog } from '../models/index.js';
 import sequelize from '../config/database.js';
-import { isMQTTConnected } from '../services/mqttService.js';
 import os from 'os';
 
 const router = Router();
@@ -25,7 +24,6 @@ router.get('/metrics', async (req, res) => {
       timestamp: now.toISOString(),
       uptime: process.uptime(),
       version: '0.8.0',
-      mqtt: { connected: isMQTTConnected() },
       system: {
         memory: process.memoryUsage(),
         cpu: os.cpus().length,
@@ -57,9 +55,4 @@ router.get('/health/db', async (req, res) => {
     res.status(503).json({ status: 'error', db: 'disconnected' });
   }
 });
-
-router.get('/health/mqtt', async (req, res) => {
-  res.json({ status: isMQTTConnected() ? 'ok' : 'degraded', mqtt: isMQTTConnected() ? 'connected' : 'disconnected' });
-});
-
 export default router;
