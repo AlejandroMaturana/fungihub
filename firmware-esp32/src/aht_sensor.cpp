@@ -65,7 +65,7 @@ SensorReading AHTSensor::read() {
   esp_task_wdt_reset();
 
   // Read 6 bytes
-  size_t received = Wire.requestFrom(AHT_ADDRESS, (uint8_t)6);
+  size_t received = Wire.requestFrom((int)AHT_ADDRESS, (int)6);
   if (received != 6) return reading;
 
   uint8_t data[6];
