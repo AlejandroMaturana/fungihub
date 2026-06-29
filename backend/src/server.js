@@ -1,22 +1,11 @@
+import { createServer } from 'http';
 import app from './app.js';
 import { env } from './config/env.js';
 import sequelize from './config/database.js';
-import { Device, Actuator, Telemetry } from './models/index.js';
-import { connectMQTT } from './services/mqttService.js';
 import { startControlEngine } from './services/controlEngine.js';
-
-const STALE_DEVICE_IDS = ['esp8266_001'];
-
-async function cleanupStaleDevices() {
-  for (const deviceId of STALE_DEVICE_IDS) {
-    const device = await Device.findOne({ where: { deviceId } });
-    if (!device) continue;
-    await Actuator.destroy({ where: { deviceId: device.id } });
-    await Telemetry.destroy({ where: { deviceId: device.id } });
-    await device.destroy();
-    console.log(`[DB] Dispositivo obsoleto eliminado: ${deviceId}`);
-  }
-}
+import { startWebSocketServer, sendActuatorUpdate } from './services/webSocketServer.js';
+import { startMqttBridge, publishActuatorCommand } from './services/mqttBridge.js';
+import { events } from './services/eventBus.js';
 
 async function start() {
   try {
@@ -28,14 +17,24 @@ async function start() {
       console.log('[DB] Modelos sincronizados');
     }
 
-    await cleanupStaleDevices();
-
-    connectMQTT();
     startControlEngine();
+    startMqttBridge();
 
-    app.listen(env.PORT, () => {
+    const httpServer = createServer(app);
+    startWebSocketServer(httpServer);
+
+    httpServer.listen(env.PORT, () => {
       console.log(`[Server] Mush2 backend en puerto ${env.PORT}`);
     });
+
+    const publishActuators = (data) => {
+      if (!data.deviceId || !data.actuatorCommands) return;
+      const cmds = data.actuatorCommands.map(c => ({ channel: c.channel, state: c.command, mode: 'REMOTE' }));
+      sendActuatorUpdate(data.deviceId, cmds);
+      publishActuatorCommand(data.deviceId, cmds);
+    };
+
+    events.on('control_eval', publishActuators);
   } catch (err) {
     console.error('[FATAL] Error al iniciar:', err);
     process.exit(1);
