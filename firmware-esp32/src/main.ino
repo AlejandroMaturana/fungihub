@@ -319,6 +319,7 @@ void taskWiFi(void* pvParameters) {
     if (!wifiOk && sm.getState() == ST_DEGRADED) {
       unsigned long now = millis();
       if (now - lastWifiRetry >= wifiRetryDelay) {
+        esp_task_wdt_reset();
         lastWifiRetry = now;
         wifi.connect();
         wifiRetryDelay = min(wifiRetryDelay * 2, 60000u);
