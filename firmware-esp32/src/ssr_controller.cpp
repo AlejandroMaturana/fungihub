@@ -2,10 +2,14 @@
 #include "config.h"
 
 SSRController::SSRController() {
-  channels[0] = {SSR_CH1_PIN, 0, 0, 3000, 0};
-  channels[1] = {SSR_CH2_PIN, 0, 0, 3000, 0};
-  channels[2] = {SSR_CH3_PIN, 0, 0, 3000, 0};
-  channels[3] = {SSR_CH4_PIN, 0, 0, 3000, 0};
+  uint8_t pins[4] = {SSR_CH1_PIN, SSR_CH2_PIN, SSR_CH3_PIN, SSR_CH4_PIN};
+  for (int i = 0; i < SSR_CHANNELS; i++) {
+    channels[i].pin = pins[i];
+    channels[i].state = 0;
+    channels[i].since = 0;
+    channels[i].minOnTime = 3000;
+    channels[i].maxOnTime = 0;
+  }
 }
 
 void SSRController::init() {
