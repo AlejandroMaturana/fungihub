@@ -2,6 +2,7 @@
 #define OTA_POSTBOOT_H
 
 #include <Arduino.h>
+#include <esp_ota_ops.h>
 
 class OTAConfirmation {
 public:
@@ -9,6 +10,10 @@ public:
   bool selfTest();
   void confirm();
   void rollback();
+  bool isPendingVerification();
+
+private:
+  bool _otaPending;
 };
 
 #endif

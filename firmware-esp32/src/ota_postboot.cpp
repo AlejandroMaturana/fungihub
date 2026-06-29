@@ -2,21 +2,57 @@
 #include "config.h"
 #include "ota_nvs.h"
 #include "state_machine.h"
+#include <WiFi.h>
 
 extern StateMachine sm;
 
-OTAConfirmation::OTAConfirmation() {}
+OTAConfirmation::OTAConfirmation() : _otaPending(false) {}
+
+bool OTAConfirmation::isPendingVerification() {
+  const esp_partition_t* running = esp_ota_get_running_partition();
+  if (!running) return false;
+
+  esp_ota_img_states_t ota_state;
+  if (esp_ota_get_state_partition(running, &ota_state) != ESP_OK) return false;
+
+  return ota_state == ESP_OTA_IMG_PENDING_VERIFY;
+}
 
 bool OTAConfirmation::selfTest() {
-  Serial.println("[OTA] Self-test post-boot...");
-  return true;
+  if (!isPendingVerification()) return false;
+
+  _otaPending = true;
+  Serial.println("[OTA] Post-boot: particion en PENDING_VERIFY, ejecutando self-test...");
+
+  bool sensorsOk = true;
+  bool wifiOk = WiFi.status() == WL_CONNECTED;
+  bool stateOk = sm.getState() == ST_NORMAL;
+
+  Serial.printf("[OTA] Self-test: WiFi=%s, State=%s, Sensors=%s\n",
+    wifiOk ? "OK" : "FAIL",
+    sm.getStateName(),
+    sensorsOk ? "OK" : "FAIL");
+
+  return wifiOk && stateOk && sensorsOk;
 }
 
 void OTAConfirmation::confirm() {
-  Serial.println("[OTA] Firmware confirmado — marcando como OK");
-  nvsSetFwVer("0.9.0");
+  if (!_otaPending) return;
+  _otaPending = false;
+
+  esp_err_t err = esp_ota_mark_app_valid_cancel_rollback();
+  if (err == ESP_OK) {
+    Serial.println("[OTA] Firmware marcado como VALID — rollback cancelado");
+    nvsSetFwVer("0.9.0");
+  } else {
+    Serial.printf("[OTA] Error marcando firmare como valid: %s\n", esp_err_to_name(err));
+  }
 }
 
 void OTAConfirmation::rollback() {
-  Serial.println("[OTA] Rollback solicitado");
+  if (!_otaPending) return;
+  _otaPending = false;
+
+  Serial.println("[OTA] Self-test fallo — solicitando rollback...");
+  esp_ota_mark_app_invalid_rollback_and_reboot();
 }
