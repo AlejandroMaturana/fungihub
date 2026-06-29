@@ -1,9 +1,10 @@
 import { Op } from 'sequelize';
 import express from 'express';
 import { Device, Telemetry, Actuator } from '../models/index.js';
-import { publishCommand } from '../services/mqttService.js';
 import { checkDeviceAccess } from '../middlewares/tenant.js';
 import { logAudit } from '../services/auditService.js';
+import { sendActuatorUpdate } from '../services/webSocketServer.js';
+import { publishActuatorCommand } from '../services/mqttBridge.js';
 
 const router = express.Router();
 
@@ -160,11 +161,6 @@ router.patch('/devices/:id/actuators/:channel', checkDeviceAccess, async (req, r
       return res.status(400).json({ error: 'VALIDATION', message: 'command debe ser ON u OFF' });
     }
 
-    const ok = publishCommand(device.deviceId, { target: 'actuator', channel, command });
-    if (!ok) {
-      return res.status(503).json({ error: 'MQTT_DISCONNECTED', message: 'MQTT no conectado' });
-    }
-
     const [actuator] = await Actuator.findOrCreate({
       where: { deviceId: device.id, channel },
       defaults: { deviceId: device.id, channel, state: command, mode: 'REMOTE' },
@@ -175,6 +171,17 @@ router.patch('/devices/:id/actuators/:channel', checkDeviceAccess, async (req, r
       lastCommand: `cmd_${Date.now()}`,
       lastSeen: new Date(),
     });
+
+    sendActuatorUpdate(device.deviceId, [{
+      channel,
+      state: command === 'ON' ? 'ON' : 'OFF',
+      mode: 'REMOTE',
+    }]);
+    publishActuatorCommand(device.deviceId, [{
+      channel,
+      state: command === 'ON' ? 'ON' : 'OFF',
+      mode: 'REMOTE',
+    }]);
 
     if (req.user) {
       await logAudit({

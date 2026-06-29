@@ -4,6 +4,7 @@ import recipesRouter from './recipes.js';
 import authRouter from './auth.js';
 import adminRouter from './admin.js';
 import monitoringRouter from './monitoring.js';
+import actuatorsRouter from './actuators.js';
 import { authenticate, optionalAuth } from '../middlewares/auth.js';
 import { requireMinRole } from '../middlewares/rbac.js';
 import { tenantScope } from '../middlewares/tenant.js';
@@ -18,5 +19,6 @@ router.use('/monitoring', monitoringRouter);
 
 router.use('/', optionalAuth, tenantScope, apiRouter);
 router.use('/', optionalAuth, tenantScope, recipesRouter);
+router.use('/actuators', optionalAuth, tenantScope, actuatorsRouter);
 
 export default router;

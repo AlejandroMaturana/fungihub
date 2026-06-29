@@ -20,13 +20,6 @@ export const env = {
 
   JWT_SECRET: process.env.JWT_SECRET || 'dev-secret-change-in-production',
 
-  MQTT: {
-    broker: process.env.MQTT_BROKER || 'test.mosquitto.org',
-    port: parseInt(process.env.MQTT_PORT || '1883', 10),
-    fallbackBroker: process.env.MQTT_BROKER_FALLBACK || 'broker.hivemq.com',
-    fallbackPort: parseInt(process.env.MQTT_PORT_FALLBACK || '1883', 10),
-  },
-
   TS: {
     apiKey: process.env.TS_API_KEY || '',
     host: process.env.TS_HOST || 'api.thingspeak.com',
