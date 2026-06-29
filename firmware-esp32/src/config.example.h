@@ -1,30 +1,53 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef CONFIG_EXAMPLE_H
+#define CONFIG_EXAMPLE_H
 
 // ============================================================
-//  CONFIG.H — Mush2 para ESP32-S3 (DevKit rev1.0)
-//  Copia este archivo como config.h y completa tus credenciales
+//  CONFIG.EXAMPLE.H — Mush2 para ESP32-S3 (DevKit rev1.0)
+//  Template de configuración. Copia este archivo como base y
+//  completa tus credenciales en config.h (está en .gitignore).
 // ============================================================
 
 // ---- WiFi ----
+#ifndef WIFI_SSID_1
 #define WIFI_SSID_1 "your_ssid_1"
+#endif
+#ifndef WIFI_PASSWORD_1
 #define WIFI_PASSWORD_1 "your_password_1"
+#endif
+#ifndef WIFI_SSID_2
 #define WIFI_SSID_2 "your_ssid_2"
+#endif
+#ifndef WIFI_PASSWORD_2
 #define WIFI_PASSWORD_2 "your_password_2"
+#endif
 
 // ---- ThingSpeak ----
 #define TS_HOST "api.thingspeak.com"
 #define TS_PORT 80
+#ifndef TS_API_KEY
 #define TS_API_KEY "your_ts_api_key"
+#endif
 
 // ---- MQTT ----
+#ifndef MQTT_BROKER
 #define MQTT_BROKER "test.mosquitto.org"
+#endif
 #define MQTT_PORT 1883
+#ifndef MQTT_BROKER_FALLBACK
 #define MQTT_BROKER_FALLBACK "broker.hivemq.com"
+#endif
 #define MQTT_PORT_FALLBACK 1883
 
 // ---- Device ----
+#ifndef DEVICE_ID
 #define DEVICE_ID "mush2_s3_001"
+#endif
+
+// ---- Backend HTTP ----
+#ifndef BACKEND_HOST
+#define BACKEND_HOST "192.168.1.100"
+#endif
+#define BACKEND_PORT 3000
 
 // ---- I2C (Sensores ENS160 + AHT21) ----
 #define I2C_SDA GPIO_NUM_4
@@ -49,32 +72,38 @@
 #define CORE_NETWORK   0
 
 // ---- FreeRTOS: Stack Sizes (words) ----
-#define STACK_SENSORS  4096
-#define STACK_SSR      4096
-#define STACK_WIFI     4096
-#define STACK_MQTT     4096
-#define STACK_OTA      4096
+#define STACK_SENSORS   4096
+#define STACK_SSR       4096
+#define STACK_WIFI      4096
+#define STACK_MQTT      4096
+#define STACK_OTA       8192
 #define STACK_TELEMETRY 4096
+#define STACK_POLLER    4096
 
 // ---- FreeRTOS: Task Priorities ----
-#define PRIORITY_SENSORS    configMAX_PRIORITIES - 1
-#define PRIORITY_SSR        configMAX_PRIORITIES - 2
-#define PRIORITY_WIFI       configMAX_PRIORITIES - 3
-#define PRIORITY_MQTT       configMAX_PRIORITIES - 3
-#define PRIORITY_OTA        configMAX_PRIORITIES - 4
-#define PRIORITY_TELEMETRY  configMAX_PRIORITIES - 4
+#define PRIORITY_SENSORS    3
+#define PRIORITY_SSR        2
+#define PRIORITY_WIFI       1
+#define PRIORITY_MQTT       1
+#define PRIORITY_OTA        1
+#define PRIORITY_TELEMETRY  1
 
 // ---- FreeRTOS: Task Delays (ms) ----
-#define DELAY_SENSORS   10000
+#define DELAY_SENSORS   5000
 #define DELAY_SSR       250
 #define DELAY_WIFI      1000
 #define DELAY_MQTT      50
 #define DELAY_OTA       100
-#define DELAY_TELEMETRY 20000
+#define DELAY_TELEMETRY 5000
+#define DELAY_POLLER    100
 
 // ---- Intervals (ms) ----
 #define SENSOR_INTERVAL 10000
 #define TS_INTERVAL 20000
+#define POLL_INTERVAL 5000
+
+// ---- WDT ----
+#define TASK_WDT_TIMEOUT 10
 
 // ---- Fail-safe overheat thresholds ----
 #define TEMP_CRITICAL 32.0
