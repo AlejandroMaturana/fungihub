@@ -460,7 +460,8 @@ void taskOTA(void* pvParameters) {
 
       bool ok = otaExecutor.begin(cand.url);
       if (ok) {
-        Serial.println("[OTA] Ejecutor reporta exito — reiniciando...");
+        Serial.printf("[OTA] Ejecutor reporta exito v%s — reiniciando...\n", cand.version.c_str());
+        nvsSetFwVer(cand.version);
         delay(1000);
         ESP.restart();
       } else {
