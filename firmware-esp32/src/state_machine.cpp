@@ -8,7 +8,7 @@
 static const bool TRANSITION_MATRIX[9][9] = {
   // to:  BOOT  INIT  WIFI  NORM  DEGR  ERR   RECV  SAFE  OTA_U
   /*BOOT*/ {0,    1,    0,    0,    0,    0,    0,    0,    0},
-  /*INIT*/ {0,    0,    1,    0,    0,    0,    0,    0,    0},
+  /*INIT*/ {0,    0,    1,    0,    0,    0,    0,    1,    0},
   /*WIFI*/ {0,    0,    0,    1,    1,    0,    0,    0,    0},
   /*NORM*/ {0,    0,    0,    0,    1,    1,    0,    0,    1},
   /*DEGR*/ {0,    0,    0,    1,    0,    1,    0,    0,    1},
