@@ -106,6 +106,7 @@ void HTTPPoller::runConnect() {
   }
 
   Serial.printf("[POLL] TCP conectado a %s:%u\n", host.c_str(), port);
+  vTaskDelay(pdMS_TO_TICKS(50));
   pollState = POLL_SEND;
 }
 
@@ -122,6 +123,9 @@ void HTTPPoller::runSend() {
     lastPollOk = false;
     return;
   }
+
+  client.flush();
+  Serial.printf("[POLL] Enviados %d bytes\n", sent);
 
   httpResponse = "";
   bodyStarted = false;
@@ -140,25 +144,31 @@ void HTTPPoller::runWait() {
     return;
   }
 
+  int avail = client.available();
+  bool conn = client.connected();
+
   // Leer datos disponibles incluso si el servidor ya cerró la conexión
-  if (client.available()) {
+  if (avail > 0) {
+    Serial.printf("[POLL] Datos disponibles: %d bytes (connected=%d)\n", avail, conn ? 1 : 0);
     pollState = POLL_READ;
     pollDeadline = millis() + 3000;
     return;
   }
 
-  if (!client.connected()) {
+  if (!conn) {
     if (client.available()) {
+      avail = client.available();
+      Serial.printf("[POLL] Datos post-close: %d bytes\n", avail);
       pollState = POLL_READ;
       pollDeadline = millis() + 3000;
       return;
     }
-      Serial.println("[POLL] Desconectado sin datos pendientes");
-      client.stop();
-      failCount++;
-      pollState = POLL_IDLE;
-      lastPollOk = false;
-      return;
+    Serial.println("[POLL] Desconectado sin datos pendientes");
+    client.stop();
+    failCount++;
+    pollState = POLL_IDLE;
+    lastPollOk = false;
+    return;
   }
 
   vTaskDelay(1);
@@ -218,10 +228,42 @@ void HTTPPoller::runParse() {
     return;
   }
 
-  Serial.printf("[POLL] Raw (%u bytes): %s\n", httpResponse.length(), httpResponse.c_str());
+  // De-chunk transfer-encoding chunked si es necesario
+  String body = httpResponse;
+  if (body[0] >= '0' && body[0] <= '9' || body[0] >= 'a' && body[0] <= 'f') {
+    int cr = body.indexOf('\r');
+    int nl = body.indexOf('\n');
+    int hdrEnd;
+    if (cr >= 0 && nl >= 0 && nl == cr + 1) {
+      hdrEnd = nl + 1;
+    } else if (nl >= 0) {
+      hdrEnd = nl + 1;
+    } else {
+      hdrEnd = 0;
+    }
+    if (hdrEnd > 0) {
+      String chunkSizeStr = body.substring(0, hdrEnd - 1);
+      chunkSizeStr.trim();
+      long chunkSize = strtol(chunkSizeStr.c_str(), NULL, 16);
+      if (chunkSize > 0 && (unsigned long)chunkSize <= body.length() - hdrEnd) {
+        body = body.substring(hdrEnd, hdrEnd + chunkSize);
+        Serial.printf("[POLL] De-chunked: %d bytes\n", chunkSize);
+      }
+    }
+  }
+
+  if (body.length() == 0) {
+    Serial.println("[POLL] Body vacío tras de-chunk");
+    failCount++;
+    pollState = POLL_IDLE;
+    lastPollOk = false;
+    return;
+  }
+
+  Serial.printf("[POLL] Body (%u bytes): %s\n", body.length(), body.c_str());
 
   JsonDocument doc;
-  DeserializationError err = deserializeJson(doc, httpResponse);
+  DeserializationError err = deserializeJson(doc, body);
   if (err) {
     Serial.printf("[POLL] JSON inválido: %s\n", err.c_str());
     failCount++;
@@ -238,7 +280,7 @@ void HTTPPoller::runParse() {
   }
 
   if (actuators.isNull()) {
-    Serial.printf("[POLL] Respuesta sin 'actuators' ni array raíz: %s\n", httpResponse.c_str());
+    Serial.printf("[POLL] Respuesta sin 'actuators' ni array raíz: %s\n", body.c_str());
     failCount++;
     pollState = POLL_IDLE;
     lastPollOk = false;
