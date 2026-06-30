@@ -51,10 +51,10 @@
 
 // ---- Backend HTTP ----
 #ifndef BACKEND_HOST
-#define BACKEND_HOST "192.168.1.100"
+#define BACKEND_HOST "192.168.1.6"
 #endif
 #ifndef BACKEND_PORT
-#define BACKEND_PORT 3000
+#define BACKEND_PORT 3797
 #endif
 
 // ---- I2C (Sensores ENS160 + AHT21) ----
