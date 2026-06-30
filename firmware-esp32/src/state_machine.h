@@ -12,16 +12,18 @@ enum DeviceState {
   ST_ERROR,
   ST_RECOVERY,
   ST_SAFE,
+  ST_OTA_UPDATING,
 };
 
 class StateMachine {
 public:
   StateMachine();
   void init();
-  void setState(DeviceState newState);
+  bool setState(DeviceState newState);
   DeviceState getState();
   const char* getStateName();
   const char* getStateName(DeviceState s);
+  bool fsmTransition(DeviceState next, const char* reason = nullptr);
   void setError(const char* reason);
   const char* getError();
 
@@ -41,6 +43,9 @@ private:
   unsigned long stateEntered;
 
   const char* prefsNamespace = "mush2";
+
+  static const int _STATE_COUNT = 9;
+  bool _isTransitionValid(DeviceState from, DeviceState to);
 };
 
 #endif

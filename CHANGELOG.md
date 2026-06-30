@@ -1,5 +1,40 @@
 # Changelog — Mush2
 
+## [0.9.1] — 2026-06-29 — OTA v3 + HTTP Poller fixes
+
+### ADRs
+- `ADR-014-OTA-v3.md`: Estado **Propuesto → Implementado**. Sección de implementación agregada con archivos creados, flujo completo, MQTT integrado, fixes aplicados y comprobación en hardware.
+
+### Firmware (ESP32-S3) — OTA v3
+- **Nuevo**: `ota_nvs.{h,cpp}` — Inicialización NVS con esquema v1, key `fw_version`
+- **Nuevo**: `ota_decisor.{h,cpp}` — `OTASelector` con validación URL, SemVer, RSSI
+- **Nuevo**: `ota_shutdown.{h,cpp}` — `OTAShutdown` para apagado seguro SSR/sensores/comms
+- **Nuevo**: `ota_executor.{h,cpp}` — `OTAExecutor` con descarga HTTPS vía `Update.write()`
+- **Nuevo**: `ota_postboot.{h,cpp}` — `OTAConfirmation` con self-test + confirmación MQTT
+- **Nuevo**: `mqtt_client.{h,cpp}` — Cliente MQTT PubSubClient, tarea FreeRTOS dedicada
+- **Nuevo**: `partitions.csv` — OTA dual 8MB (app0/app1, spiffs 1.5MB, coredump)
+- **Nuevo**: `state_machine.{h,cpp}` — Matriz 9×9 con `fsmTransition()`
+- **Integración MQTT**: Subscribe a `mush2/{deviceId}/ota/command`, publica `ota/rejected` y `ota/status` con retain
+- **Limpieza**: Eliminados `startArduinoOTA()`, `startHTTPUpdate()`, `isUpdating()` de `ota_handler`
+- `getVersion()` ahora lee de NVS con fallback a `FIRMWARE_VERSION="0.9.0"`
+- `nvsSetFwVer(cand.version)` post-ejecución exitosa
+
+### Firmware (ESP32-S3) — HTTP Poller fixes
+- **Bug fix**: Stack overflow silencioso mataba el poller HTTP → `STACK_POLLER 4096→8192`
+- **Bug fix**: `client.connect()` sin timeout bloqueaba hasta ~20s → `client.connect(host,port,5000)`
+- **Bug fix**: `client.printf()` sin flush no enviaba datos al wire → `client.flush()` post-printf
+- **Bug fix**: `Transfer-Encoding: chunked` no manejado → de-chunking en `runParse()`
+- **Bug fix**: `continue` en `taskOTA()` saltaba `vTaskDelayUntil` → reemplazado por `goto ota_skip`
+- **Mejora**: `DELAY_POLLER 100→500ms`, `DELAY_MQTT 50→500ms` para reducir CPU waste
+- **Mejora**: `vTaskDelay(50)` tras connect para estabilizar TCP
+- `BACKEND_PORT` corregido de 3000→3797 para coincidir con backend Express
+
+### Documentación
+- `README.md`: Referencia a ADR-014 agregada
+- `docs/ADR/ADR-014-OTA-v3.md`: Implementación completa documentada (archivos, flujo, fixes, comprobación)
+- `docs/issues/ota-v3/`: Estados de fases actualizados a completado
+- `CHANGELOG.md`: Esta entrada
+
 ## [0.9.0] — 2026-06-28 — Arquitectura FreeRTOS + Estrategia de Seguridad
 
 ### ADRs

@@ -8,12 +8,18 @@
 #include "state_machine.h"
 #include "http_poller.h"
 #include "ota_handler.h"
+#include "ota_decisor.h"
+#include "ota_nvs.h"
+#include "ota_shutdown.h"
+#include "ota_executor.h"
+#include "ota_postboot.h"
 #include "aht_sensor.h"
 #include "ens160_sensor.h"
 #include "ssr_controller.h"
 #include "hysteresis_controller.h"
 #include "thingspeak_client.h"
 #include "device_manager.h"
+#include "mqtt_client.h"
 
 // Global instances
 WiFiManager wifi;
@@ -21,11 +27,16 @@ StateMachine sm;
 DeviceManager deviceManager;
 HTTPPoller httpPoller;
 OTAHandler ota;
+OTASelector otaselector;
+OTAShutdown otaShutdown;
+OTAExecutor otaExecutor;
+OTAConfirmation otaConfirmacion;
 AHTSensor aht;
 EnsSensor ens;
 SSRController ssr;
 HysteresisController hyst;
 ThingSpeakClient ts;
+MQTTClient mqtt;
 Adafruit_NeoPixel led(LED_RGB_COUNT, LED_RGB_PIN, NEO_GRB + NEO_KHZ800);
 
 // Shared state (accessed across cores, declared volatile)
@@ -58,6 +69,7 @@ TaskHandle_t taskWiFiHandle = NULL;
 TaskHandle_t taskPollerHandle = NULL;
 TaskHandle_t taskOTAHandle = NULL;
 TaskHandle_t taskTelemetryHandle = NULL;
+TaskHandle_t taskMQTTHandle = NULL;
 
 // Forward declarations
 void setLEDColor(uint8_t r, uint8_t g, uint8_t b);
@@ -236,12 +248,15 @@ void taskSSR(void* pvParameters) {
     }
 
     // State machine transitions based on system state
-    if (sm.getState() == ST_NORMAL || sm.getState() == ST_DEGRADED) {
-      if (sharedOverheatActive || strcmp(systemState, "SAFE_SENSOR") == 0) {
-        if (sm.getState() != ST_ERROR) sm.setState(ST_ERROR);
-      } else {
-        sm.setState(strcmp(systemState, "NORMAL") == 0 ? ST_NORMAL : ST_DEGRADED);
-      }
+    DeviceState current = sm.getState();
+    bool faultActive = sharedOverheatActive || strcmp(systemState, "SAFE_SENSOR") == 0;
+
+    if ((current == ST_NORMAL || current == ST_DEGRADED) && faultActive) {
+      sm.fsmTransition(ST_ERROR, "fault detected");
+    } else if (current == ST_ERROR && !faultActive) {
+      sm.fsmTransition(ST_RECOVERY, "fault cleared");
+    } else if (current == ST_RECOVERY && !faultActive) {
+      sm.fsmTransition(ST_NORMAL, "recovery complete");
     }
 
     // Periodic alarm check
@@ -291,19 +306,20 @@ void taskWiFi(void* pvParameters) {
 
     if (!wifiOk && sm.getState() == ST_NORMAL) {
       Serial.println("[WARN] WiFi perdido — DEGRADED");
-      sm.setState(ST_DEGRADED);
+      sm.fsmTransition(ST_DEGRADED, "wifi lost");
       lastWifiRetry = millis();
       wifiRetryDelay = 5000;
     }
 
     if (wifiOk && sm.getState() == ST_DEGRADED) {
-      sm.setState(ST_NORMAL);
+      sm.fsmTransition(ST_NORMAL, "wifi recovered");
       wifiRetryDelay = 5000;
     }
 
     if (!wifiOk && sm.getState() == ST_DEGRADED) {
       unsigned long now = millis();
       if (now - lastWifiRetry >= wifiRetryDelay) {
+        esp_task_wdt_reset();
         lastWifiRetry = now;
         wifi.connect();
         wifiRetryDelay = min(wifiRetryDelay * 2, 60000u);
@@ -337,11 +353,45 @@ void taskPoller(void* pvParameters) {
   }
 }
 
+// Shared OTA command state (set by serial or MQTT)
+volatile bool otaCommandPending = false;
+char otaCommandUrl[256] = "";
+char otaCommandVersion[32] = "";
+
+// ============================================================
+//  MQTT Task
+// ============================================================
+
+void otaMqttCallback(const char* url, const char* version) {
+  strncpy(otaCommandUrl, url, sizeof(otaCommandUrl) - 1);
+  strncpy(otaCommandVersion, version, sizeof(otaCommandVersion) - 1);
+  otaCommandPending = true;
+  Serial.printf("[OTA] Comando recibido via MQTT: %s (v%s)\n", otaCommandUrl, otaCommandVersion);
+}
+
+void taskMQTT(void* pvParameters) {
+  esp_err_t wdtErr = esp_task_wdt_add(NULL);
+  if (wdtErr != ESP_OK) Serial.printf("[MQTT] WDT add: %s (0x%x)\n",
+    wdtErr == ESP_ERR_INVALID_STATE ? "YA_REGISTRADO" : "ERROR", wdtErr);
+  TickType_t lastWake = xTaskGetTickCount();
+
+  while (true) {
+    esp_task_wdt_reset();
+
+    if (wifi.isConnected()) {
+      mqtt.loop();
+    }
+
+    vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(DELAY_MQTT));
+  }
+}
+
 void taskOTA(void* pvParameters) {
   esp_err_t wdtErr = esp_task_wdt_add(NULL);
   if (wdtErr != ESP_OK) Serial.printf("[OTA] WDT add: %s (0x%x)\n",
     wdtErr == ESP_ERR_INVALID_STATE ? "YA_REGISTRADO" : "ERROR", wdtErr);
   TickType_t lastWake = xTaskGetTickCount();
+  unsigned long lastSerialCheck = 0;
 
   while (true) {
     esp_task_wdt_reset();
@@ -350,6 +400,81 @@ void taskOTA(void* pvParameters) {
       ota.loop();
     }
 
+    // Check for serial OTA commands (development/debug)
+    if (millis() - lastSerialCheck > 1000) {
+      lastSerialCheck = millis();
+      if (Serial.available() > 0) {
+        String line = Serial.readStringUntil('\n');
+        line.trim();
+        if (line.startsWith("ota ")) {
+          String url = line.substring(4);
+          if (url.length() > 0 && url.startsWith("https://")) {
+            strncpy(otaCommandUrl, url.c_str(), sizeof(otaCommandUrl) - 1);
+            snprintf(otaCommandVersion, sizeof(otaCommandVersion), "0.0.0");
+            otaCommandPending = true;
+            Serial.printf("[OTA] Comando recibido via serial: %s\n", otaCommandUrl);
+          }
+        }
+      }
+    }
+
+    // Process pending OTA command
+    if (otaCommandPending) {
+      otaCommandPending = false;
+
+      if (sm.getState() != ST_NORMAL) {
+        Serial.printf("[OTA] Rechazado: estado %s\n", sm.getStateName());
+        mqtt.publish("ota/rejected", "{\"causa\":\"estado_no_normal\"}");
+        goto ota_skip;
+      }
+
+      OtaCandidate cand = otaselector.select(
+        String(otaCommandUrl),
+        String(otaCommandVersion),
+        wifi.getRSSI()
+      );
+
+      if (!cand.valid) {
+        Serial.println("[OTA] Rechazado por el decisor");
+        mqtt.publish("ota/rejected", "{\"causa\":\"decisor_rechaza\"}");
+        goto ota_skip;
+      }
+
+      String currentVer = nvsGetFwVer();
+      int cmp = otaselector.compareSemVer(currentVer, cand.version);
+      if (cmp <= 0) {
+        Serial.printf("[OTA] Rechazado: version %s <= actual %s\n",
+          cand.version.c_str(), currentVer.c_str());
+        mqtt.publish("ota/rejected", "{\"causa\":\"version_no_mayor\"}");
+        goto ota_skip;
+      }
+
+      Serial.println("[OTA] Autorizado — iniciando shutdown...");
+
+      char statusPayload[128];
+      snprintf(statusPayload, sizeof(statusPayload),
+        "{\"estado\":\"OTA_STARTING\",\"version\":\"%s\"}", cand.version.c_str());
+      mqtt.publish("ota/status", statusPayload);
+
+      otaShutdown.begin();
+      sm.fsmTransition(ST_OTA_UPDATING, "ota starting");
+
+      bool ok = otaExecutor.begin(cand.url);
+      if (ok) {
+        Serial.printf("[OTA] Ejecutor reporta exito v%s — reiniciando...\n", cand.version.c_str());
+        nvsSetFwVer(cand.version);
+        delay(1000);
+        ESP.restart();
+      } else {
+        Serial.println("[OTA] Fallo en ejecutor — restaurando");
+        snprintf(statusPayload, sizeof(statusPayload),
+          "{\"estado\":\"OTA_FAILED\",\"error\":\"download_failed\"}");
+        mqtt.publish("ota/status", statusPayload, true);
+        sm.fsmTransition(ST_NORMAL, "ota failed");
+      }
+    }
+
+ota_skip:
     vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(DELAY_OTA));
   }
 }
@@ -464,14 +589,14 @@ void setup() {
       esp_task_wdt_reset();
       vTaskDelay(pdMS_TO_TICKS(500));
     }
-    sm.setState(ST_INIT);
+    sm.fsmTransition(ST_INIT, "safe mode recovery");
   }
 
   // I2C bus
   Wire.begin(I2C_SDA, I2C_SCL);
   Wire.setClock(I2C_FREQ);
 
-  sm.setState(ST_WIFI);
+  sm.fsmTransition(ST_WIFI, "setup");
   wifi.init();
   wifi.connect(); // async — no bloquea
 
@@ -497,11 +622,33 @@ void setup() {
     ota.init(deviceManager.getDeviceId().c_str());
   }
 
+  // Inicializar componentes OTA v3
+  otaselector = OTASelector();
+  otaShutdown = OTAShutdown();
+  otaExecutor = OTAExecutor();
+  otaConfirmacion = OTAConfirmation();
+  nvsInit();
+
+  // MQTT
+  mqtt.init(deviceManager.getDeviceId().c_str());
+  mqtt.setOtaCallback(otaMqttCallback);
+
   bootTime = millis();
   lightCycleStart = bootTime;
   sharedLightOn = true;
 
-  sm.setState(wifi.isConnected() ? ST_NORMAL : ST_DEGRADED);
+  sm.fsmTransition(wifi.isConnected() ? ST_NORMAL : ST_DEGRADED, "setup complete");
+
+  // Post-boot OTA: confirm firmware if pending verification
+  if (otaConfirmacion.selfTest()) {
+    otaConfirmacion.confirm();
+    String ver = nvsGetFwVer();
+    Serial.printf("[OTA] Firmware v%s confirmado post-OTA\n", ver.c_str());
+    char successPayload[128];
+    snprintf(successPayload, sizeof(successPayload),
+      "{\"estado\":\"OTA_SUCCESS\",\"version\":\"%s\"}", ver.c_str());
+    mqtt.publish("ota/status", successPayload, true);
+  }
 
   // Create FreeRTOS tasks
   xTaskCreatePinnedToCore(
@@ -525,12 +672,16 @@ void setup() {
     &taskOTAHandle, CORE_NETWORK);
 
   xTaskCreatePinnedToCore(
+    taskMQTT, "MQTT", STACK_MQTT, NULL, PRIORITY_MQTT,
+    &taskMQTTHandle, CORE_NETWORK);
+
+  xTaskCreatePinnedToCore(
     taskTelemetry, "Telemetry", STACK_TELEMETRY, NULL, PRIORITY_TELEMETRY,
     &taskTelemetryHandle, CORE_NETWORK);
 
   Serial.printf("[OTA] Firmware v%s\n", ota.getVersion());
   Serial.printf("[SYS] %d tareas FreeRTOS creadas en Core %d (control) y Core %d (red)\n",
-    5, CORE_CONTROL, CORE_NETWORK);
+    6, CORE_CONTROL, CORE_NETWORK);
 
   setLEDColor(0, 0, 0);
 }
