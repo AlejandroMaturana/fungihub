@@ -10,10 +10,10 @@ Proveer una plataforma integral (firmware + backend + frontend) que permita a pr
 
 | Componente | Tecnología | Función |
 |---|---|---|
-| **Firmware** | C++ (PlatformIO / ESP32-S3) | Lectura de sensores (AHT21, ENS160), control de actuadores (SSR), comunicaciones HTTP + ThingSpeak |
-| **Backend** | Node.js + Express 5 + Sequelize 6 + PostgreSQL | API REST, autenticación JWT, motor de reglas, gestión de recetas/ciclos, WebSockets |
+| **Firmware** | C++ (PlatformIO / ESP32-S3) | Lectura de sensores (AHT21, ENS160), control de actuadores (SSR), comunicaciones HTTP + MQTT + ThingSpeak, OTA v3 con 4-capas y rollback nativo |
+| **Backend** | Node.js + Express 5 + Sequelize 6 + PostgreSQL | API REST, autenticación JWT, motor de reglas, gestión de recetas/ciclos, WebSockets, bridge MQTT |
 | **Frontend** | React (Vite) | Dashboard en tiempo real, configuración remota, visualización de históricos, alarmas |
-| **Comunicación** | HTTP Polling (REST API) | Comunicación HTTP entre dispositivos y backend |
+| **Comunicación** | HTTP Polling (REST API) + MQTT | Comunicación HTTP para telemetría y comandos; MQTT para comandos OTA y eventos en tiempo real |
 
 ## ¿Cuáles son las reglas?
 

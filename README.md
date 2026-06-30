@@ -52,7 +52,7 @@ Mush2 es una solución completa de **IoT industrial** para el cultivo controlado
 - HTTP polling al backend con backoff exponencial y cola de comandos
 - Watchdog jerárquico: TWDT (12s, panic → reboot), SWDT (30s, recovery controlado), Health Check (60s)
 - Envío de telemetría a ThingSpeak cada 20s
-- OTA: ArduinoOTA + HTTP Update
+- OTA v3: 4-capas (Decisor + Safe Shutdown + Ejecutor + Confirmación Post-Boot) + MQTT
 - Device ID dinámico derivado de MAC address
 
 ### Backend (Node.js/Express)
@@ -77,17 +77,18 @@ Mush2 es una solución completa de **IoT industrial** para el cultivo controlado
 
 - `PROJECT_CONTEXT.md` — Definición del proyecto
 - `PROJECT_JOURNAL.md` — Bitácora de decisiones
-- `docs/ADR/` — 13 Architecture Decision Records (ADR-001 a ADR-013)
+- `docs/ADR/` — 14 Architecture Decision Records (ADR-001 a ADR-014)
 - `docs/architecture/` — Arquitectura por componente
-- `docs/contracts/` — Contratos (API REST)
+- `docs/contracts/` — Contratos (API REST, MQTT)
 - `docs/roadmap.md` — Roadmap de desarrollo (18 fases)
 - `docs/requirements.md` — Requerimientos funcionales
 
-### ADRs destacados (v0.9.0)
+### ADRs destacados (v0.9.1)
 - `ADR-001-ESP32.md` — Migración a ESP32-S3 como nodo de telemetría
 - `ADR-008-HTTP-Command-Protocol.md` — Protocolo HTTP polling
 - `ADR-012-FreeRTOS.md` — Arquitectura FreeRTOS y watchdog jerárquico
 - `ADR-013-Seguridad-Estrategia.md` — Estrategia de seguridad por capas
+- `ADR-014-OTA-v3.md` — Sistema OTA v3 con arquitectura 4-capas y rollback nativo
 
 ---
 
