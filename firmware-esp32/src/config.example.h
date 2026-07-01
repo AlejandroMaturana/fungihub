@@ -132,4 +132,9 @@
 #define DEFAULT_HUM_MAX 85.0
 #define DEFAULT_CO2_MAX 1200
 
+// ---- Debug ----
+#ifndef POLL_DEBUG
+#define POLL_DEBUG 0
+#endif
+
 #endif
