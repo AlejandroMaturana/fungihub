@@ -5,7 +5,8 @@
 MQTTClient* MQTTClient::_instance = nullptr;
 
 MQTTClient::MQTTClient()
-  : _client(_tcpClient), _lastReconnect(0), _otaCb(nullptr) {
+  : _client(_tcpClient), _lastReconnect(0), _fallbackRetry(0),
+    _usingFallback(false), _otaCb(nullptr), _actuatorCb(nullptr) {
   _deviceId[0] = '\0';
   _topicBase[0] = '\0';
 }
@@ -13,7 +14,6 @@ MQTTClient::MQTTClient()
 void MQTTClient::init(const char* deviceId) {
   snprintf(_deviceId, sizeof(_deviceId), "%s", deviceId);
   snprintf(_topicBase, sizeof(_topicBase), "mush2/%s", deviceId);
-
   _client.setServer(MQTT_BROKER, MQTT_PORT);
   _client.setCallback(_staticCallback);
   _instance = this;
@@ -23,12 +23,30 @@ void MQTTClient::setOtaCallback(void (*cb)(const char* url, const char* version)
   _otaCb = cb;
 }
 
+void MQTTClient::setActuatorCallback(void (*cb)(const ActuatorCommand* cmds, int count)) {
+  _actuatorCb = cb;
+}
+
 void MQTTClient::loop() {
   if (!_client.connected()) {
     unsigned long now = millis();
-    if (now - _lastReconnect > 10000) {
-      _lastReconnect = now;
-      _connect();
+
+    if (!_usingFallback) {
+      if (now - _lastReconnect > 10000) {
+        _lastReconnect = now;
+        _connect();
+      }
+    } else {
+      if (now - _fallbackRetry > 300000) {
+        _fallbackRetry = now;
+        _usingFallback = false;
+        _client.setServer(MQTT_BROKER, MQTT_PORT);
+        _lastReconnect = 0;
+      }
+      if (now - _lastReconnect > 30000) {
+        _lastReconnect = now;
+        _connect();
+      }
     }
     return;
   }
@@ -46,23 +64,67 @@ bool MQTTClient::publish(const char* topic, const char* payload, bool retained) 
   return _client.publish(fullTopic, payload, retained);
 }
 
+bool MQTTClient::publishTelemetry(float temp, float hum, uint16_t eco2, uint16_t tvoc, uint8_t aqi) {
+  char payload[256];
+  snprintf(payload, sizeof(payload),
+    "{\"temp\":%.1f,\"hum\":%.1f,\"co2\":%u,\"tvoc\":%u,\"aqi\":%u,\"ts\":%lu}",
+    temp, hum, eco2, tvoc, aqi, millis());
+  return publish("telemetry", payload);
+}
+
+bool MQTTClient::publishStatus(const char* state, const char* mode, int rssi) {
+  char payload[128];
+  snprintf(payload, sizeof(payload),
+    "{\"state\":\"%s\",\"mode\":\"%s\",\"rssi\":%d,\"ts\":%lu}",
+    state, mode, rssi, millis());
+  return publish("status", payload);
+}
+
+bool MQTTClient::publishAlarm(const char* reason) {
+  char payload[128];
+  snprintf(payload, sizeof(payload),
+    "{\"reason\":\"%s\",\"ts\":%lu}", reason, millis());
+  return publish("alarm", payload);
+}
+
 void MQTTClient::_connect() {
   if (WiFi.status() != WL_CONNECTED) return;
 
-  char clientId[40];
-  snprintf(clientId, sizeof(clientId), "%s", _deviceId);
+  const char* brokerLabel = _usingFallback ? "FALLBACK" : "PRIMARY";
+  const char* brokerHost = _usingFallback ? MQTT_BROKER_FALLBACK : MQTT_BROKER;
+  uint16_t brokerPort = _usingFallback ? MQTT_PORT_FALLBACK : MQTT_PORT;
 
-  Serial.printf("[MQTT] Conectando a %s:%d como %s...\n", MQTT_BROKER, MQTT_PORT, clientId);
+  char clientId[40];
+  snprintf(clientId, sizeof(clientId), "%s_%lu", _deviceId, millis() % 100000);
+
+  Serial.printf("[MQTT] Conectando a %s (%s:%d)...\n", brokerLabel, brokerHost, brokerPort);
+
+  _client.setServer(brokerHost, brokerPort);
 
   if (_client.connect(clientId)) {
-    Serial.printf("[MQTT] Conectado como %s\n", clientId);
+    Serial.printf("[MQTT] Conectado como %s via %s\n", clientId, brokerLabel);
 
-    char topic[96];
-    snprintf(topic, sizeof(topic), "%s/ota/command", _topicBase);
-    _client.subscribe(topic);
-    Serial.printf("[MQTT] Suscrito a %s\n", topic);
+    char otaTopic[96];
+    snprintf(otaTopic, sizeof(otaTopic), "%s/ota/command", _topicBase);
+    _client.subscribe(otaTopic);
+
+    char actTopic[96];
+    snprintf(actTopic, sizeof(actTopic), "%s/actuators", _topicBase);
+    _client.subscribe(actTopic);
+
+    Serial.printf("[MQTT] Suscrito a %s, %s\n", otaTopic, actTopic);
+
+    publish("status", "{\"status\":\"ONLINE\"}", false);
   } else {
-    Serial.printf("[MQTT] Fallo conexion, rc=%d\n", _client.state());
+    Serial.printf("[MQTT] Fallo conexion %s, rc=%d\n", brokerLabel, _client.state());
+
+    if (!_usingFallback) {
+#ifdef MQTT_BROKER_FALLBACK
+      _usingFallback = true;
+      _fallbackRetry = millis();
+      Serial.println("[MQTT] Cambiando a broker FALLBACK");
+#endif
+    }
   }
 }
 
@@ -73,34 +135,74 @@ void MQTTClient::_staticCallback(char* topic, uint8_t* payload, unsigned int len
 }
 
 void MQTTClient::_onMessage(char* topic, uint8_t* payload, unsigned int len) {
-  char cmdTopic[96];
-  snprintf(cmdTopic, sizeof(cmdTopic), "%s/ota/command", _topicBase);
+  char otaTopic[96];
+  snprintf(otaTopic, sizeof(otaTopic), "%s/ota/command", _topicBase);
 
-  if (strcmp(topic, cmdTopic) != 0) return;
+  char actTopic[96];
+  snprintf(actTopic, sizeof(actTopic), "%s/actuators", _topicBase);
 
-  String jsonStr;
-  for (unsigned int i = 0; i < len; i++) {
-    jsonStr += (char)payload[i];
-  }
+  if (strcmp(topic, otaTopic) == 0) {
+    String jsonStr;
+    for (unsigned int i = 0; i < len; i++) {
+      jsonStr += (char)payload[i];
+    }
 
-  JsonDocument doc;
-  DeserializationError err = deserializeJson(doc, jsonStr);
-  if (err) {
-    Serial.printf("[MQTT] Error parseando ota/command: %s\n", err.c_str());
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, jsonStr);
+    if (err) {
+      Serial.printf("[MQTT] Error parseando ota/command: %s\n", err.c_str());
+      return;
+    }
+
+    const char* url = doc["url"];
+    const char* version = doc["version"];
+
+    if (!url || !version) {
+      Serial.println("[MQTT] ota/command: faltan url o version");
+      return;
+    }
+
+    Serial.printf("[MQTT] Comando OTA: url=%s, version=%s\n", url, version);
+
+    if (_otaCb) {
+      _otaCb(url, version);
+    }
     return;
   }
 
-  const char* url = doc["url"];
-  const char* version = doc["version"];
+  if (strcmp(topic, actTopic) == 0) {
+    String jsonStr;
+    for (unsigned int i = 0; i < len; i++) {
+      jsonStr += (char)payload[i];
+    }
 
-  if (!url || !version) {
-    Serial.println("[MQTT] ota/command: faltan url o version");
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, jsonStr);
+    if (err) {
+      Serial.printf("[MQTT] Error parseando actuators: %s\n", err.c_str());
+      return;
+    }
+
+    JsonArray acts = doc["actuators"].as<JsonArray>();
+    if (acts.isNull()) {
+      Serial.println("[MQTT] actuators: falta array 'actuators'");
+      return;
+    }
+
+    int count = acts.size();
+    if (count > 4) count = 4;
+    ActuatorCommand cmds[4];
+
+    for (int i = 0; i < count; i++) {
+      JsonObject a = acts[i];
+      cmds[i].channel = a["channel"] | 0;
+      cmds[i].state = (strcmp(a["state"] | "OFF", "ON") == 0) ? 1 : 0;
+      cmds[i].mode = (strcmp(a["mode"] | "LOCAL", "REMOTE") == 0) ? 1 : 0;
+    }
+
+    if (_actuatorCb) {
+      _actuatorCb(cmds, count);
+    }
     return;
-  }
-
-  Serial.printf("[MQTT] Comando OTA recibido: url=%s, version=%s\n", url, version);
-
-  if (_otaCb) {
-    _otaCb(url, version);
   }
 }

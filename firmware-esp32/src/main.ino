@@ -240,10 +240,16 @@ void taskSSR(void* pvParameters) {
         unsigned long now = millis();
         if (now - lastAlarmSent > 30000) {
           Serial.printf("[ALARM] %s\n", hyst.getAlarmReason());
+          if (mqtt.isConnected()) {
+            mqtt.publishAlarm(hyst.getAlarmReason());
+          }
           lastAlarmSent = now;
         }
       } else if (hyst.getOverheatState() == OH_RECOVERY) {
         Serial.printf("[ALARM] %s\n", hyst.getAlarmReason());
+        if (mqtt.isConnected()) {
+          mqtt.publishAlarm(hyst.getAlarmReason());
+        }
       }
     }
 
@@ -338,12 +344,15 @@ void taskPoller(void* pvParameters) {
     esp_task_wdt_reset();
 
     if (wifi.isConnected()) {
-      httpPoller.loop();
-      for (int ch = 1; ch <= 4; ch++) {
-        uint8_t state, mode;
-        httpPoller.getDesired(ch, &state, &mode);
-        actuatorDesired[ch - 1] = state;
-        actuatorMode[ch - 1] = mode;
+      // MQTT es primario para comandos de actuadores; HTTP poller es fallback
+      if (!mqtt.isConnected()) {
+        httpPoller.loop();
+        for (int ch = 1; ch <= 4; ch++) {
+          uint8_t state, mode;
+          httpPoller.getDesired(ch, &state, &mode);
+          actuatorDesired[ch - 1] = state;
+          actuatorMode[ch - 1] = mode;
+        }
       }
     }
 
@@ -365,6 +374,17 @@ void otaMqttCallback(const char* url, const char* version) {
   strncpy(otaCommandVersion, version, sizeof(otaCommandVersion) - 1);
   otaCommandPending = true;
   Serial.printf("[OTA] Comando recibido via MQTT: %s (v%s)\n", otaCommandUrl, otaCommandVersion);
+}
+
+void mqttActuatorCallback(const ActuatorCommand* cmds, int count) {
+  for (int i = 0; i < count; i++) {
+    int ch = cmds[i].channel;
+    if (ch < 1 || ch > 4) continue;
+    actuatorDesired[ch - 1] = cmds[i].state;
+    actuatorMode[ch - 1] = cmds[i].mode;
+    Serial.printf("[MQTT] Actuator ch%d: %s (REMOTE)\n",
+      ch, cmds[i].state ? "ON" : "OFF");
+  }
 }
 
 void taskMQTT(void* pvParameters) {
@@ -483,6 +503,8 @@ void taskTelemetry(void* pvParameters) {
     wdtErr == ESP_ERR_INVALID_STATE ? "YA_REGISTRADO" : "ERROR", wdtErr);
   TickType_t lastWake = xTaskGetTickCount();
   unsigned long lastTsSend = 0;
+  unsigned long lastMqttTel = 0;
+  unsigned long lastMqttStatus = 0;
 
   while (true) {
     esp_task_wdt_reset();
@@ -497,6 +519,28 @@ void taskTelemetry(void* pvParameters) {
         ts.send(sharedTemp, sharedHum,
           sharedEnsValid ? sharedEco2 : 0,
           sharedEnsValid ? sharedTvoc : 0);
+      }
+    }
+
+    // MQTT telemetry (cada 10s)
+    if (now - lastMqttTel >= 10000) {
+      lastMqttTel = now;
+      if (wifiOk && mqtt.isConnected() && sharedSensorsValid) {
+        mqtt.publishTelemetry(sharedTemp, sharedHum,
+          sharedEnsValid ? sharedEco2 : 0,
+          sharedEnsValid ? sharedTvoc : 0,
+          sharedAqi);
+      }
+    }
+
+    // MQTT status (cada 60s)
+    if (now - lastMqttStatus >= 60000) {
+      lastMqttStatus = now;
+      if (wifiOk && mqtt.isConnected()) {
+        CtrlMode ctrlMode = hyst.getMode();
+        const char* modeStr = (ctrlMode == CTRL_LOCAL) ? "LOCAL"
+          : (ctrlMode == CTRL_REMOTE) ? "REMOTE" : "OFF";
+        mqtt.publishStatus(sm.getStateName(), modeStr, wifi.getRSSI());
       }
     }
 
@@ -517,11 +561,11 @@ void taskTelemetry(void* pvParameters) {
         ssrStates[0] & 1, ssrStates[1] & 1,
         ssrStates[2] & 1, ssrStates[3] & 1);
 
-      Serial.printf("[STATS] Uptime: %lus | State: %s | WiFi: %s | HTTP: %s | RSSI: %d | Mode: %s | Light: %s | SSR: %s\n",
+      Serial.printf("[STATS] Uptime: %lus | State: %s | WiFi: %s | MQTT: %s | RSSI: %d | Mode: %s | Light: %s | SSR: %s\n",
         sharedUptime,
         sm.getStateName(),
         wifi.isConnected() ? "OK" : "NO",
-        httpPoller.isConnected() ? "OK" : "NO",
+        mqtt.isConnected() ? "OK" : "NO",
         wifi.getRSSI(),
         modeStr.c_str(),
         sharedLightOn ? "ON" : "OFF",
@@ -630,6 +674,7 @@ void setup() {
   // MQTT
   mqtt.init(deviceManager.getDeviceId().c_str());
   mqtt.setOtaCallback(otaMqttCallback);
+  mqtt.setActuatorCallback(mqttActuatorCallback);
 
   bootTime = millis();
   lightCycleStart = bootTime;
