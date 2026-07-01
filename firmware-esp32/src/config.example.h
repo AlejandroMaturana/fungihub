@@ -65,7 +65,7 @@
 // ---- LED RGB Integrado (NeoPixel/WS2812B) ----
 #define LED_RGB_PIN GPIO_NUM_48
 #define LED_RGB_COUNT 1
-#define LED_RGB_BRIGHTNESS 64
+#define LED_RGB_BRIGHTNESS 24
 
 // ---- SSR 4 Canales (active-LOW) ----
 #define SSR_CH1_PIN GPIO_NUM_11   // Ventilación
@@ -131,5 +131,10 @@
 #define DEFAULT_HUM_MIN 78.0
 #define DEFAULT_HUM_MAX 85.0
 #define DEFAULT_CO2_MAX 1200
+
+// ---- Debug ----
+#ifndef POLL_DEBUG
+#define POLL_DEBUG 0
+#endif
 
 #endif

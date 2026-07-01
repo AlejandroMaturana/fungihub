@@ -22,7 +22,11 @@ void SSRController::init() {
 }
 
 uint8_t SSRController::resolvePinState(uint8_t state) {
-  return state ? LOW : HIGH;
+  if (SSR_ACTIVE_LOW) {
+    return state ? LOW : HIGH;
+  } else {
+    return state ? HIGH : LOW;
+  }
 }
 
 void SSRController::setChannel(uint8_t channel, uint8_t state) {
