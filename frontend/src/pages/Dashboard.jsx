@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { getDevices, getLatestTelemetry } from '../api/client.js'
 import { useSSE } from '../api/useSSE.js'
@@ -90,43 +90,45 @@ function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [alarms, setAlarms] = useState([])
+  const cancelledRef = useRef(false)
+
+  async function fetchData() {
+    try {
+      const devs = await getDevices()
+      if (cancelledRef.current) return
+      setDevices(devs)
+
+      if (devs.length > 0) {
+        const targetId = selectedId || devs[0].id
+        if (!selectedId && !cancelledRef.current) setSelectedId(targetId)
+
+        const [tel, allTel] = await Promise.all([
+          getLatestTelemetry(targetId),
+          Promise.all(devs.map(d => getLatestTelemetry(d.id).catch(() => null))),
+        ])
+        if (cancelledRef.current) return
+        setTelemetry(tel)
+
+        const map = {}
+        devs.forEach((d, i) => { map[d.id] = allTel[i] })
+        setTelemetryMap(map)
+      } else {
+        setSelectedId(null)
+        setTelemetry({})
+        setTelemetryMap({})
+      }
+      setError(null)
+    } catch (err) {
+      if (!cancelledRef.current) setError(err.message || 'Error de conexión')
+    } finally {
+      if (!cancelledRef.current) setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    let cancelled = false
-    async function fetchData() {
-      try {
-        const devs = await getDevices()
-        if (cancelled) return
-        setDevices(devs)
-
-        if (devs.length > 0) {
-          const targetId = selectedId || devs[0].id
-          if (!selectedId && !cancelled) setSelectedId(targetId)
-
-          const [tel, allTel] = await Promise.all([
-            getLatestTelemetry(targetId),
-            Promise.all(devs.map(d => getLatestTelemetry(d.id).catch(() => null))),
-          ])
-          if (cancelled) return
-          setTelemetry(tel)
-
-          const map = {}
-          devs.forEach((d, i) => { map[d.id] = allTel[i] })
-          setTelemetryMap(map)
-        } else {
-          setSelectedId(null)
-          setTelemetry({})
-          setTelemetryMap({})
-        }
-        setError(null)
-      } catch (err) {
-        if (!cancelled) setError(err.message || 'Error de conexión')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
+    cancelledRef.current = false
     fetchData()
-    return () => { cancelled = true }
+    return () => { cancelledRef.current = true }
   }, [selectedId])
 
   useSSE(useCallback((type, data) => {
@@ -158,7 +160,7 @@ function Dashboard() {
         <div className="text-center">
           <span className="material-symbols-outlined text-48px text-error mb-4">wifi_off</span>
           <p className="text-body-md text-error font-semibold">{error}</p>
-          <button className="mt-4 px-5 py-2 bg-error/20 border border-error/40 text-error font-label-caps rounded-md" onClick={() => window.location.reload()}>
+          <button className="mt-4 px-5 py-2 bg-error/20 border border-error/40 text-error font-label-caps rounded-md" onClick={fetchData}>
             REINTENTAR
           </button>
         </div>
@@ -251,7 +253,7 @@ function Dashboard() {
       )}
 
       {devices.length === 0 && (
-        <DevicesEmptyState onConnect={() => window.location.reload()} />
+        <DevicesEmptyState onConnect={fetchData} />
       )}
     </div>
   )
