@@ -1,4 +1,4 @@
-import { NavLink, Link } from 'react-router-dom'
+import { NavLink, Link, useNavigate } from 'react-router-dom'
 
 const NAV_LINKS = [
   { to: '/', label: 'Dashboard' },
@@ -8,6 +8,7 @@ const NAV_LINKS = [
 ]
 
 function TopBar({ user, onLogout }) {
+  const navigate = useNavigate()
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -28,10 +29,10 @@ function TopBar({ user, onLogout }) {
         </nav>
       </div>
       <div className="topbar-right">
-        <button className="topbar-icon-btn" title="Notifications">
+        <button className="topbar-icon-btn" title="Notifications" onClick={() => {}}>
           <span className="material-symbols-outlined">notifications</span>
         </button>
-        <button className="topbar-icon-btn" title="Settings">
+        <button className="topbar-icon-btn" title="Settings" onClick={() => navigate('/settings')}>
           <span className="material-symbols-outlined">settings</span>
         </button>
         {user && (
