@@ -22,7 +22,7 @@ class ErrorBoundary extends Component {
           <h2 className="text-headline-md text-error mb-2">FATAL_EXCEPTION</h2>
           <p className="text-body-md text-on-surface-variant max-w-md mb-6">{this.state.error?.message || 'Unhandled error in render cycle'}</p>
           <button
-            onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload() }}
+            onClick={() => this.setState({ hasError: false, error: null })}
             className="px-6 py-3 bg-error/20 border border-error/40 text-error font-label-caps text-label-caps rounded-md hover:bg-error/30 transition-all"
             style={{ cursor: 'pointer' }}
           >
