@@ -55,24 +55,27 @@ function DeviceDetail() {
     return () => clearInterval(interval)
   }, [addLog])
 
-  useEffect(() => {
-    let cancelled = false
-    async function loadData() {
-      try {
-        const [dev, acts] = await Promise.all([getDevice(id), getActuators(id)])
-        if (cancelled) return
-        setDevice(dev)
-        setActuators(acts)
-        setError(null)
-        addLog('System initialized. Chamber telemetry active.', 'info')
-      } catch (err) {
-        if (!cancelled) setError(err.message || 'Connection error')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+  const cancelledRef = useRef(false)
+
+  async function loadData() {
+    try {
+      const [dev, acts] = await Promise.all([getDevice(id), getActuators(id)])
+      if (cancelledRef.current) return
+      setDevice(dev)
+      setActuators(acts)
+      setError(null)
+      addLog('System initialized. Chamber telemetry active.', 'info')
+    } catch (err) {
+      if (!cancelledRef.current) setError(err.message || 'Connection error')
+    } finally {
+      if (!cancelledRef.current) setLoading(false)
     }
+  }
+
+  useEffect(() => {
+    cancelledRef.current = false
     loadData()
-    return () => { cancelled = true }
+    return () => { cancelledRef.current = true }
   }, [id, addLog])
 
   useSSE(useCallback((type, data) => {
@@ -126,7 +129,7 @@ function DeviceDetail() {
       <div className="text-center">
         <span className="material-symbols-outlined text-48px text-error mb-4">wifi_off</span>
         <p className="text-body-md text-error font-semibold">{error}</p>
-        <button className="mt-4 px-5 py-2 bg-error/20 border border-error/40 text-error font-label-caps rounded-md" onClick={() => window.location.reload()} style={{ cursor: 'pointer' }}>
+        <button className="mt-4 px-5 py-2 bg-error/20 border border-error/40 text-error font-label-caps rounded-md" onClick={loadData} style={{ cursor: 'pointer' }}>
           RETRY
         </button>
       </div>
