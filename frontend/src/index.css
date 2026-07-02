@@ -1,22 +1,88 @@
+/* =========================================================================
+   DESIGN SYSTEM — Prototype v3 Tokens
+   Fuente: .example/Prototype_website_sush2/
+   ========================================================================= */
+
 :root {
-  --bg: #0f1117;
-  --surface: #1a1d28;
-  --surface2: #232738;
-  --text: #e4e6ef;
-  --text2: #989bb3;
-  --accent: #6c5ce7;
-  --green: #00b894;
-  --red: #e17055;
-  --orange: #fdcb6e;
-  --radius: 12px;
+  /* === Colores primarios prototipo === */
+  --spore-green: #6bfb9a;
+  --spore-glow: rgba(74, 222, 128, 0.2);
+  --teal: #44e2cd;
+  --amber: #ffb657;
+  --error-red: #ffb4ab;
+
+  /* === Superficies prototipo === */
+  --bg-deep: #0a0f0d;
+  --surface-dim: #0f1412;
+  --surface-container: #1c211e;
+  --surface-container-low: #181d1a;
+  --surface-container-high: #262b29;
+  --surface-container-highest: #313633;
+  --surface-variant: #313633;
+  --surface-bright: #353a38;
+  --outline-variant: #3d4a3e;
+  --outline: #869486;
+
+  /* === Texto prototipo === */
+  --on-surface: #dfe4e0;
+  --on-surface-variant: #bccabb;
+  --on-primary: #003919;
+  --on-primary-container: #005e2d;
+  --on-error: #690005;
+  --on-error-container: #ffdad6;
+
+  /* === Contenedores === */
+  --primary-container: #4ade80;
+  --error-container: #93000a;
+
+  /* === Tipografía === */
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* === Border radius === */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* === Espaciado === */
+  --space-unit: 4px;
+  --space-stack-sm: 8px;
+  --space-stack-md: 16px;
+  --space-gutter: 12px;
+  --space-container-padding: 24px;
+
+  /* === Efectos === */
+  --glow-primary: 0 0 12px rgba(74, 222, 128, 0.2);
+  --glow-error: 0 0 12px rgba(255, 180, 171, 0.3);
+  --glass-bg: rgba(19, 26, 23, 0.8);
+  --glass-border: #1f2924;
+
+  /* === Legacy variables (compatibilidad con componentes actuales) === */
+  --bg: var(--surface-dim);
+  --surface: var(--surface-container);
+  --surface2: var(--outline-variant);
+  --text: var(--on-surface);
+  --text2: var(--on-surface-variant);
+  --accent: var(--spore-green);
+  --green: var(--spore-green);
+  --red: var(--error-red);
+  --orange: var(--amber);
+  --radius: var(--radius-lg);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg);
-  color: var(--text);
+  font-family: var(--font-body);
+  background: var(--bg-deep);
+  background-image: radial-gradient(circle at 2px 2px, rgba(107, 251, 154, 0.03) 1px, transparent 0);
+  background-size: 24px 24px;
+  color: var(--on-surface);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 .app { max-width: 1200px; margin: 0 auto; padding: 20px; }
 .app-header {
@@ -335,4 +401,238 @@ section h3 { font-size: 16px; margin-bottom: 16px; color: var(--text2); }
   .app-header { flex-direction: column; align-items: flex-start; gap: 8px; }
   .app-nav { margin-left: 0; }
   .app-user { margin-left: 0; }
+}
+
+/* =========================================================================
+   NUEVAS UTILIDADES — Prototype Design System
+   ========================================================================= */
+
+/* === Glass Card === */
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.glass-card:hover {
+  border-color: var(--spore-green);
+  box-shadow: var(--glow-primary);
+}
+
+/* === Status Badges === */
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.status-dot.online { background: var(--spore-green); box-shadow: var(--glow-primary); }
+.status-dot.offline { background: var(--outline); }
+.status-dot.error { background: var(--error-red); box-shadow: var(--glow-error); }
+.status-dot.pulse {
+  animation: status-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.status-badge.online { background: rgba(107, 251, 154, 0.1); border: 1px solid rgba(107, 251, 154, 0.2); color: var(--spore-green); }
+.status-badge.offline { background: rgba(134, 148, 134, 0.1); border: 1px solid rgba(134, 148, 134, 0.2); color: var(--outline); }
+.status-badge.critical { background: rgba(255, 180, 171, 0.1); border: 1px solid rgba(255, 180, 171, 0.2); color: var(--error-red); }
+
+/* === Typography Utilities === */
+.text-label-caps {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 16px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.text-headline-lg {
+  font-family: var(--font-body);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+.text-headline-md {
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+}
+.text-body-md {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+.text-data-sm {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+.text-display-data {
+  font-family: var(--font-mono);
+  font-size: 48px;
+  line-height: 48px;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+@media (max-width: 768px) {
+  .text-display-data { font-size: 32px; line-height: 32px; }
+}
+
+/* === Material Symbols === */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+}
+
+/* === Segmented Bar === */
+.segmented-bar {
+  display: flex;
+  gap: 2px;
+}
+.segment {
+  height: 12px;
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 1px;
+}
+.segment.active-primary {
+  background: var(--spore-green);
+  box-shadow: 0 0 5px rgba(107, 251, 154, 0.5);
+}
+.segment.active-secondary {
+  background: var(--teal);
+}
+.segment.active-amber {
+  background: var(--amber);
+}
+.segment.active-error {
+  background: var(--error-red);
+}
+
+/* === Gauges (SVG container) === */
+.gauge-svg {
+  transform: rotate(-180deg);
+}
+.gauge-half {
+  transform: rotate(0deg);
+}
+
+/* === Active Glow === */
+.active-glow {
+  box-shadow: var(--glow-primary);
+}
+.active-glow-error {
+  box-shadow: var(--glow-error);
+}
+
+/* === Toggle Switch === */
+.toggle-switch {
+  position: relative;
+  width: 32px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.toggle-switch.on {
+  background: var(--spore-green);
+  box-shadow: 0 0 8px rgba(107, 251, 154, 0.4);
+}
+.toggle-switch.off {
+  background: var(--surface-variant);
+  border: 1px solid var(--outline-variant);
+}
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--on-surface);
+  transition: left 0.2s;
+}
+.toggle-switch.on .toggle-knob { left: 18px; }
+.toggle-switch.off .toggle-knob { left: 2px; }
+
+/* === Terminal Log Panel === */
+.terminal-log {
+  background: var(--surface-dim);
+  border: 1px solid var(--outline-variant);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.4;
+  overflow-y: auto;
+}
+.terminal-header {
+  background: var(--surface-variant);
+  padding: 4px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.terminal-body {
+  padding: 8px 12px;
+}
+.terminal-entry { padding: 1px 0; }
+.terminal-entry .ts { color: var(--outline); }
+.terminal-entry .msg-ok { color: var(--spore-green); }
+.terminal-entry .msg-warn { color: var(--amber); }
+.terminal-entry .msg-err { color: var(--error-red); }
+.terminal-entry .msg-info { color: var(--on-surface-variant); }
+
+/* === Skeleton (prototype style) === */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--surface-container) 25%, var(--surface-dim) 50%, var(--surface-container) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-xs);
+}
+
+/* === Scrollbar (prototype style) === */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--outline-variant); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--surface-variant); }
+
+/* === Animations === */
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.2); }
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(1); box-shadow: var(--glow-primary); }
+  50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(74, 222, 128, 0.3); }
+}
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 2px rgba(107, 251, 154, 0.5)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(107, 251, 154, 0.8)); }
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.breathing-pulse {
+  animation: breathe 3s ease-in-out infinite;
+}
+.pulse-glow {
+  animation: pulse-glow 2s infinite ease-in-out;
 }
