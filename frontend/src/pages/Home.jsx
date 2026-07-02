@@ -1,66 +1,43 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getDevices, getLatestTelemetry } from '../api/client.js'
-import LoadingState from '../components/ui/LoadingState.jsx'
-import ErrorState from '../components/ui/ErrorState.jsx'
 
 function Home() {
   const navigate = useNavigate()
   const [stats, setStats] = useState({ sporeDensity: 84.2, nodeConn: 0.998, totalNodes: 12482, syncRate: 99.9, totalDevices: 0 })
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [retry, setRetry] = useState(0)
 
   useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    setError(null)
     getDevices().then(devs => {
-      if (cancelled) return
       if (devs.length > 0) {
         setStats(prev => ({ ...prev, totalDevices: devs.length, totalNodes: devs.length * 3 }))
         Promise.all(devs.map(d => getLatestTelemetry(d.id).catch(() => null))).then(results => {
-          if (cancelled) return
           const valid = results.filter(Boolean)
           if (valid.length > 0) {
-            const tAvg = valid.filter(t => t.temperature != null).reduce((a, b) => a + b.temperature, 0) / valid.filter(t => t.temperature != null).length
             const hAvg = valid.filter(t => t.humidity != null).reduce((a, b) => a + b.humidity, 0) / valid.filter(t => t.humidity != null).length
-            setStats(prev => ({
-              ...prev,
-              sporeDensity: hAvg || prev.sporeDensity,
-            }))
+            setStats(prev => ({ ...prev, sporeDensity: hAvg || prev.sporeDensity }))
           }
         })
       }
-      if (!cancelled) setLoading(false)
-    }).catch(err => {
-      if (!cancelled) {
-        setError(err.message || 'Connection error')
-        setLoading(false)
-      }
-    })
-    return () => { cancelled = true }
-  }, [retry])
-
-  if (loading) return <LoadingState message="Initializing system..." icon="settings_ethernet" />
-  if (error) return <ErrorState message={error} onRetry={() => setRetry(n => n + 1)} />
+    }).catch(() => {})
+  }, [])
 
   return (
     <div className="pb-20">
-      <section className="relative min-h-[500px] flex items-center border-b border-outline-variant" style={{ minHeight: '500px' }}>
-        <div className="relative z-10 max-w-2xl">
+      <section className="relative min-h-[600px] flex items-center" style={{ minHeight: '600px' }}>
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+        <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-highest border border-primary/30 rounded-full mb-6">
             <span className="w-2 h-2 rounded-full bg-primary breathing-pulse" />
-            <span className="font-label-caps text-label-caps text-primary">NETWORK ACTIVE // ALPHA NODE</span>
+            <span className="font-label-caps text-label-caps text-primary">PLATFORM OVERVIEW // ALPHA NODE</span>
           </div>
-          <h2 className="text-display-data text-[clamp(32px,5vw,48px)] text-white mb-4 leading-none">
+          <h2 className="text-display-data text-[clamp(40px,6vw,64px)] text-white mb-6 leading-[0.9] tracking-tight">
             NEURAL<br />MYCELIUM
           </h2>
-          <p className="text-body-md text-on-surface-variant mb-8 max-w-lg">
-            Real-time orchestration of bio-synthetic fungal networks. Monitoring global spore distribution and metabolic synthesis cycles with sub-millisecond precision.
+          <p className="text-headline-md text-on-surface-variant mb-10 max-w-xl leading-relaxed">
+            Real-time orchestration platform for bio-synthetic fungal networks. Monitor, control, and optimize cultivation environments with precision.
           </p>
           <div className="flex gap-4">
-            <button className="px-8 py-4 bg-primary text-on-primary font-label-caps text-label-caps rounded hover:scale-105 transition-all" style={{ border: 'none', cursor: 'pointer', boxShadow: '0 0 12px rgba(74,222,128,0.1)' }}>
+            <button className="btn btn-primary px-8 py-4 text-label-caps" style={{ boxShadow: '0 0 12px rgba(74,222,128,0.1)' }}>
               DEPLOY PROTOCOL
             </button>
             <button className="px-8 py-4 border border-secondary text-secondary font-label-caps text-label-caps rounded hover:bg-secondary/10 transition-all" style={{ background: 'none', cursor: 'pointer' }}>
@@ -91,56 +68,6 @@ function Home() {
               ))}
             </div>
           </div>
-        </div>
-      </section>
-
-      <section className="py-6 px-0">
-        <div className="flex items-center gap-4 mb-4">
-          <span className="material-symbols-outlined text-primary">monitor_heart</span>
-          <h3 className="font-label-caps text-label-caps text-primary">SYSTEM PULSE // GLOBAL TELEMETRY</h3>
-          <div className="flex-1 border-b border-outline-variant opacity-20" />
-          <span className="text-data-sm text-data-sm text-on-surface-variant">REFRESH: 250ms</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          {[
-            { label: 'THERMAL MATRIX', value: '24.2°C', change: '+0.4%', changeColor: 'text-primary', borderColor: 'border-l-primary', logs: ['[SYS] CALIBRATING SENSOR 09...', '[SYS] AMBIENT STABILIZED', '[SYS] VENTILATION 100%'] },
-            { label: 'HYGROMETRIC LEVEL', value: '92.1%', change: 'NOMINAL', changeColor: 'text-secondary', borderColor: 'border-l-secondary', bars: [60, 75, 80, 95, 92] },
-            { label: 'CO2 SATURATION', value: '840ppm', change: 'PHASING', changeColor: 'text-tertiary', borderColor: 'border-l-tertiary', segments: [100, 100, 20, 10] },
-            { label: 'BIO-STABILITY', value: 'CRITICAL', change: 'ERR 42', changeColor: 'text-error', borderColor: 'border-l-error', alert: 'Incubation Chamber 04 Leak' },
-          ].map((card, i) => (
-            <div key={i} className={`glass-card p-4 rounded-xl border-l-2 ${card.borderColor}`}>
-              <header className="font-label-caps text-10px text-on-surface-variant mb-2">{card.label}</header>
-              <div className="flex justify-between items-baseline">
-                <span className="text-headline-lg text-white">{card.value}</span>
-                <span className={`text-data-sm text-data-sm ${card.changeColor}`}>{card.change}</span>
-              </div>
-              {card.logs && (
-                <div className="mt-3 text-9px font-mono text-outline space-y-0.5" style={{ height: 48, overflowY: 'auto' }}>
-                  {card.logs.map((l, j) => <div key={j}>{l}</div>)}
-                </div>
-              )}
-              {card.bars && (
-                <div className="mt-3 flex gap-0.5 h-8 items-end">
-                  {card.bars.map((h, j) => (
-                    <div key={j} className="flex-1 bg-secondary" style={{ height: `${h}%`, opacity: h > 80 ? 1 : h > 60 ? 0.6 : 0.4 }} />
-                  ))}
-                </div>
-              )}
-              {card.segments && (
-                <div className="mt-3 grid grid-cols-4 gap-1">
-                  {card.segments.map((s, j) => (
-                    <div key={j} className="h-1 rounded" style={{ background: s > 50 ? 'var(--tertiary)' : 'var(--tertiary)', opacity: s / 100 }} />
-                  ))}
-                </div>
-              )}
-              {card.alert && (
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-error text-xs animate-pulse">report</span>
-                  <span className="text-10px font-mono text-error uppercase">{card.alert}</span>
-                </div>
-              )}
-            </div>
-          ))}
         </div>
       </section>
 
