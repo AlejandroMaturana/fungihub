@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../api/AuthContext.jsx'
 import { login } from '../api/client.js'
 
 function Login() {
+  const navigate = useNavigate()
   const { login: authLogin } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -16,7 +18,7 @@ function Login() {
     try {
       const result = await login(username, password)
       authLogin(result.user, result.token.accessToken, result.token.refreshToken)
-      window.location.href = '/'
+      navigate('/')
     } catch (err) {
       setError(err.response?.data?.error || 'Connection error')
     } finally {
@@ -99,8 +101,8 @@ function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-primary hover:brightness-110 text-on-primary font-label-caps text-label-caps py-4 rounded-lg tracking-widest transition-all flex items-center justify-center gap-2"
-                style={{ border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.8 : 1 }}
+                className="btn btn-primary w-full"
+                style={{ padding: '16px 32px', opacity: loading ? 0.8 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
               >
                 <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: '"FILL" 1' }}>
                   {loading ? 'sync' : 'login'}

@@ -129,7 +129,7 @@ function DeviceDetail() {
       <div className="text-center">
         <span className="material-symbols-outlined text-48px text-error mb-4">wifi_off</span>
         <p className="text-body-md text-error font-semibold">{error}</p>
-        <button className="mt-4 px-5 py-2 bg-error/20 border border-error/40 text-error font-label-caps rounded-md" onClick={loadData} style={{ cursor: 'pointer' }}>
+        <button className="btn btn-danger mt-4" onClick={loadData}>
           RETRY
         </button>
       </div>

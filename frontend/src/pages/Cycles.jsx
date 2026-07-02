@@ -71,23 +71,19 @@ function CycleCard({ cycle }) {
 
       <div className="flex gap-2">
         {isRunning && (
-          <button className="flex-1 border border-outline-variant hover:bg-surface-variant font-label-caps text-10px py-2 transition-all active:scale-95"
-            style={{ background: 'rgba(0,0,0,0.2)', border: 'none', cursor: 'pointer' }}>
+          <button className="btn btn-secondary flex-1">
             PAUSE
           </button>
         )}
         {isPaused && (
-          <button className="flex-1 bg-primary text-on-primary font-label-caps text-10px py-2 transition-all hover:brightness-110 active:scale-95"
-            style={{ border: 'none', cursor: 'pointer', boxShadow: '0 0 10px rgba(107,251,154,0.2)' }}>
+          <button className="btn btn-primary flex-1" style={{ boxShadow: '0 0 10px rgba(107,251,154,0.2)' }}>
             RESUME_SEQ
           </button>
         )}
-        <button className="flex-1 border border-outline-variant font-label-caps text-10px py-2 transition-all active:scale-95 text-error"
-          style={{ background: 'rgba(0,0,0,0.2)', cursor: 'pointer' }}>
+        <button className="btn btn-secondary flex-1" style={{ color: 'var(--error-red)' }}>
           TERMINATE
         </button>
-        <button className="flex-1 bg-surface-container-high hover:bg-surface-container-highest font-label-caps text-10px py-2 transition-all flex items-center justify-center gap-1 border border-outline-variant/50"
-          style={{ cursor: 'pointer' }}>
+        <button className="btn btn-surface flex-1">
           <span className="material-symbols-outlined text-sm">terminal</span>
           DATA_LOGS
         </button>
@@ -162,8 +158,8 @@ function Cycles() {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-primary text-on-primary font-label-caps py-2 px-6 rounded flex items-center gap-2 active:scale-95"
-          style={{ border: 'none', cursor: 'pointer', boxShadow: '0 0 15px rgba(107,251,154,0.3)' }}
+          className="btn btn-primary"
+          style={{ boxShadow: '0 0 15px rgba(107,251,154,0.3)' }}
         >
           <span className="material-symbols-outlined text-18px">add</span>
           INITIATE NEW BATCH
@@ -284,8 +280,7 @@ function Cycles() {
               <h2 className="text-headline-md text-primary">Initiate New Batch</h2>
               <button
                 onClick={() => setShowForm(false)}
-                className="text-on-surface-variant hover:text-error transition-colors"
-                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                className="btn btn-ghost"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
@@ -320,13 +315,11 @@ function Cycles() {
               </div>
               <div className="flex justify-end gap-3 pt-2 pb-4">
                 <button type="button" onClick={() => setShowForm(false)}
-                  className="font-label-caps text-10px text-on-surface-variant border border-outline-variant px-6 py-2 rounded-lg hover:bg-surface-variant transition-colors"
-                  style={{ background: 'none', cursor: 'pointer' }}>
+                  className="btn btn-secondary">
                   ABORT
                 </button>
                 <button type="submit"
-                  className="font-label-caps text-10px text-on-primary bg-primary px-8 py-2 rounded-lg hover:brightness-110 transition-all active:scale-95"
-                  style={{ border: 'none', cursor: 'pointer' }}>
+                  className="btn btn-primary">
                   INITIATE
                 </button>
               </div>

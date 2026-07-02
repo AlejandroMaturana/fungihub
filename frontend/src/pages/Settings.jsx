@@ -31,19 +31,19 @@ function Settings() {
             <div>
               <label className="font-label-caps text-label-caps text-on-surface-variant opacity-70 block mb-1">MAC ADDRESS</label>
               <div className="bg-surface-container-lowest border border-outline-variant rounded p-2">
-                <input className="w-full bg-transparent border-none text-data-sm text-primary p-0" readOnly value="3E:22:FB:4A:91:0C" style={{ outline: 'none' }} />
+                <input className="form-input bg-transparent border-none text-data-sm text-primary p-0" readOnly value="3E:22:FB:4A:91:0C" />
               </div>
             </div>
             <div>
               <label className="font-label-caps text-label-caps text-on-surface-variant opacity-70 block mb-1">IP ADDRESS (STATIC)</label>
               <div className="bg-surface-container-lowest border border-outline-variant rounded p-2">
-                <input className="w-full bg-transparent border-none text-data-sm text-primary p-0" defaultValue="192.168.1.142" style={{ outline: 'none' }} />
+                <input className="form-input bg-transparent border-none text-data-sm text-primary p-0" defaultValue="192.168.1.142" />
               </div>
             </div>
             <div className="md:col-span-2 mt-2">
               <label className="font-label-caps text-label-caps text-on-surface-variant opacity-70 block mb-1">MQTT BROKER ENDPOINT</label>
               <div className="bg-surface-container-lowest border border-outline-variant rounded p-2">
-                <input className="w-full bg-transparent border-none text-data-sm text-primary p-0" defaultValue="mqtt://core-biosystems.mush2.internal:1883" style={{ outline: 'none' }} />
+                <input className="form-input bg-transparent border-none text-data-sm text-primary p-0" defaultValue="mqtt://core-biosystems.mush2.internal:1883" />
               </div>
             </div>
             <div className="md:col-span-2 flex items-center justify-between py-2 border-t border-outline-variant mt-4">
@@ -88,11 +88,9 @@ function Settings() {
               </div>
             </div>
           </div>
-          <button
-            className="w-full mt-6 py-2 border border-primary text-primary font-label-caps text-10px rounded hover:bg-primary hover:text-on-primary transition-all"
-            style={{ background: 'none', cursor: 'pointer' }}>
-            RUN DIAGNOSTICS
-          </button>
+            <button className="btn btn-secondary mt-6 w-full" style={{ borderColor: 'var(--spore-green)', color: 'var(--spore-green)' }}>
+              RUN DIAGNOSTICS
+            </button>
         </section>
 
         <section className="col-span-12 lg:col-span-6 glass-panel rounded-lg p-4">
@@ -114,8 +112,7 @@ function Settings() {
               <span className="material-symbols-outlined text-on-surface-variant" style={{ cursor: 'pointer' }}>more_vert</span>
             </div>
           </div>
-          <button className="w-full mt-6 py-2 bg-surface-container-high text-on-surface font-label-caps text-10px rounded hover:bg-surface-bright transition-all flex items-center justify-center gap-2"
-            style={{ border: 'none', cursor: 'pointer' }}>
+          <button className="btn btn-surface mt-6 w-full">
             <span className="material-symbols-outlined text-sm">add</span>
             PROVISION NEW ACCESS
           </button>
@@ -164,12 +161,11 @@ function Settings() {
           <div className="flex gap-4">
             <button
               onClick={logout}
-              className="px-6 py-2 bg-error/20 text-error font-label-caps text-10px rounded hover:bg-error/30 transition-colors"
-              style={{ border: 'none', cursor: 'pointer' }}>
+              className="btn btn-danger"
+              style={{ border: 'none' }}>
               LOG OUT
             </button>
-            <button className="px-8 py-2 bg-primary text-on-primary font-label-caps text-10px rounded hover:brightness-110 active:scale-95 transition-all"
-              style={{ border: 'none', cursor: 'pointer', boxShadow: '0 0 15px rgba(107,251,154,0.3)' }}>
+            <button className="btn btn-primary" style={{ boxShadow: '0 0 15px rgba(107,251,154,0.3)' }}>
               COMMIT TO CORE
             </button>
           </div>

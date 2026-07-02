@@ -97,8 +97,8 @@ function Recipes() {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-primary text-on-primary font-label-caps text-label-caps px-4 py-2 rounded-lg flex items-center gap-2 hover:brightness-110 transition-all active:scale-95"
-          style={{ border: 'none', cursor: 'pointer', boxShadow: '0 0 12px rgba(74,222,128,0.1)' }}
+          className="btn btn-primary"
+          style={{ boxShadow: '0 0 12px rgba(74,222,128,0.1)' }}
         >
           <span className="material-symbols-outlined text-16px">add</span>
           NEW RECIPE
@@ -262,8 +262,7 @@ function Recipes() {
               <h2 className="text-headline-md text-primary">Compile New Organism Recipe</h2>
               <button
                 onClick={() => setShowForm(false)}
-                className="text-on-surface-variant hover:text-error transition-colors"
-                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                className="btn btn-ghost"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
@@ -385,15 +384,13 @@ function Recipes() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="font-label-caps text-10px text-on-surface-variant border border-outline-variant px-6 py-2 rounded-lg hover:bg-surface-variant transition-colors"
-                  style={{ background: 'none', cursor: 'pointer' }}
+                  className="btn btn-secondary"
                 >
                   ABORT_ACTION
                 </button>
                 <button
                   type="submit"
-                  className="font-label-caps text-10px text-on-primary bg-primary px-8 py-2 rounded-lg hover:brightness-110 transition-all active:scale-95"
-                  style={{ border: 'none', cursor: 'pointer' }}
+                  className="btn btn-primary"
                 >
                   COMPILE_PROTOCOL
                 </button>
