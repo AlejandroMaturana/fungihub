@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getCycles, getRecipes } from '../api/client.js'
+import LoadingState from '../components/ui/LoadingState.jsx'
 
 const STATUS_LABELS = { PLANNED: 'PLANNED', ACTIVE: 'RUNNING', COMPLETED: 'COMPLETED', ABORTED: 'ABORTED' }
 
@@ -140,14 +141,7 @@ function Cycles() {
   const active = cycles.filter(c => c.status === 'ACTIVE' || c.status === 'PLANNED')
   const historical = cycles.filter(c => c.status === 'COMPLETED' || c.status === 'ABORTED')
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="text-center">
-        <span className="material-symbols-outlined text-48px text-primary opacity-50 mb-4 animate-pulse">sync</span>
-        <p className="text-body-md text-on-surface-variant">Loading cycles...</p>
-      </div>
-    </div>
-  )
+  if (loading) return <LoadingState message="Loading cycles..." icon="cyclone" />
 
   return (
     <div className="flex flex-col gap-6">

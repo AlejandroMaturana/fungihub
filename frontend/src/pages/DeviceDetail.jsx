@@ -4,6 +4,7 @@ import { getDevice, getActuators, setActuatorDirect } from '../api/client.js'
 import { useSSE } from '../api/useSSE.js'
 import ArcGauge from '../components/ui/ArcGauge.jsx'
 import StatusBadge from '../components/ui/StatusBadge.jsx'
+import LoadingState from '../components/ui/LoadingState.jsx'
 
 const ACTUATOR_META = {
   1: { label: 'AIR EXCHANGE', icon: 'air', color: 'primary' },
@@ -115,26 +116,8 @@ function DeviceDetail() {
     }
   }
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="text-center">
-        <span className="material-symbols-outlined text-48px text-primary opacity-50 mb-4 animate-pulse">sync</span>
-        <p className="text-body-md text-on-surface-variant">Connecting to device...</p>
-      </div>
-    </div>
-  )
-
-  if (error) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="text-center">
-        <span className="material-symbols-outlined text-48px text-error mb-4">wifi_off</span>
-        <p className="text-body-md text-error font-semibold">{error}</p>
-        <button className="btn btn-danger mt-4" onClick={loadData}>
-          RETRY
-        </button>
-      </div>
-    </div>
-  )
+  if (loading) return <LoadingState message="Connecting to device..." icon="sync" />
+  if (error) return <ErrorState message={error} onRetry={loadData} />
 
   if (!device) return (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -151,6 +134,7 @@ function DeviceDetail() {
     hum: telemetry.humidity != null,
     co2: telemetry.co2 != null,
   }
+  const hasTelemetry = has.temp || has.hum || has.co2
   const co2Error = has.co2 && telemetry.co2 > 2000
 
   return (
@@ -181,6 +165,12 @@ function DeviceDetail() {
             <span className="bg-error-container/20 px-3 py-1 rounded text-10px font-label-caps text-error flex items-center gap-1 border border-error/30">
               <span className="material-symbols-outlined text-12px">warning</span>
               SENSOR FAILURE
+            </span>
+          )}
+          {!hasTelemetry && (
+            <span className="bg-surface-container-high px-3 py-1 rounded text-10px font-label-caps text-amber flex items-center gap-1 border border-amber/30">
+              <span className="material-symbols-outlined text-12px animate-pulse">graphic_eq</span>
+              AWAITING DATA
             </span>
           )}
         </div>

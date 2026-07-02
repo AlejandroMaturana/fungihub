@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { getDevices, getLatestTelemetry } from '../api/client.js'
 import { useSSE } from '../api/useSSE.js'
+import LoadingState from '../components/ui/LoadingState.jsx'
+import ErrorState from '../components/ui/ErrorState.jsx'
 import Gauge from '../components/ui/Gauge.jsx'
 import SegmentedBar from '../components/ui/SegmentedBar.jsx'
 import StatusBadge from '../components/ui/StatusBadge.jsx'
@@ -153,19 +155,9 @@ function Dashboard() {
     }
   }, [devices, selectedId]))
 
-  if (loading) return <div className="loading">Conectando...</div>
+  if (loading) return <LoadingState message="Connecting to system..." icon="settings_ethernet" />
   if (error && devices.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <span className="material-symbols-outlined text-48px text-error mb-4">wifi_off</span>
-          <p className="text-body-md text-error font-semibold">{error}</p>
-          <button className="btn btn-danger mt-4" onClick={fetchData}>
-            REINTENTAR
-          </button>
-        </div>
-      </div>
-    )
+    return <ErrorState message={error} onRetry={fetchData} />
   }
 
   const agg = aggregateTelemetry(telemetryMap)

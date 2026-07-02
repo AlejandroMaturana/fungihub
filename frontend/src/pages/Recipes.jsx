@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getRecipes, createRecipe } from '../api/client.js'
+import LoadingState from '../components/ui/LoadingState.jsx'
 import RecipesEmptyState from '../components/ui/RecipesEmptyState.jsx'
 
 function PhaseSegments({ incubationDays, fruitingDays }) {
@@ -77,14 +78,7 @@ function Recipes() {
     }
   }
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="text-center">
-        <span className="material-symbols-outlined text-48px text-primary opacity-50 mb-4 animate-pulse">sync</span>
-        <p className="text-body-md text-on-surface-variant">Loading recipes...</p>
-      </div>
-    </div>
-  )
+  if (loading) return <LoadingState message="Loading recipes..." icon="science" />
 
   return (
     <div className="flex flex-col h-full">

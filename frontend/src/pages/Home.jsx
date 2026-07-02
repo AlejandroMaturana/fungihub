@@ -1,16 +1,26 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getDevices, getLatestTelemetry } from '../api/client.js'
+import LoadingState from '../components/ui/LoadingState.jsx'
+import ErrorState from '../components/ui/ErrorState.jsx'
 
 function Home() {
   const navigate = useNavigate()
   const [stats, setStats] = useState({ sporeDensity: 84.2, nodeConn: 0.998, totalNodes: 12482, syncRate: 99.9, totalDevices: 0 })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [retry, setRetry] = useState(0)
 
   useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
     getDevices().then(devs => {
+      if (cancelled) return
       if (devs.length > 0) {
         setStats(prev => ({ ...prev, totalDevices: devs.length, totalNodes: devs.length * 3 }))
         Promise.all(devs.map(d => getLatestTelemetry(d.id).catch(() => null))).then(results => {
+          if (cancelled) return
           const valid = results.filter(Boolean)
           if (valid.length > 0) {
             const tAvg = valid.filter(t => t.temperature != null).reduce((a, b) => a + b.temperature, 0) / valid.filter(t => t.temperature != null).length
@@ -22,8 +32,18 @@ function Home() {
           }
         })
       }
-    }).catch(() => {})
-  }, [])
+      if (!cancelled) setLoading(false)
+    }).catch(err => {
+      if (!cancelled) {
+        setError(err.message || 'Connection error')
+        setLoading(false)
+      }
+    })
+    return () => { cancelled = true }
+  }, [retry])
+
+  if (loading) return <LoadingState message="Initializing system..." icon="settings_ethernet" />
+  if (error) return <ErrorState message={error} onRetry={() => setRetry(n => n + 1)} />
 
   return (
     <div className="pb-20">
