@@ -75,7 +75,7 @@ function Login() {
                 <span>BIOMETRIC KEY</span>
                 <span className="text-8px opacity-50">ENCRYPTED_V3</span>
               </label>
-              <div className="relative">
+              <div className="relative password-input-wrapper">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">fingerprint</span>
                 <input
                   id="password"
@@ -83,18 +83,18 @@ function Login() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface text-data-sm rounded-lg py-3 pl-10 pr-10 outline-none transition-all placeholder:text-on-surface-variant/30"
+                  className="password-input w-full bg-surface-container-lowest border border-outline-variant text-on-surface text-data-sm rounded-lg py-3 pl-10 outline-none transition-all placeholder:text-on-surface-variant/30"
                   style={{ boxShadow: 'none' }}
                   onFocus={e => { e.target.style.boxShadow = '0 0 12px var(--spore-glow)'; e.target.style.borderColor = 'var(--spore-green)' }}
                   onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = '' }}
                 />
                 <button
                   type="button"
-                  tabIndex={-1}
+                  aria-label={showPassword ? 'Ocultar password' : 'Mostrar password'}
                   onClick={() => setShowPassword(prev => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors"
+                  className="password-toggle-btn text-on-surface-variant hover:text-on-surface transition-colors"
                 >
-                  <span className="material-symbols-outlined text-sm">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                  <span className="material-symbols-outlined text-16px">{showPassword ? 'visibility_off' : 'visibility'}</span>
                 </button>
               </div>
             </div>
