@@ -31,33 +31,14 @@ function DeviceDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [logs, setLogs] = useState([])
+  const [cmdHistory, setCmdHistory] = useState([])
   const [pendingChannels, setPendingChannels] = useState(new Set())
-  const logIndex = useRef(0)
-
-  const LOG_ENTRIES = [
-    'Syncing chamber mesh nodes...',
-    'Bio-filter efficiency at 94.2%',
-    'Adjusting humidity setpoints for fruiting stage.',
-    'Analyzing spore density across quadrant C...',
-    'Substrate temperature drifting +0.1C',
-    'Relaying diagnostic data to System Core Alpha.',
-    'CO2 Sensor (ADDR: 0x3F) dropped from bus. Resetting...',
-    'O2 Levels compensating for missing CO2 data.',
-  ]
+  const prevTelemetry = useRef({})
 
   const addLog = useCallback((text, type = 'info') => {
     const ts = new Date().toLocaleTimeString('en-GB', { hour12: false })
-    setLogs(prev => [{ ts, text, type }, ...prev].slice(0, 12))
+    setLogs(prev => [{ ts, text, type }, ...prev].slice(0, 20))
   }, [])
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const text = LOG_ENTRIES[logIndex.current % LOG_ENTRIES.length]
-      addLog(text)
-      logIndex.current++
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [addLog])
 
   const cancelledRef = useRef(false)
 
@@ -68,7 +49,7 @@ function DeviceDetail() {
       setDevice(dev)
       setActuators(acts)
       setError(null)
-      addLog('System initialized. Chamber telemetry active.', 'info')
+      addLog('System initialized. Chamber telemetry active.', 'success')
     } catch (err) {
       if (!cancelledRef.current) setError(err.message || 'Connection error')
     } finally {
@@ -85,29 +66,53 @@ function DeviceDetail() {
   useSSE(useCallback((type, data) => {
     if (type === 'telemetry' && device && data.deviceId === device.deviceId) {
       if (data.sensors) {
+        const prev = prevTelemetry.current
+        const s = data.sensors
+        if (s.temperature != null && prev.temperature != null && Math.abs(s.temperature - prev.temperature) > 0.2) {
+          addLog(`Temperature ${s.temperature > prev.temperature ? '▲' : '▼'} ${s.temperature.toFixed(1)}°C`, 'info')
+        }
+        if (s.humidity != null && prev.humidity != null && Math.abs(s.humidity - prev.humidity) > 1) {
+          addLog(`Humidity ${s.humidity > prev.humidity ? '▲' : '▼'} ${s.humidity.toFixed(0)}%`, 'info')
+        }
+        if (s.co2 != null && prev.co2 != null && Math.abs(s.co2 - prev.co2) > 50) {
+          const warnLevel = s.co2 > 2000 ? 'error' : s.co2 > 1500 ? 'warn' : 'info'
+          addLog(`CO₂ ${s.co2 > prev.co2 ? '▲' : '▼'} ${s.co2} ppm`, warnLevel)
+        }
+        prevTelemetry.current = {
+          temperature: s.temperature,
+          humidity: s.humidity,
+          co2: s.co2,
+        }
         setTelemetry(prev => ({
           ...prev,
-          temperature: data.sensors.temperature,
-          humidity: data.sensors.humidity,
-          co2: data.sensors.co2,
-          voc: data.sensors.voc,
+          temperature: s.temperature,
+          humidity: s.humidity,
+          co2: s.co2,
+          voc: s.voc,
           ts: new Date().toISOString(),
         }))
       }
     }
     if (type === 'ack') {
+      const ch = data.actuatorState?.channel
       setActuators(prev => prev.map(a =>
-        a.channel === data.actuatorState?.channel
+        a.channel === ch
           ? { ...a, state: data.actuatorState.state, lastAck: data.status }
           : a
       ))
       setPendingChannels(prev => {
         const next = new Set(prev)
-        next.delete(data.actuatorState?.channel)
+        next.delete(ch)
         return next
       })
+      const label = ACTUATOR_META[ch]?.label || `CH${ch}`
+      if (data.status === 'ACKED') {
+        addLog(`${label} → ACKED (${data.actuatorState.state})`, 'success')
+      } else if (data.status === 'TIMEOUT') {
+        addLog(`${label} → TIMEOUT`, 'error')
+      }
     }
-  }, [device]))
+  }, [device, addLog]))
 
   function getCmdState(act) {
     if (pendingChannels.has(act.channel)) return 'PENDING'
@@ -120,12 +125,25 @@ function DeviceDetail() {
     const act = actuators.find(a => a.channel === channel)
     if (!act) return
     const newState = act.state === 'ON' ? 'OFF' : 'ON'
+    const label = ACTUATOR_META[channel]?.label || `CH${channel}`
     setPendingChannels(prev => new Set([...prev, channel]))
-    addLog(`Actuator CH${channel} toggled ${newState}`, newState === 'ON' ? 'success' : 'warn')
+    addLog(`${label} → CMD ${newState}`, 'warn')
+    setCmdHistory(prev => [{
+      channel,
+      label,
+      cmd: newState,
+      ts: new Date().toLocaleTimeString('en-GB', { hour12: false }),
+      status: 'PENDING',
+    }, ...prev].slice(0, 8))
     try {
       await setActuatorDirect(device.deviceId, channel, newState)
       setActuators(prev => prev.map(a =>
         a.channel === channel ? { ...a, state: newState } : a
+      ))
+      setCmdHistory(prev => prev.map(h =>
+        h.channel === channel && h.status === 'PENDING'
+          ? { ...h, status: 'SENT' }
+          : h
       ))
     } catch (err) {
       setPendingChannels(prev => {
@@ -133,7 +151,12 @@ function DeviceDetail() {
         next.delete(channel)
         return next
       })
-      addLog(`Actuator CH${channel} command failed: ${err.response?.data?.error || 'timeout'}`, 'error')
+      addLog(`${label} → FAILED: ${err.response?.data?.error || 'timeout'}`, 'error')
+      setCmdHistory(prev => prev.map(h =>
+        h.channel === channel && h.status === 'PENDING'
+          ? { ...h, status: 'FAILED' }
+          : h
+      ))
     }
   }
 
@@ -197,57 +220,53 @@ function DeviceDetail() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-surface-container p-4 rounded border border-outline-variant flex flex-col items-center group hover:bg-surface-container-high transition-all duration-300">
-          <div className="flex justify-between items-start w-full mb-2">
-            <span className="font-label-caps text-label-caps text-on-surface-variant">HUMIDITY</span>
-            <span className="material-symbols-outlined text-primary text-sm">water_drop</span>
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="bg-surface-container p-2 rounded border border-outline-variant flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-16px">water_drop</span>
+          <div className="flex flex-col min-w-0">
+            <span className="text-8px font-label-caps text-on-surface-variant">HUMIDITY</span>
+            <span className="text-headline-md text-on-surface">{has.hum ? `${Math.round(telemetry.humidity)}%` : '--%'}</span>
           </div>
-          <ArcGauge value={has.hum ? Math.round(telemetry.humidity) : 0} min={50} max={100} unit="%" color="primary" size="md" trend={SPARKLINES.hum} />
         </div>
-        <div className="bg-surface-container p-4 rounded border border-outline-variant flex flex-col items-center group hover:bg-surface-container-high transition-all duration-300">
-          <div className="flex justify-between items-start w-full mb-2">
-            <span className="font-label-caps text-label-caps text-on-surface-variant">TEMPERATURE</span>
-            <span className="material-symbols-outlined text-secondary text-sm">thermostat</span>
+        <div className="bg-surface-container p-2 rounded border border-outline-variant flex items-center gap-2">
+          <span className="material-symbols-outlined text-secondary text-16px">thermostat</span>
+          <div className="flex flex-col min-w-0">
+            <span className="text-8px font-label-caps text-on-surface-variant">TEMPERATURE</span>
+            <span className="text-headline-md text-on-surface">{has.temp ? `${Math.round(telemetry.temperature * 10) / 10}°C` : '--°C'}</span>
           </div>
-          <ArcGauge value={has.temp ? Math.round(telemetry.temperature * 10) / 10 : 0} min={10} max={40} unit="°C" color="secondary" size="md" trend={SPARKLINES.temp} />
         </div>
-        <div className={`bg-surface-container-low p-4 rounded flex flex-col items-center relative transition-all duration-500${co2Error ? '' : ' border border-outline-variant group hover:bg-surface-container-high'}${co2Error ? ' border border-error/40' : ''}`}
-          style={co2Error ? { boxShadow: '0 0 15px var(--glow-error)' } : {}}>
-          <div className="flex justify-between items-start w-full mb-2">
-            <div className="flex items-center gap-2">
-              <span className="font-label-caps text-label-caps text-on-surface-variant">CO2 CONC.</span>
-              {co2Error && <span className="material-symbols-outlined text-error text-16px">report</span>}
-            </div>
-            <span className="material-symbols-outlined text-error text-sm">co2</span>
+        <div className={`bg-surface-container-low p-2 rounded flex items-center gap-2 relative${co2Error ? ' border border-error/40' : ' border border-outline-variant'}`}
+          style={co2Error ? { boxShadow: '0 0 10px var(--glow-error)' } : {}}>
+          <span className="material-symbols-outlined text-error text-16px">co2</span>
+          <div className="flex flex-col min-w-0">
+            <span className="text-8px font-label-caps text-on-surface-variant">CO₂</span>
+            <span className={`text-headline-md ${co2Error ? 'text-error' : 'text-on-surface'}`}>
+              {has.co2 ? `${telemetry.co2}` : '--'}<span className="text-data-sm text-on-surface-variant ml-1">ppm</span>
+            </span>
           </div>
-          <div className={co2Error ? 'opacity-60' : ''}>
-            <ArcGauge value={has.co2 ? telemetry.co2 : 0} min={400} max={2500} unit="ppm" color="tertiary" size="md"
-              errorState={co2Error} errorMessage={co2Error ? 'Signal Lost: Sensor RS-485 Timeout' : undefined} />
-          </div>
-          {co2Error && <div className="absolute inset-0 bg-error/5 pointer-events-none rounded" />}
+          {co2Error && <span className="material-symbols-outlined text-error text-14px absolute top-1 right-1">report</span>}
         </div>
-        <div className="bg-surface-container p-4 rounded border border-outline-variant flex flex-col items-center group hover:bg-surface-container-high transition-all duration-300">
-          <div className="flex justify-between items-start w-full mb-2">
-            <span className="font-label-caps text-label-caps text-on-surface-variant">O2 LEVEL</span>
-            <span className="material-symbols-outlined text-tertiary text-sm">air</span>
+        <div className="bg-surface-container p-2 rounded border border-outline-variant flex items-center gap-2">
+          <span className="material-symbols-outlined text-tertiary text-16px">air</span>
+          <div className="flex flex-col min-w-0">
+            <span className="text-8px font-label-caps text-on-surface-variant">O₂</span>
+            <span className="text-headline-md text-on-surface">19.8<span className="text-data-sm text-on-surface-variant ml-1">%</span></span>
           </div>
-          <ArcGauge value={19.8} min={18} max={22} unit="%" color="tertiary" size="md" trend={SPARKLINES.o2} />
         </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-3 flex-1 min-h-[200px]">
-        <div className="lg:col-span-1 bg-surface-container p-4 rounded border border-outline-variant flex flex-col h-[400px]">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-label-caps text-label-caps text-on-surface-variant">SYSTEM TELEMETRY LOG</span>
-            <span className="text-10px text-primary bg-primary/10 px-2 py-0.5 rounded">LIVE</span>
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div className="lg:col-span-1 bg-surface-container rounded border border-outline-variant flex flex-col h-[360px]">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-outline-variant">
+            <span className="font-label-caps text-9px text-on-surface-variant">SYSTEM LOG</span>
+            <span className="text-8px text-primary bg-primary/10 px-1.5 py-0.5 rounded">LIVE</span>
           </div>
-          <div className="flex-1 overflow-y-auto text-12px font-mono leading-relaxed space-y-1 pr-1" style={{ scrollbarWidth: 'thin' }}>
+          <div className="flex-1 overflow-y-auto p-2 text-11px font-mono leading-relaxed" style={{ scrollbarWidth: 'thin' }}>
             {logs.length === 0 && (
-              <div className="opacity-30">[--:--:--] Waiting for data...</div>
+              <div className="opacity-30 p-2">[--:--:--] Waiting for data...</div>
             )}
             {logs.map((entry, i) => (
-              <div key={i} className={`flex gap-2 ${i === 0 ? '' : 'opacity-50'}`}>
+              <div key={i} className={`flex gap-2 py-0.5 ${i === 0 ? '' : 'opacity-60'}`}>
                 <span className="text-outline shrink-0">{entry.ts}</span>
                 <span className={
                   entry.type === 'error' ? 'text-error' :
@@ -259,47 +278,59 @@ function DeviceDetail() {
             ))}
           </div>
         </div>
+
         <div className="lg:col-span-2 bg-surface-container rounded border border-outline-variant overflow-hidden flex flex-col">
-          <div className="p-4 border-b border-outline-variant bg-surface-container-high flex items-center justify-between">
-            <span className="font-label-caps text-label-caps text-on-surface-variant">ACTUATOR OVERRIDE MATRIX</span>
-            <div className="bg-surface-container px-2 py-1 rounded text-10px font-label-caps border border-outline">MODE: MANUAL</div>
+          <div className="px-3 py-2 border-b border-outline-variant bg-surface-container-high flex items-center justify-between">
+            <span className="font-label-caps text-9px text-on-surface-variant">ACTUATOR OVERRIDE MATRIX</span>
+            <div className="flex items-center gap-2">
+              <span className={`text-8px font-label-caps px-1.5 py-0.5 rounded border ${actuators.some(a => a.mode === 'REMOTE') ? 'text-primary border-primary/30 bg-primary/10' : 'text-on-surface-variant border-outline-variant'}`}>
+                MODE: {actuators.some(a => a.mode === 'REMOTE') ? 'REMOTE' : 'MANUAL'}
+              </span>
+            </div>
           </div>
-          <div className="flex-1 p-4 grid grid-cols-2 md:grid-cols-4 gap-3 auto-rows-min">
-            {[1, 2, 3, 4].map(ch => {
-              const act = actuators.find(a => a.channel === ch) || { channel: ch, state: 'OFF', mode: 'LOCAL' }
-              return (
-                <ActuatorControl
-                  key={ch}
-                  deviceId={device.deviceId}
-                  actuator={act}
-                  meta={ACTUATOR_META[ch]}
-                  cmdState={getCmdState(act)}
-                  onToggle={handleToggle}
-                />
-              )
-            })}
-            <div className="col-span-full h-28 bg-surface-container-lowest rounded border border-outline-variant relative overflow-hidden group">
-              <div className="absolute inset-0 p-4">
-                <div className="flex justify-between items-start">
-                  <span className="font-label-caps text-10px text-outline">THERMAL MAPPING RECON</span>
-                  <span className="material-symbols-outlined text-outline text-sm">grid_view</span>
+          <div className="flex-1 p-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+              {[1, 2, 3, 4].map(ch => {
+                const act = actuators.find(a => a.channel === ch) || { channel: ch, state: 'OFF', mode: 'LOCAL' }
+                return (
+                  <ActuatorControl
+                    key={ch}
+                    deviceId={device.deviceId}
+                    actuator={act}
+                    meta={ACTUATOR_META[ch]}
+                    cmdState={getCmdState(act)}
+                    onToggle={handleToggle}
+                  />
+                )
+              })}
+            </div>
+            {cmdHistory.length > 0 && (
+              <div className="border-t border-outline-variant pt-2">
+                <span className="font-label-caps text-8px text-on-surface-variant block mb-1">COMMAND HISTORY</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {cmdHistory.map((h, i) => {
+                    const statusColors = {
+                      PENDING: 'text-amber border-amber/30 bg-amber/10',
+                      SENT: 'text-primary border-primary/30 bg-primary/10',
+                      FAILED: 'text-error border-error/30 bg-error/10',
+                    }
+                    return (
+                      <div key={i} className={`text-8px font-label-caps px-1.5 py-0.5 rounded border ${statusColors[h.status] || ''}`}>
+                        {h.label} → {h.cmd}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
-              <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 800 200">
-                <circle className="breathing-pulse" cx="100" cy="80" fill="#6bfb9a" r="3" />
-                <circle className="breathing-pulse" cx="250" cy="130" fill="#6bfb9a" r="3" />
-                <circle className="breathing-pulse" cx="400" cy="60" fill="#6bfb9a" r="3" />
-                <circle className="breathing-pulse" cx="550" cy="140" fill="#6bfb9a" r="3" />
-                <circle className="breathing-pulse" cx="700" cy="90" fill="#44e2cd" r="3" />
-                <path d="M100,80 Q175,105 250,130" fill="none" stroke="#6bfb9a" strokeWidth="1" className="bioluminescent-path" />
-                <path d="M250,130 Q325,95 400,60" fill="none" stroke="#6bfb9a" strokeWidth="1" className="bioluminescent-path" />
-                <path d="M400,60 Q475,100 550,140" fill="none" stroke="#6bfb9a" strokeWidth="1" className="bioluminescent-path" />
-                <path d="M550,140 Q625,115 700,90" fill="none" stroke="#44e2cd" strokeWidth="1" className="bioluminescent-path" />
-              </svg>
-              <div className="absolute bottom-3 right-4 text-right">
-                <div className="font-label-caps text-10px text-primary">COLONY DENSITY</div>
-                <div className="text-headline-lg text-on-surface">64.8<span className="text-data-sm text-on-surface-variant ml-1">%</span></div>
+            )}
+            <div className="border-t border-outline-variant mt-2 pt-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-secondary" style={{ boxShadow: '0 0 6px var(--teal)' }} />
+                <span className="text-8px font-label-caps text-on-surface-variant">SUBSYSTEM NOMINAL</span>
               </div>
+              <span className="text-8px font-label-caps text-on-surface-variant">
+                CMD: {actuators.filter(a => a.lastAck === 'ACKED').length}/{actuators.length}
+              </span>
             </div>
           </div>
         </div>
