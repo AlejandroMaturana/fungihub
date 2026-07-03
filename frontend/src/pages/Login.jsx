@@ -8,6 +8,7 @@ function Login() {
   const { login: authLogin } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -78,15 +79,23 @@ function Login() {
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">fingerprint</span>
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface text-data-sm rounded-lg py-3 pl-10 pr-4 outline-none transition-all placeholder:text-on-surface-variant/30"
+                  className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface text-data-sm rounded-lg py-3 pl-10 pr-10 outline-none transition-all placeholder:text-on-surface-variant/30"
                   style={{ boxShadow: 'none' }}
                   onFocus={e => { e.target.style.boxShadow = '0 0 12px var(--spore-glow)'; e.target.style.borderColor = 'var(--spore-green)' }}
                   onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = '' }}
                 />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPassword(prev => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                </button>
               </div>
             </div>
 
