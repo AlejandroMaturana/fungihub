@@ -5,11 +5,11 @@ import { getTelemetryHistory } from '../../api/client.js'
 Chart.register(...registerables)
 
 const TIME_RANGES = [
-  { label: '1H', value: '1h', limit: 60, desc: '60 min' },
-  { label: '6H', value: '6h', limit: 30, desc: '30 min' },
-  { label: '1D', value: '1d', limit: 24, desc: '1 hora' },
-  { label: '3D', value: '3d', limit: 72, desc: '1 hora' },
-  { label: '7D', value: '7d', limit: 168, desc: '1 hora' },
+  { label: '1H', value: '1h', limit: 500,  hours: 1,  resolution: 0   },
+  { label: '6H', value: '6h', limit: 200,  hours: 6,  resolution: 5   },
+  { label: '1D', value: '1d', limit: 500,  hours: 24, resolution: 15  },
+  { label: '3D', value: '3d', limit: 500,  hours: 72, resolution: 60  },
+  { label: '7D', value: '7d', limit: 2000, hours: 168,resolution: 60  },
 ]
 
 function computeRanges(datasets, margin, bands) {
@@ -154,18 +154,31 @@ function ChartPanel({ deviceId, telemetry, has }) {
     { ax: 'y2', min: 0, max: 500, fill: 'rgba(251,113,133,0.06)', stroke: 'rgba(251,113,133,0.22)' },
   ]
 
+  function fmtTime(ts, fmt) {
+    const d = new Date(ts)
+    const pad = (n) => String(n).padStart(2, '0')
+    if (fmt === 'HH:mm') return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+
+  function pickFormat(hours) {
+    return hours <= 24 ? 'HH:mm' : 'DD/MM HH:mm'
+  }
+
   async function loadHistory(range) {
     if (!deviceId) return
     setLoading(true)
     const entry = TIME_RANGES.find(t => t.value === range)
-    const limit = entry ? entry.limit : 30
+    const limit = entry ? entry.limit : 500
+    const resolution = entry ? entry.resolution : 0
     cancelledRef.current = false
     currentRange.current = range
     try {
-      const rows = await getTelemetryHistory(deviceId, { limit })
+      const rows = await getTelemetryHistory(deviceId, { limit, resolution })
       if (cancelledRef.current || currentRange.current !== range) return
       const reshaped = reshapeRows(rows)
-      setLabels(reshaped.map(r => r.t))
+      const fmt = pickFormat(entry ? entry.hours : 24)
+      setLabels(reshaped.map(r => fmtTime(r.t, fmt)))
       setData1({ temp: reshaped.map(r => r.temp ?? 0), hum: reshaped.map(r => r.hum ?? 0) })
       setData2({ eco2: reshaped.map(r => r.eco2 ?? 0), tvoc: reshaped.map(r => r.tvoc ?? 0) })
     } catch {
@@ -346,14 +359,13 @@ function ChartPanel({ deviceId, telemetry, has }) {
 function reshapeRows(rows) {
   const byTime = {}
   for (const r of rows) {
-    const t = r.timestamp ? new Date(r.timestamp) : new Date()
-    const key = `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}`
-    if (!byTime[key]) byTime[key] = {}
-    byTime[key][r.sensorType] = parseFloat(r.value)
+    const t = r.timestamp ? new Date(r.timestamp).getTime() : Date.now()
+    if (!byTime[t]) byTime[t] = {}
+    byTime[t][r.sensorType] = parseFloat(r.value)
   }
-  const sorted = Object.entries(byTime).sort(([a], [b]) => a.localeCompare(b))
-  return sorted.map(([t, v]) => ({
-    t,
+  const sorted = Object.entries(byTime).sort(([a], [b]) => Number(a) - Number(b))
+  return sorted.map(([ts, v]) => ({
+    t: new Date(Number(ts)),
     temp: v.TEMPERATURE ?? null,
     hum: v.HUMIDITY ?? null,
     eco2: v.CO2 ?? null,
