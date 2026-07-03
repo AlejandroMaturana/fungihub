@@ -5,6 +5,7 @@ import { useSSE } from '../api/useSSE.js'
 import ArcGauge from '../components/ui/ArcGauge.jsx'
 import StatusBadge from '../components/ui/StatusBadge.jsx'
 import LoadingState from '../components/ui/LoadingState.jsx'
+import ErrorState from '../components/ui/ErrorState.jsx'
 import ActuatorControl from '../components/device/ActuatorControl.jsx'
 
 const ACTUATOR_META = {
@@ -178,7 +179,7 @@ function DeviceDetail() {
         </div>
         <div className="flex gap-2">
           <span className="bg-surface-container-high px-3 py-1 rounded text-10px font-label-caps text-secondary flex items-center gap-1 border border-outline-variant">
-            <span className="w-1.5 h-1.5 rounded-full bg-secondary" style={{ boxShadow: '0 0 8px #44e2cd' }} />
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary" style={{ boxShadow: '0 0 8px var(--teal)' }} />
             SYSTEM NOMINAL
           </span>
           {co2Error && (
@@ -212,7 +213,7 @@ function DeviceDetail() {
           <ArcGauge value={has.temp ? Math.round(telemetry.temperature * 10) / 10 : 0} min={10} max={40} unit="°C" color="secondary" size="md" trend={SPARKLINES.temp} />
         </div>
         <div className={`bg-surface-container-low p-4 rounded flex flex-col items-center relative transition-all duration-500${co2Error ? '' : ' border border-outline-variant group hover:bg-surface-container-high'}${co2Error ? ' border border-error/40' : ''}`}
-          style={co2Error ? { boxShadow: '0 0 15px rgba(239,68,68,0.15)' } : {}}>
+          style={co2Error ? { boxShadow: '0 0 15px var(--glow-error)' } : {}}>
           <div className="flex justify-between items-start w-full mb-2">
             <div className="flex items-center gap-2">
               <span className="font-label-caps text-label-caps text-on-surface-variant">CO2 CONC.</span>

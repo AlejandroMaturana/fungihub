@@ -63,7 +63,7 @@ function Login() {
                   autoFocus
                   className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface text-data-sm rounded-lg py-3 pl-10 pr-4 outline-none transition-all placeholder:text-on-surface-variant/30"
                   style={{ boxShadow: 'none' }}
-                  onFocus={e => { e.target.style.boxShadow = '0 0 12px rgba(107,251,154,0.25)'; e.target.style.borderColor = '#6bfb9a' }}
+                  onFocus={e => { e.target.style.boxShadow = '0 0 12px var(--spore-glow)'; e.target.style.borderColor = 'var(--spore-green)' }}
                   onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = '' }}
                 />
               </div>
@@ -84,7 +84,7 @@ function Login() {
                   placeholder="••••••••••••"
                   className="w-full bg-surface-container-lowest border border-outline-variant text-on-surface text-data-sm rounded-lg py-3 pl-10 pr-4 outline-none transition-all placeholder:text-on-surface-variant/30"
                   style={{ boxShadow: 'none' }}
-                  onFocus={e => { e.target.style.boxShadow = '0 0 12px rgba(107,251,154,0.25)'; e.target.style.borderColor = '#6bfb9a' }}
+                  onFocus={e => { e.target.style.boxShadow = '0 0 12px var(--spore-glow)'; e.target.style.borderColor = 'var(--spore-green)' }}
                   onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.borderColor = '' }}
                 />
               </div>
@@ -102,7 +102,7 @@ function Login() {
                 type="submit"
                 disabled={loading}
                 className="btn btn-primary w-full"
-                style={{ padding: '16px 32px', opacity: loading ? 0.8 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+                style={{ opacity: loading ? 0.8 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
               >
                 <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: '"FILL" 1' }}>
                   {loading ? 'sync' : 'login'}
