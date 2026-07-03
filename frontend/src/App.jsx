@@ -5,7 +5,7 @@ import DeviceDetail from './pages/DeviceDetail.jsx'
 import Recipes from './pages/Recipes.jsx'
 import Cycles from './pages/Cycles.jsx'
 import Settings from './pages/Settings.jsx'
-import Login from './pages/Login.jsx'
+import Landing from './pages/Landing.jsx'
 import { useAuth } from './api/AuthContext.jsx'
 import AppShell from './components/layout/AppShell.jsx'
 
@@ -16,7 +16,7 @@ function App() {
     <BrowserRouter>
       {!user ? (
         <Routes>
-          <Route path="*" element={<Login />} />
+          <Route path="*" element={<Landing />} />
         </Routes>
       ) : (
         <AppShell user={user} onLogout={logout}>
