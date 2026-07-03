@@ -77,7 +77,7 @@ function CycleCard({ cycle }) {
           </button>
         )}
         {isPaused && (
-          <button className="btn btn-primary flex-1" style={{ boxShadow: '0 0 10px rgba(107,251,154,0.2)' }}>
+          <button className="btn btn-primary flex-1" style={{ boxShadow: '0 0 10px var(--spore-glow)' }}>
             RESUME_SEQ
           </button>
         )}
@@ -153,7 +153,7 @@ function Cycles() {
         <button
           onClick={() => setShowForm(true)}
           className="btn btn-primary"
-          style={{ boxShadow: '0 0 15px rgba(107,251,154,0.3)' }}
+          style={{ boxShadow: '0 0 15px var(--spore-glow)' }}
         >
           <span className="material-symbols-outlined text-18px">add</span>
           INITIATE NEW BATCH
@@ -213,7 +213,7 @@ function Cycles() {
                   {historical.map(c => {
                     const isAborted = c.status === 'ABORTED'
                     return (
-                      <tr key={c.id} className={`transition-colors ${isAborted ? 'hover:bg-error/5' : 'hover:bg-primary/5'}`} style={{ borderTop: '1px solid rgba(61, 74, 62, 0.1)' }}>
+                      <tr key={c.id} className={`transition-colors ${isAborted ? 'hover:bg-error/5' : 'hover:bg-primary/5'} border-t border-outline-variant/10`}>
                         <td className="p-4 text-data-sm text-on-surface-variant font-mono">
                           {c.startDate ? new Date(c.startDate).toLocaleDateString('en-CA') : '—'}
                         </td>
@@ -268,7 +268,7 @@ function Cycles() {
       )}
 
       {showForm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6" style={{ background: 'rgba(15, 20, 18, 0.85)', backdropFilter: 'blur(4px)' }}>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6" style={{ background: 'color-mix(in srgb, var(--surface-dim) 85%, transparent)', backdropFilter: 'blur(4px)' }}>
           <div className="relative bg-surface border border-outline-variant rounded-xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
             <div className="px-6 py-4 border-b border-outline-variant flex justify-between items-center">
               <h2 className="text-headline-md text-primary">Initiate New Batch</h2>

@@ -5,7 +5,7 @@ function TerminalLog({ entries = [], onExtract }) {
         <span className="text-label-caps text-on-surface">SYS.LOG.TERMINAL</span>
         <span className="material-symbols-outlined text-12px text-on-surface-variant">terminal</span>
       </div>
-      <div className="terminal-body flex-1 overflow-y-auto" style={{ minHeight: 80 }}>
+      <div className="terminal-body flex-1 overflow-y-auto min-h-[80px]">
         {entries.length === 0 ? (
           <div className="terminal-entry">
             <span className="msg-info">[--:--:--] Waiting for data...</span>
