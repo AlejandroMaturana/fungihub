@@ -76,7 +76,8 @@ function ChamberCard({ device, telemetry }) {
         </svg>
       </div>
 
-      <Link to={`/devices/${device.id}`} className="w-full py-2.5 rounded bg-surface-variant hover:bg-primary hover:text-on-primary font-label-caps text-label-caps transition-all flex justify-center items-center gap-2 mt-auto no-underline">
+      <Link to={`/devices/${device.id}`} className="w-full py-3 rounded bg-primary text-on-primary hover:brightness-110 font-label-caps text-label-caps transition-all flex justify-center items-center gap-2 mt-auto no-underline"
+        style={{ boxShadow: '0 0 12px var(--primary), 0 0 4px var(--glow-primary, var(--primary))' }}>
         VIEW TELEMETRY
         <span className="material-symbols-outlined text-14px">query_stats</span>
       </Link>
