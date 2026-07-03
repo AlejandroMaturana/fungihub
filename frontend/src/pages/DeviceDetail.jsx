@@ -277,21 +277,20 @@ function DeviceDetail() {
     <div className="flex flex-col gap-4">
       <button
         onClick={() => navigate('/dashboard')}
-        className="flex items-center gap-2 text-on-surface-variant hover:text-primary font-label-caps text-label-caps transition-colors mb-1"
-        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+        style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', cursor: 'pointer' }}
       >
-        <span className="material-symbols-outlined text-16px">arrow_back</span>
+        <span className="material-symbols-outlined text-16px" style={{ color: 'inherit' }}>arrow_back</span>
         BACK TO DASHBOARD
       </button>
 
       <section className="flex flex-wrap justify-between items-end gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: isOnline ? '#22c55e' : '#ef4444', display: 'inline-block' }} />
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: isOnline ? 'var(--spore-green)' : 'var(--error-red)', display: 'inline-block', flexShrink: 0 }} />
             <h1 className="text-headline-lg text-on-surface">{device.chamberName || device.deviceId}</h1>
             <StatusBadge status={isOnline ? 'online' : 'critical'} label={isOnline ? 'ONLINE' : device.status} />
           </div>
-          <p className="text-body-md text-on-surface-variant">
+          <p className="text-body-md text-on-surface-variant" style={{ marginTop: '4px' }}>
             Active Mycelium Colonization Phase
             <span style={{ fontSize: '8px', color: '#2e4036', fontFamily: 'var(--font-mono)' }}> · Phase: Fruiting</span>
           </p>
@@ -313,15 +312,15 @@ function DeviceDetail() {
       </section>
 
       <section className="flex gap-4">
-        <div className="flex flex-col gap-1" style={{ width: '70%', minWidth: 0 }}>
-          <div className="font-label-caps text-9px text-on-surface-variant tracking-wider px-0.5">TELEMETRY GAUGES</div>
+        <div className="flex flex-col" style={{ flex: '1 1 70%', minWidth: 0 }}>
+          <div className="text-9px text-on-surface-variant" style={{ letterSpacing: '0.1em', fontFamily: 'var(--font-mono)', fontWeight: 700, textTransform: 'uppercase', paddingLeft: '2px', paddingRight: '2px', marginBottom: '4px' }}>TELEMETRY GAUGES</div>
           <div className="flex flex-1">
             <DomeGauge value={has.temp ? telemetry.temperature : SENSOR_CFG.temp.min} prevValue={gaugePrev.current.temp} min={SENSOR_CFG.temp.min} max={SENSOR_CFG.temp.max} optMin={SENSOR_CFG.temp.optMin} optMax={SENSOR_CFG.temp.optMax} unit={SENSOR_CFG.temp.unit} label={SENSOR_CFG.temp.label} decimals={SENSOR_CFG.temp.decimals} history={sparkHistory.current.temp} noData={!has.temp} />
             <DomeGauge value={has.hum ? telemetry.humidity : SENSOR_CFG.hum.min} prevValue={gaugePrev.current.hum} min={SENSOR_CFG.hum.min} max={SENSOR_CFG.hum.max} optMin={SENSOR_CFG.hum.optMin} optMax={SENSOR_CFG.hum.optMax} unit={SENSOR_CFG.hum.unit} label={SENSOR_CFG.hum.label} decimals={SENSOR_CFG.hum.decimals} history={sparkHistory.current.hum} noData={!has.hum} />
             <DomeGauge value={has.eco2 ? telemetry.co2 : SENSOR_CFG.eco2.min} prevValue={gaugePrev.current.eco2} min={SENSOR_CFG.eco2.min} max={SENSOR_CFG.eco2.max} optMin={SENSOR_CFG.eco2.optMin} optMax={SENSOR_CFG.eco2.optMax} unit={SENSOR_CFG.eco2.unit} label={SENSOR_CFG.eco2.label} decimals={SENSOR_CFG.eco2.decimals} history={sparkHistory.current.eco2} noData={!has.eco2} />
             <DomeGauge value={has.tvoc ? telemetry.voc : SENSOR_CFG.tvoc.min} prevValue={gaugePrev.current.tvoc} min={SENSOR_CFG.tvoc.min} max={SENSOR_CFG.tvoc.max} optMin={SENSOR_CFG.tvoc.optMin} optMax={SENSOR_CFG.tvoc.optMax} unit={SENSOR_CFG.tvoc.unit} label={SENSOR_CFG.tvoc.label} decimals={SENSOR_CFG.tvoc.decimals} history={sparkHistory.current.tvoc} noData={!has.tvoc} />
           </div>
-          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+          <div className="flex flex-wrap" style={{ gap: '5px' }}>
             <StatusPill sk="temp" label="Temp" />
             <StatusPill sk="hum" label="Hum" />
             <StatusPill sk="eco2" label="eCO₂" />
@@ -333,17 +332,17 @@ function DeviceDetail() {
             )}
           </div>
         </div>
-        <div className="bg-surface-container rounded border border-outline-variant flex flex-col" style={{ width: '30%', minWidth: 0 }}>
-          <div className="flex items-center justify-between px-3 py-2 border-b border-outline-variant">
-            <span className="font-label-caps text-9px text-on-surface-variant">SYSTEM LOG</span>
-            <span className="text-8px text-primary bg-primary/10 px-1.5 py-0.5 rounded">LIVE</span>
+        <div className="bg-surface-container border border-outline-variant flex flex-col" style={{ flex: '1 1 30%', minWidth: 0, borderRadius: '8px' }}>
+          <div className="flex items-center justify-between" style={{ padding: '8px 12px', borderBottom: '1px solid var(--outline-variant)' }}>
+            <span className="text-9px text-on-surface-variant" style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>SYSTEM LOG</span>
+            <span className="text-8px text-primary bg-primary/10" style={{ padding: '2px 6px', borderRadius: '4px' }}>LIVE</span>
           </div>
-          <div className="flex-1 overflow-y-auto p-2 text-11px font-mono leading-relaxed" style={{ scrollbarWidth: 'thin' }}>
+          <div className="flex-1 overflow-y-auto" style={{ padding: '8px', fontSize: '11px', fontFamily: 'var(--font-mono)', lineHeight: '1.7' }}>
             {logs.length === 0 && (
-              <div className="opacity-30 p-2">[--:--:--] Waiting for data...</div>
+              <div className="opacity-30" style={{ padding: '8px' }}>[--:--:--] Waiting for data...</div>
             )}
             {logs.map((entry, i) => (
-              <div key={i} className={`flex gap-2 py-0.5 ${i === 0 ? '' : 'opacity-60'}`}>
+              <div className="flex gap-2" style={{ padding: '2px 0', opacity: i === 0 ? 1 : 0.6 }}>
                 <span className="text-outline shrink-0">{entry.ts}</span>
                 <span className={
                   entry.type === 'error' ? 'text-error' :
@@ -357,50 +356,63 @@ function DeviceDetail() {
         </div>
       </section>
 
-      <div className="bg-surface-container-low border border-outline-variant rounded overflow-hidden flex flex-col">
-        <div className="bg-surface-variant/30 px-3 py-2 border-b border-outline-variant flex items-center justify-between">
+      <div className="bg-surface-container-low border" style={{ borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column', borderColor: 'var(--outline-variant)' }}>
+        <div style={{ background: 'rgba(49,54,51,0.3)', padding: '8px 12px', borderBottom: '1px solid var(--outline-variant)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-sm">grid_view</span>
-            <span className="font-label-caps text-[9px] text-on-surface tracking-wider">ACTUATOR OVERRIDE MATRIX</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--on-surface)', letterSpacing: '0.1em', fontWeight: 700, textTransform: 'uppercase' }}>ACTUATOR OVERRIDE MATRIX</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="font-mono text-[8px] text-on-surface-variant opacity-50">{clockStr}</span>
-            <span className={`text-[7px] font-label-caps px-2 py-0.5 rounded border ${actuators.some(a => a.mode === 'REMOTE') ? 'text-primary border-primary/20 bg-primary/10' : 'text-on-surface-variant border-outline-variant'}`}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--on-surface-variant)', opacity: 0.5 }}>{clockStr}</span>
+            <span style={{
+              fontSize: '7px',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              border: '1px solid',
+              borderColor: actuators.some(a => a.mode === 'REMOTE') ? 'rgba(107,251,154,0.2)' : 'var(--outline-variant)',
+              background: actuators.some(a => a.mode === 'REMOTE') ? 'rgba(107,251,154,0.1)' : 'transparent',
+              color: actuators.some(a => a.mode === 'REMOTE') ? 'var(--spore-green)' : 'var(--on-surface-variant)',
+            }}>
               MODE: {actuators.some(a => a.mode === 'REMOTE') ? 'REMOTE' : 'MANUAL'}
             </span>
           </div>
         </div>
-        <div className="grid divide-x divide-outline-variant/20 h-32" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-          {[1, 2, 3, 4].map(ch => {
+        <div className="grid" style={{ height: '128px', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          {[1, 2, 3, 4].map((ch, idx) => {
             const act = actuators.find(a => a.channel === ch) || { channel: ch, state: 'OFF', mode: 'LOCAL' }
             return (
-              <ActuatorControl
-                key={ch}
-                actuator={act}
-                meta={ACTUATOR_META[ch]}
-                cmdState={getCmdState(act)}
-                onToggle={handleToggle}
-              />
+              <div key={ch} style={{ borderRight: idx < 3 ? '1px solid var(--outline-variant)' : 'none' }}>
+                <ActuatorControl
+                  actuator={act}
+                  meta={ACTUATOR_META[ch]}
+                  cmdState={getCmdState(act)}
+                  onToggle={handleToggle}
+                />
+              </div>
             )
           })}
         </div>
-        <div className="bg-surface-container-lowest px-3 py-1.5 border-t border-outline-variant flex items-center justify-between">
+        <div className="bg-surface-container-lowest" style={{ padding: '6px 12px', borderTop: '1px solid var(--outline-variant)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary" style={{ boxShadow: '0 0 4px var(--primary, #6bfb9a)' }} />
-              <span className="font-mono text-[8px] text-on-surface-variant">{actuators.filter(a => a.lastAck === 'ACKED').length}/{actuators.length} ACKED</span>
+            <div className="flex items-center gap-1">
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--spore-green)', display: 'inline-block', boxShadow: '0 0 4px var(--spore-green)' }} />
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--on-surface-variant)' }}>{actuators.filter(a => a.lastAck === 'ACKED').length}/{actuators.length} ACKED</span>
             </div>
-            <span className="w-px h-3 bg-outline-variant/40" />
-            <span className="font-mono text-[8px] text-on-surface-variant">
+            <span style={{ width: '1px', height: '12px', background: 'rgba(61,74,62,0.4)', display: 'inline-block' }} />
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--on-surface-variant)' }}>
               LATEST_LOG: {logs[0] ? `[${logs[0].ts}] ${logs[0].text}` : '--:--:-- waiting...'}
             </span>
           </div>
           {cmdHistory.length > 0 && (
             <div className="flex items-center gap-1">
               {cmdHistory.slice(0, 3).map((h, i) => {
-                const col = h.status === 'FAILED' ? 'var(--error)' : h.status === 'PENDING' ? 'var(--amber)' : 'var(--primary)'
+                const col = h.status === 'FAILED' ? 'var(--error-red)' : h.status === 'PENDING' ? 'var(--amber)' : 'var(--spore-green)'
                 return (
-                  <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: col, boxShadow: `0 0 3px ${col}` }} />
+                  <span key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: col, display: 'inline-block', boxShadow: `0 0 3px ${col}` }} />
                 )
               })}
             </div>

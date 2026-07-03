@@ -230,88 +230,112 @@ function ChartPanel({ deviceId, telemetry, has }) {
     updateChart(chart2Ref.current, labels, ds2, chart2Bands)
   }, [labels, data1, data2])
 
+  const SX = {
+    section: { display: 'flex', flexDirection: 'column', gap: '4px' },
+    label: { fontSize: '9px', color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', paddingLeft: '2px' },
+    wrapper: { display: 'flex', gap: 0, height: '380px' },
+    sidebar: { display: 'flex', flexDirection: 'column', gap: '2px', width: '36px', flexShrink: 0, paddingTop: '32px', paddingBottom: '8px' },
+    chartBox: { flex: 1, background: 'var(--surface-container)', border: '1px solid var(--outline-variant)', borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column', minWidth: 0 },
+    chartInner: { flex: 1, display: 'flex', minHeight: 0 },
+    pane: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' },
+    paneBorder: { borderRight: '1px solid rgba(61,74,62,0.3)' },
+    barHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px 4px' },
+    barLabel: { fontSize: '8px', color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' },
+    badge: (c) => ({ display: 'flex', alignItems: 'center', gap: '4px', padding: '2px 6px', borderRadius: '4px', border: `1px solid ${c}40`, background: `${c}08` }),
+    dot: (c) => ({ width: '6px', height: '6px', borderRadius: '50%', background: c, display: 'inline-block', boxShadow: `0 0 4px ${c}` }),
+    badgeLabel: (c) => ({ fontSize: '7px', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: c }),
+    canvasWrap: { flex: 1, position: 'relative', padding: '0 8px 8px' },
+    canvas: { position: 'absolute', inset: 0, width: '100%', height: '100%', padding: '12px 4px 4px' },
+    footer: { display: 'flex', alignItems: 'center', gap: '12px', padding: '6px 12px', borderTop: '1px solid rgba(61,74,62,0.3)', background: 'rgba(38,43,41,0.5)' },
+    legendItem: { display: 'flex', alignItems: 'center', gap: '4px' },
+    legendLine: (c) => ({ width: '10px', height: '2px', borderRadius: '1px', background: c }),
+    legendLabel: { fontSize: '7px', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' },
+    optimal: { width: '10px', height: '4px', border: '1px dashed rgba(34,197,94,0.3)', borderRadius: '1px', background: 'rgba(34,197,94,0.07)' },
+    loading: { fontSize: '7px', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--spore-green)', marginLeft: 'auto' },
+  }
+
   return (
-    <section className="flex flex-col gap-1">
-      <div className="font-label-caps text-9px text-on-surface-variant tracking-wider px-0.5">HISTORY CHARTS</div>
-      <div className="flex gap-0" style={{ height: '380px' }}>
-        <div className="flex flex-col gap-0.5 w-9 shrink-0 pt-8 pb-2">
+    <section style={SX.section}>
+      <div style={SX.label}>HISTORY CHARTS</div>
+      <div style={SX.wrapper}>
+        <div style={SX.sidebar}>
           {TIME_RANGES.map(tr => (
             <button
               key={tr.value}
               onClick={() => setTimeRange(tr.value)}
-              className="flex-1 font-label-caps text-[7px] tracking-wider border-0 transition-all cursor-pointer"
               style={{
-                background: timeRange === tr.value
-                  ? 'rgba(107,251,154,0.08)'
-                  : 'transparent',
-                color: timeRange === tr.value
-                  ? 'var(--primary, #6bfb9a)'
-                  : 'var(--on-surface-variant, #bccabb)',
-                borderLeft: timeRange === tr.value
-                  ? '2px solid var(--primary, #6bfb9a)'
-                  : '2px solid transparent',
+                flex: 1,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                fontSize: '7px',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                border: 'none',
+                background: timeRange === tr.value ? 'rgba(107,251,154,0.08)' : 'transparent',
+                color: timeRange === tr.value ? 'var(--spore-green)' : 'var(--on-surface-variant)',
+                borderLeft: timeRange === tr.value ? '2px solid var(--spore-green)' : '2px solid transparent',
                 padding: '2px 6px',
                 borderRadius: 0,
                 textAlign: 'left',
-                fontSize: '7px',
+                cursor: 'pointer',
               }}
             >
               {tr.label}
             </button>
           ))}
         </div>
-        <div className="flex-1 bg-surface-container rounded border border-outline-variant overflow-hidden flex flex-col min-w-0">
-          <div className="flex-1 flex min-h-0">
-            <div className="flex-1 min-w-0 border-r border-outline-variant/30 flex flex-col">
-              <div className="flex items-center justify-between px-3 pt-2 pb-1">
-                <span className="font-label-caps text-[8px] text-on-surface-variant tracking-wider">TEMPERATURE & HUMIDITY</span>
+        <div style={SX.chartBox}>
+          <div style={SX.chartInner}>
+            <div style={{ ...SX.pane, ...SX.paneBorder }}>
+              <div style={SX.barHeader}>
+                <span style={SX.barLabel}>TEMPERATURE & HUMIDITY</span>
                 <div className="flex gap-2">
                   {['temp', 'hum'].map(k => (
-                    <div key={k} className="flex items-center gap-1 px-1.5 py-0.5 rounded border" style={{ borderColor: timeColors[k] + '40', background: timeColors[k] + '08' }}>
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: timeColors[k], boxShadow: `0 0 4px ${timeColors[k]}` }} />
-                      <span className="font-label-caps text-[7px]" style={{ color: timeColors[k] }}>{k === 'temp' ? 'T°' : 'HR%'}</span>
+                    <div key={k} style={SX.badge(timeColors[k])}>
+                      <span style={SX.dot(timeColors[k])} />
+                      <span style={SX.badgeLabel(timeColors[k])}>{k === 'temp' ? 'T°' : 'HR%'}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="flex-1 relative px-2 pb-2">
-                <canvas ref={canvas1Ref} className="absolute inset-0 w-full h-full" style={{ padding: '12px 4px 4px' }} />
+              <div style={SX.canvasWrap}>
+                <canvas ref={canvas1Ref} style={SX.canvas} />
               </div>
             </div>
-            <div className="flex-1 min-w-0 flex flex-col">
-              <div className="flex items-center justify-between px-3 pt-2 pb-1">
-                <span className="font-label-caps text-[8px] text-on-surface-variant tracking-wider">ECO₂ & TVOC</span>
+            <div style={SX.pane}>
+              <div style={SX.barHeader}>
+                <span style={SX.barLabel}>ECO₂ & TVOC</span>
                 <div className="flex gap-2">
                   {['eco2', 'tvoc'].map(k => (
-                    <div key={k} className="flex items-center gap-1 px-1.5 py-0.5 rounded border" style={{ borderColor: timeColors[k] + '40', background: timeColors[k] + '08' }}>
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: timeColors[k], boxShadow: `0 0 4px ${timeColors[k]}` }} />
-                      <span className="font-label-caps text-[7px]" style={{ color: timeColors[k] }}>{k === 'eco2' ? 'eCO₂' : 'TVOC'}</span>
+                    <div key={k} style={SX.badge(timeColors[k])}>
+                      <span style={SX.dot(timeColors[k])} />
+                      <span style={SX.badgeLabel(timeColors[k])}>{k === 'eco2' ? 'eCO₂' : 'TVOC'}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="flex-1 relative px-2 pb-2">
-                <canvas ref={canvas2Ref} className="absolute inset-0 w-full h-full" style={{ padding: '12px 4px 4px' }} />
+              <div style={SX.canvasWrap}>
+                <canvas ref={canvas2Ref} style={SX.canvas} />
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3 px-3 py-1.5 border-t border-outline-variant/30 bg-surface-container-high/50">
+          <div style={SX.footer}>
             {[
               { id: 't', c: timeColors.temp, lbl: `Temp ${has.temp ? telemetry.temperature.toFixed(1) : '--'} °C` },
               { id: 'h', c: timeColors.hum, lbl: `Hum ${has.hum ? telemetry.humidity.toFixed(1) : '--'} %RH` },
               { id: 'e', c: timeColors.eco2, lbl: `eCO₂ ${has.eco2 ? Math.round(telemetry.co2) : '--'} ppm` },
               { id: 'v', c: timeColors.tvoc, lbl: `TVOC ${has.tvoc ? Math.round(telemetry.voc) : '--'} ppb` },
             ].map(item => (
-              <div key={item.id} className="flex items-center gap-1">
-                <span className="w-2.5 h-0.5 rounded-full" style={{ background: item.c }} />
-                <span className="font-label-caps text-[7px] text-on-surface-variant">{item.lbl}</span>
+              <div key={item.id} style={SX.legendItem}>
+                <span style={SX.legendLine(item.c)} />
+                <span style={SX.legendLabel}>{item.lbl}</span>
               </div>
             ))}
-            <div className="flex items-center gap-1">
-              <span className="w-2.5 h-1 rounded border border-dashed" style={{ borderColor: 'rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.07)' }} />
-              <span className="font-label-caps text-[7px] text-on-surface-variant">optimal</span>
+            <div style={SX.legendItem}>
+              <span style={SX.optimal} />
+              <span style={SX.legendLabel}>optimal</span>
             </div>
-            {loading && <span className="font-label-caps text-[7px] text-primary ml-auto">loading...</span>}
+            {loading && <span style={SX.loading}>loading...</span>}
           </div>
         </div>
       </div>
