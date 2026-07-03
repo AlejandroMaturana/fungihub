@@ -387,7 +387,52 @@ function DeviceDetail() {
         </div>
       </section>
 
-      <div className="bg-surface-container rounded border border-outline-variant overflow-hidden flex flex-col" style={{ minHeight: '200px' }}>
+      <section className="flex gap-4">
+        <div className="flex flex-col gap-1" style={{ width: '70%', minWidth: 0 }}>
+          <div className="font-label-caps text-9px text-on-surface-variant tracking-wider px-0.5">TELEMETRY GAUGES</div>
+          <div className="flex flex-1">
+            <DomeGauge value={has.temp ? telemetry.temperature : SENSOR_CFG.temp.min} prevValue={gaugePrev.current.temp} min={SENSOR_CFG.temp.min} max={SENSOR_CFG.temp.max} optMin={SENSOR_CFG.temp.optMin} optMax={SENSOR_CFG.temp.optMax} unit={SENSOR_CFG.temp.unit} label={SENSOR_CFG.temp.label} decimals={SENSOR_CFG.temp.decimals} history={sparkHistory.current.temp} noData={!has.temp} />
+            <DomeGauge value={has.hum ? telemetry.humidity : SENSOR_CFG.hum.min} prevValue={gaugePrev.current.hum} min={SENSOR_CFG.hum.min} max={SENSOR_CFG.hum.max} optMin={SENSOR_CFG.hum.optMin} optMax={SENSOR_CFG.hum.optMax} unit={SENSOR_CFG.hum.unit} label={SENSOR_CFG.hum.label} decimals={SENSOR_CFG.hum.decimals} history={sparkHistory.current.hum} noData={!has.hum} />
+            <DomeGauge value={has.eco2 ? telemetry.co2 : SENSOR_CFG.eco2.min} prevValue={gaugePrev.current.eco2} min={SENSOR_CFG.eco2.min} max={SENSOR_CFG.eco2.max} optMin={SENSOR_CFG.eco2.optMin} optMax={SENSOR_CFG.eco2.optMax} unit={SENSOR_CFG.eco2.unit} label={SENSOR_CFG.eco2.label} decimals={SENSOR_CFG.eco2.decimals} history={sparkHistory.current.eco2} noData={!has.eco2} />
+            <DomeGauge value={has.tvoc ? telemetry.voc : SENSOR_CFG.tvoc.min} prevValue={gaugePrev.current.tvoc} min={SENSOR_CFG.tvoc.min} max={SENSOR_CFG.tvoc.max} optMin={SENSOR_CFG.tvoc.optMin} optMax={SENSOR_CFG.tvoc.optMax} unit={SENSOR_CFG.tvoc.unit} label={SENSOR_CFG.tvoc.label} decimals={SENSOR_CFG.tvoc.decimals} history={sparkHistory.current.tvoc} noData={!has.tvoc} />
+          </div>
+          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+            <StatusPill sk="temp" label="Temp" />
+            <StatusPill sk="hum" label="Hum" />
+            <StatusPill sk="eco2" label="eCO₂" />
+            <StatusPill sk="tvoc" label="TVOC" />
+            {co2Error && (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '7px', color: '#ef4444', background: 'rgba(239,68,68,0.08)', padding: '2px 8px', borderRadius: '3px' }}>
+                ⚠ CO₂ OVER LIMIT
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="bg-surface-container rounded border border-outline-variant flex flex-col" style={{ width: '30%', minWidth: 0 }}>
+          <div className="flex items-center justify-between px-3 py-2 border-b border-outline-variant">
+            <span className="font-label-caps text-9px text-on-surface-variant">SYSTEM LOG</span>
+            <span className="text-8px text-primary bg-primary/10 px-1.5 py-0.5 rounded">LIVE</span>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 text-11px font-mono leading-relaxed" style={{ scrollbarWidth: 'thin' }}>
+            {logs.length === 0 && (
+              <div className="opacity-30 p-2">[--:--:--] Waiting for data...</div>
+            )}
+            {logs.map((entry, i) => (
+              <div key={i} className={`flex gap-2 py-0.5 ${i === 0 ? '' : 'opacity-60'}`}>
+                <span className="text-outline shrink-0">{entry.ts}</span>
+                <span className={
+                  entry.type === 'error' ? 'text-error' :
+                  entry.type === 'success' ? 'text-primary' :
+                  entry.type === 'warn' ? 'text-tertiary' :
+                  'text-on-surface-variant'
+                }>{entry.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="bg-surface-container rounded border border-outline-variant overflow-hidden flex flex-col">
         <div className="px-4 py-3 border-b border-outline-variant bg-surface-container-high flex items-center justify-between">
           <span className="font-label-caps text-10px text-on-surface-variant tracking-wider">ACTUATOR OVERRIDE MATRIX</span>
           <div className="flex items-center gap-3">
@@ -458,29 +503,8 @@ function DeviceDetail() {
         </div>
       </div>
 
-      <section className="flex" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <DomeGauge value={has.temp ? telemetry.temperature : SENSOR_CFG.temp.min} prevValue={gaugePrev.current.temp} min={SENSOR_CFG.temp.min} max={SENSOR_CFG.temp.max} optMin={SENSOR_CFG.temp.optMin} optMax={SENSOR_CFG.temp.optMax} unit={SENSOR_CFG.temp.unit} label={SENSOR_CFG.temp.label} decimals={SENSOR_CFG.temp.decimals} history={sparkHistory.current.temp} noData={!has.temp} />
-        <DomeGauge value={has.hum ? telemetry.humidity : SENSOR_CFG.hum.min} prevValue={gaugePrev.current.hum} min={SENSOR_CFG.hum.min} max={SENSOR_CFG.hum.max} optMin={SENSOR_CFG.hum.optMin} optMax={SENSOR_CFG.hum.optMax} unit={SENSOR_CFG.hum.unit} label={SENSOR_CFG.hum.label} decimals={SENSOR_CFG.hum.decimals} history={sparkHistory.current.hum} noData={!has.hum} />
-        <DomeGauge value={has.eco2 ? telemetry.co2 : SENSOR_CFG.eco2.min} prevValue={gaugePrev.current.eco2} min={SENSOR_CFG.eco2.min} max={SENSOR_CFG.eco2.max} optMin={SENSOR_CFG.eco2.optMin} optMax={SENSOR_CFG.eco2.optMax} unit={SENSOR_CFG.eco2.unit} label={SENSOR_CFG.eco2.label} decimals={SENSOR_CFG.eco2.decimals} history={sparkHistory.current.eco2} noData={!has.eco2} />
-        <DomeGauge value={has.tvoc ? telemetry.voc : SENSOR_CFG.tvoc.min} prevValue={gaugePrev.current.tvoc} min={SENSOR_CFG.tvoc.min} max={SENSOR_CFG.tvoc.max} optMin={SENSOR_CFG.tvoc.optMin} optMax={SENSOR_CFG.tvoc.optMax} unit={SENSOR_CFG.tvoc.unit} label={SENSOR_CFG.tvoc.label} decimals={SENSOR_CFG.tvoc.decimals} history={sparkHistory.current.tvoc} noData={!has.tvoc} />
-      </section>
-
-      <section style={{ display: 'flex', gap: '5px', padding: '4px 0', flexWrap: 'wrap' }}>
-        <StatusPill sk="temp" label="Temp" />
-        <StatusPill sk="hum" label="Hum" />
-        <StatusPill sk="eco2" label="eCO₂" />
-        <StatusPill sk="tvoc" label="TVOC" />
-        {co2Error && (
-          <span style={{
-            fontFamily: 'var(--font-mono)', fontSize: '7px', color: '#ef4444',
-            background: 'rgba(239,68,68,0.08)', padding: '2px 8px', borderRadius: '3px',
-          }}>
-            ⚠ CO₂ OVER LIMIT
-          </span>
-        )}
-      </section>
-
-      <section className="flex flex-col gap-1" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>
+      <section className="flex flex-col gap-1">
+        <div className="font-label-caps text-9px text-on-surface-variant tracking-wider px-0.5">HISTORY CHARTS</div>
         <div className="flex">
           <div style={{ flex: 1, minWidth: 0 }}>
             <DeviceHistoryChart
@@ -522,29 +546,6 @@ function DeviceDetail() {
             </div>
           </div>
         )}
-      </section>
-
-      <section className="bg-surface-container rounded border border-outline-variant flex flex-col h-[300px]">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-outline-variant">
-          <span className="font-label-caps text-9px text-on-surface-variant">SYSTEM LOG</span>
-          <span className="text-8px text-primary bg-primary/10 px-1.5 py-0.5 rounded">LIVE</span>
-        </div>
-        <div className="flex-1 overflow-y-auto p-2 text-11px font-mono leading-relaxed" style={{ scrollbarWidth: 'thin' }}>
-          {logs.length === 0 && (
-            <div className="opacity-30 p-2">[--:--:--] Waiting for data...</div>
-          )}
-          {logs.map((entry, i) => (
-            <div key={i} className={`flex gap-2 py-0.5 ${i === 0 ? '' : 'opacity-60'}`}>
-              <span className="text-outline shrink-0">{entry.ts}</span>
-              <span className={
-                entry.type === 'error' ? 'text-error' :
-                entry.type === 'success' ? 'text-primary' :
-                entry.type === 'warn' ? 'text-tertiary' :
-                'text-on-surface-variant'
-              }>{entry.text}</span>
-            </div>
-          ))}
-        </div>
       </section>
     </div>
   )
