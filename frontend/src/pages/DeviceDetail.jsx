@@ -387,6 +387,77 @@ function DeviceDetail() {
         </div>
       </section>
 
+      <div className="bg-surface-container rounded border border-outline-variant overflow-hidden flex flex-col" style={{ minHeight: '600px' }}>
+        <div className="px-4 py-3 border-b border-outline-variant bg-surface-container-high flex items-center justify-between">
+          <span className="font-label-caps text-10px text-on-surface-variant tracking-wider">ACTUATOR OVERRIDE MATRIX</span>
+          <div className="flex items-center gap-3">
+            <span className="text-7px font-label-caps text-on-surface-variant opacity-40">{clockStr}</span>
+            <span className={`text-8px font-label-caps px-2 py-1 rounded border ${actuators.some(a => a.mode === 'REMOTE') ? 'text-primary border-primary/30 bg-primary/10' : 'text-on-surface-variant border-outline-variant'}`}>
+              MODE: {actuators.some(a => a.mode === 'REMOTE') ? 'REMOTE' : 'MANUAL'}
+            </span>
+          </div>
+        </div>
+        <div className="flex-1 p-4 flex flex-col gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-1">
+            {[1, 2, 3, 4].map(ch => {
+              const act = actuators.find(a => a.channel === ch) || { channel: ch, state: 'OFF', mode: 'LOCAL' }
+              return (
+                <ActuatorControl
+                  key={ch}
+                  deviceId={device.deviceId}
+                  actuator={act}
+                  meta={ACTUATOR_META[ch]}
+                  cmdState={getCmdState(act)}
+                  onToggle={handleToggle}
+                />
+              )
+            })}
+          </div>
+          <div className="flex items-stretch gap-3">
+            {cmdHistory.length > 0 && (
+              <div className="border border-outline-variant rounded p-3 flex-1">
+                <span className="font-label-caps text-8px text-on-surface-variant block mb-2 tracking-wider">COMMAND HISTORY</span>
+                <div className="flex flex-wrap gap-1.5 max-h-[72px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                  {cmdHistory.map((h, i) => {
+                    const statusColors = {
+                      PENDING: 'text-amber border-amber/30 bg-amber/10',
+                      SENT: 'text-primary border-primary/30 bg-primary/10',
+                      FAILED: 'text-error border-error/30 bg-error/10',
+                    }
+                    return (
+                      <div key={i} className={`text-8px font-label-caps px-2 py-1 rounded border flex items-center gap-1.5 ${statusColors[h.status] || ''}`}>
+                        <span className="opacity-50">{h.ts}</span>
+                        <span>{h.label}</span>
+                        <span className="opacity-70">→</span>
+                        <span className={h.cmd === 'ON' ? 'text-primary' : ''}>{h.cmd}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+            <div className="border border-outline-variant rounded p-3 flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className="flex -space-x-0.5">
+                  {actuators.map((a, i) => (
+                    <span key={i}
+                      className="w-2 h-2 rounded-full border border-surface-container"
+                      style={{
+                        background: a.state === 'ON' ? '#22c55e' : a.lastAck === 'TIMEOUT' ? '#ef4444' : '#2e4036',
+                        boxShadow: a.state === 'ON' ? '0 0 6px rgba(34,197,94,0.5)' : 'none',
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <span className="text-8px font-label-caps text-on-surface-variant">
+                {actuators.filter(a => a.lastAck === 'ACKED').length}/{actuators.length} ACKED
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <section className="flex" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <DomeGauge value={has.temp ? telemetry.temperature : SENSOR_CFG.temp.min} prevValue={gaugePrev.current.temp} min={SENSOR_CFG.temp.min} max={SENSOR_CFG.temp.max} optMin={SENSOR_CFG.temp.optMin} optMax={SENSOR_CFG.temp.optMax} unit={SENSOR_CFG.temp.unit} label={SENSOR_CFG.temp.label} decimals={SENSOR_CFG.temp.decimals} history={sparkHistory.current.temp} noData={!has.temp} />
         <DomeGauge value={has.hum ? telemetry.humidity : SENSOR_CFG.hum.min} prevValue={gaugePrev.current.hum} min={SENSOR_CFG.hum.min} max={SENSOR_CFG.hum.max} optMin={SENSOR_CFG.hum.optMin} optMax={SENSOR_CFG.hum.optMax} unit={SENSOR_CFG.hum.unit} label={SENSOR_CFG.hum.label} decimals={SENSOR_CFG.hum.decimals} history={sparkHistory.current.hum} noData={!has.hum} />
@@ -453,84 +524,26 @@ function DeviceDetail() {
         )}
       </section>
 
-      <section className="flex flex-col gap-3">
-        <div className="bg-surface-container rounded border border-outline-variant flex flex-col h-[300px]">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-outline-variant">
-            <span className="font-label-caps text-9px text-on-surface-variant">SYSTEM LOG</span>
-            <span className="text-8px text-primary bg-primary/10 px-1.5 py-0.5 rounded">LIVE</span>
-          </div>
-          <div className="flex-1 overflow-y-auto p-2 text-11px font-mono leading-relaxed" style={{ scrollbarWidth: 'thin' }}>
-            {logs.length === 0 && (
-              <div className="opacity-30 p-2">[--:--:--] Waiting for data...</div>
-            )}
-            {logs.map((entry, i) => (
-              <div key={i} className={`flex gap-2 py-0.5 ${i === 0 ? '' : 'opacity-60'}`}>
-                <span className="text-outline shrink-0">{entry.ts}</span>
-                <span className={
-                  entry.type === 'error' ? 'text-error' :
-                  entry.type === 'success' ? 'text-primary' :
-                  entry.type === 'warn' ? 'text-tertiary' :
-                  'text-on-surface-variant'
-                }>{entry.text}</span>
-              </div>
-            ))}
-          </div>
+      <section className="bg-surface-container rounded border border-outline-variant flex flex-col h-[300px]">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-outline-variant">
+          <span className="font-label-caps text-9px text-on-surface-variant">SYSTEM LOG</span>
+          <span className="text-8px text-primary bg-primary/10 px-1.5 py-0.5 rounded">LIVE</span>
         </div>
-
-        <div className="bg-surface-container rounded border border-outline-variant overflow-hidden flex flex-col">
-          <div className="px-3 py-2 border-b border-outline-variant bg-surface-container-high flex items-center justify-between">
-            <span className="font-label-caps text-9px text-on-surface-variant">ACTUATOR OVERRIDE MATRIX</span>
-            <div className="flex items-center gap-2">
-              <span className={`text-8px font-label-caps px-1.5 py-0.5 rounded border ${actuators.some(a => a.mode === 'REMOTE') ? 'text-primary border-primary/30 bg-primary/10' : 'text-on-surface-variant border-outline-variant'}`}>
-                MODE: {actuators.some(a => a.mode === 'REMOTE') ? 'REMOTE' : 'MANUAL'}
-              </span>
+        <div className="flex-1 overflow-y-auto p-2 text-11px font-mono leading-relaxed" style={{ scrollbarWidth: 'thin' }}>
+          {logs.length === 0 && (
+            <div className="opacity-30 p-2">[--:--:--] Waiting for data...</div>
+          )}
+          {logs.map((entry, i) => (
+            <div key={i} className={`flex gap-2 py-0.5 ${i === 0 ? '' : 'opacity-60'}`}>
+              <span className="text-outline shrink-0">{entry.ts}</span>
+              <span className={
+                entry.type === 'error' ? 'text-error' :
+                entry.type === 'success' ? 'text-primary' :
+                entry.type === 'warn' ? 'text-tertiary' :
+                'text-on-surface-variant'
+              }>{entry.text}</span>
             </div>
-          </div>
-          <div className="flex-1 p-3">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-              {[1, 2, 3, 4].map(ch => {
-                const act = actuators.find(a => a.channel === ch) || { channel: ch, state: 'OFF', mode: 'LOCAL' }
-                return (
-                  <ActuatorControl
-                    key={ch}
-                    deviceId={device.deviceId}
-                    actuator={act}
-                    meta={ACTUATOR_META[ch]}
-                    cmdState={getCmdState(act)}
-                    onToggle={handleToggle}
-                  />
-                )
-              })}
-            </div>
-            {cmdHistory.length > 0 && (
-              <div className="border-t border-outline-variant pt-2 mb-2">
-                <span className="font-label-caps text-8px text-on-surface-variant block mb-1">COMMAND HISTORY</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {cmdHistory.map((h, i) => {
-                    const statusColors = {
-                      PENDING: 'text-amber border-amber/30 bg-amber/10',
-                      SENT: 'text-primary border-primary/30 bg-primary/10',
-                      FAILED: 'text-error border-error/30 bg-error/10',
-                    }
-                    return (
-                      <div key={i} className={`text-8px font-label-caps px-1.5 py-0.5 rounded border ${statusColors[h.status] || ''}`}>
-                        {h.label} → {h.cmd}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-            <div className="border-t border-outline-variant pt-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-secondary" style={{ boxShadow: '0 0 6px var(--teal)' }} />
-                <span className="text-8px font-label-caps text-on-surface-variant">SUBSYSTEM NOMINAL</span>
-              </div>
-              <span className="text-8px font-label-caps text-on-surface-variant">
-                CMD: {actuators.filter(a => a.lastAck === 'ACKED').length}/{actuators.length}
-              </span>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
     </div>

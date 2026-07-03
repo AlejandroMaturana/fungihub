@@ -106,7 +106,7 @@ function DeviceHistoryChart({ title, datasets, bands, y1Domain, y2Domain, labels
       <div style={{ fontSize: '7.5px', color: '#4a6652', letterSpacing: '0.1em', textTransform: 'uppercase', paddingLeft: '4px', marginBottom: '6px', fontFamily: 'var(--font-mono)' }}>
         {title}
       </div>
-      <div style={{ position: 'relative', height: '148px' }}>
+      <div style={{ position: 'relative', height: '296px' }}>
         <canvas ref={canvasRef} role="img" aria-label={title} />
       </div>
     </div>
