@@ -345,25 +345,28 @@ section h3 { font-size: 16px; margin-bottom: 16px; color: var(--text2); }
 .login-card .submit-btn { width: 100%; }
 .password-input-wrapper {
   position: relative;
-  display: flex;
-  align-items: center;
 }
-.password-input-wrapper input {
+
+.password-input {
   width: 100%;
-  padding-right: 44px;
+  padding-right: 3.5rem;
 }
+
 .password-toggle-btn {
   position: absolute;
-  right: 8px;
+  top: 0;
+  right: 0.75rem;
+  bottom: 0;
+  width: 2rem;
   background: transparent;
   border: none;
   color: var(--text2);
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   transition: color 0.2s, background 0.2s;
 }
 .password-toggle-btn:hover {
