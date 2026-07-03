@@ -1,147 +1,545 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import AuthModal from '../components/auth/AuthModal.jsx'
+
+const FEATURES = [
+  {
+    icon: 'sensors',
+    label: 'MONITOREO EN VIVO',
+    title: 'Telemetría en Tiempo Real',
+    desc: 'Sensores de temperatura, humedad, CO₂ y flujo de aire. Visualiza métricas con gráficos dinámicos y alertas inteligentes.',
+    color: 'primary',
+    borderClass: 'border-t-primary',
+    iconBg: 'bg-primary/10',
+    iconColor: 'text-primary',
+  },
+  {
+    icon: 'potted_plant',
+    label: 'RECETAS',
+    title: 'Perfiles de Cultivo',
+    desc: 'Diseña secuencias ambientales para cada especie. Fase de incubación, fructificación y cosecha con control preciso.',
+    color: 'secondary',
+    borderClass: 'border-t-secondary',
+    iconBg: 'bg-secondary/10',
+    iconColor: 'text-secondary',
+  },
+  {
+    icon: 'devices',
+    label: 'ACTUADORES',
+    title: 'Control Remoto',
+    desc: 'Ventiladores, humidificadores, iluminación y más. Automatización programada o control manual desde cualquier lugar.',
+    color: 'tertiary',
+    borderClass: 'border-t-tertiary',
+    iconBg: 'bg-tertiary/10',
+    iconColor: 'text-tertiary',
+  },
+]
+
+const NETWORK_NODES = [
+  { cx: '15%', cy: '30%', delay: 0 },
+  { cx: '45%', cy: '20%', delay: 0.5 },
+  { cx: '75%', cy: '35%', delay: 1 },
+  { cx: '30%', cy: '60%', delay: 1.5 },
+  { cx: '60%', cy: '55%', delay: 2 },
+  { cx: '85%', cy: '65%', delay: 2.5 },
+  { cx: '20%', cy: '80%', delay: 3 },
+  { cx: '55%', cy: '75%', delay: 3.5 },
+  { cx: '80%', cy: '50%', delay: 4 },
+]
+
+const PARTICLES = Array.from({ length: 30 }, (_, i) => ({
+  id: i,
+  left: `${Math.random() * 100}%`,
+  top: `${Math.random() * 100}%`,
+  size: Math.random() * 3 + 1,
+  delay: Math.random() * 5,
+  duration: Math.random() * 4 + 3,
+}))
+
+function Particle({ style }) {
+  return (
+    <div
+      className="absolute rounded-full bg-primary breathing-pulse"
+      style={style}
+    />
+  )
+}
 
 function Landing() {
   const [showAuth, setShowAuth] = useState(false)
+  const [mousePos, setMousePos] = useState({ x: 0.5, y: 0.5 })
+  const heroRef = useRef(null)
+
+  useEffect(() => {
+    function onMove(e) {
+      setMousePos({
+        x: e.clientX / window.innerWidth,
+        y: e.clientY / window.innerHeight,
+      })
+    }
+    window.addEventListener('mousemove', onMove)
+    return () => window.removeEventListener('mousemove', onMove)
+  }, [])
+
+  const bgOffsetX = (mousePos.x - 0.5) * 30
+  const bgOffsetY = (mousePos.y - 0.5) * 30
 
   return (
-    <div className="pb-20" style={{ minHeight: '100vh', background: 'var(--bg-deep)' }}>
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="breathing-node w-[800px] h-[800px] rounded-full blur-3xl absolute"
-          style={{ top: '40%', left: '50%', transform: 'translate(-50%, -50%)' }} />
-        <svg className="absolute w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <path className="bioluminescent-line" d="M-100,200 Q200,400 600,200 T1200,500" fill="none" opacity="0.15" stroke="#44e2cd" strokeWidth="0.5" />
-          <path className="bioluminescent-line" d="M-200,800 Q400,600 800,900 T1500,400" fill="none" opacity="0.1" stroke="#6bfb9a" strokeWidth="0.5" />
-        </svg>
+    <div className="relative" style={{ minHeight: '100vh', background: 'var(--bg-deep)', overflow: 'hidden' }}>
+      {/* Noise texture overlay */}
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          opacity: 0.025,
+        }}
+      />
+
+      {/* Background orbs */}
+      <div
+        className="fixed pointer-events-none z-0"
+        style={{
+          top: '50%',
+          left: '50%',
+          width: '900px',
+          height: '900px',
+          transform: `translate(calc(-50% + ${bgOffsetX}px), calc(-50% + ${bgOffsetY}px))`,
+        }}
+      >
+        <div
+          className="absolute inset-0 rounded-full blur-3xl"
+          style={{
+            background: 'radial-gradient(circle, rgba(107,251,154,0.15) 0%, rgba(68,226,205,0.04) 40%, transparent 70%)',
+            animation: 'breathe 6s infinite ease-in-out',
+          }}
+        />
+      </div>
+      <div
+        className="fixed pointer-events-none z-0"
+        style={{
+          top: '20%',
+          right: '10%',
+          width: '500px',
+          height: '500px',
+          transform: `translate(${bgOffsetX * -0.5}px, ${bgOffsetY * -0.5}px)`,
+        }}
+      >
+        <div
+          className="absolute inset-0 rounded-full blur-3xl"
+          style={{
+            background: 'radial-gradient(circle, rgba(68,226,205,0.08) 0%, transparent 60%)',
+            animation: 'breathe 8s infinite ease-in-out 2s',
+          }}
+        />
+      </div>
+      <div
+        className="fixed pointer-events-none z-0"
+        style={{
+          bottom: '10%',
+          left: '5%',
+          width: '400px',
+          height: '400px',
+          transform: `translate(${bgOffsetX * 0.3}px, ${bgOffsetY * 0.3}px)`,
+        }}
+      >
+        <div
+          className="absolute inset-0 rounded-full blur-3xl"
+          style={{
+            background: 'radial-gradient(circle, rgba(255,182,87,0.05) 0%, transparent 60%)',
+            animation: 'breathe 10s infinite ease-in-out 4s',
+          }}
+        />
       </div>
 
-      <header className="relative z-10 max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-2xl" style={{ fontVariationSettings: '"FILL" 1' }}>grain</span>
-          <span className="text-headline-md text-primary">Mush2</span>
+      {/* Floating particles */}
+      {PARTICLES.map(p => (
+        <Particle
+          key={p.id}
+          style={{
+            left: p.left,
+            top: p.top,
+            width: `${p.size}px`,
+            height: `${p.size}px`,
+            opacity: 0.3 + Math.random() * 0.4,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            transform: `translate(${bgOffsetX * 0.2}px, ${bgOffsetY * 0.2}px)`,
+          }}
+        />
+      ))}
+
+      {/* SVG Mycelium Network Background */}
+      <svg
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{ width: '100%', height: '100%', opacity: 0.12 }}
+        preserveAspectRatio="xMidYMid meet"
+      >
+        {NETWORK_NODES.map((node, i) => (
+          <circle
+            key={i}
+            cx={node.cx}
+            cy={node.cy}
+            r="3"
+            fill="#6bfb9a"
+            className="breathing-pulse"
+            style={{ animationDelay: `${node.delay}s` }}
+          />
+        ))}
+        <path
+          d="M15%,30% Q30%,25% 45%,20% T75%,35%"
+          fill="none"
+          stroke="#6bfb9a"
+          strokeWidth="0.8"
+          className="bioluminescent-path"
+          style={{ animationDelay: '0s' }}
+        />
+        <path
+          d="M45%,20% Q52%,40% 60%,55% T85%,65%"
+          fill="none"
+          stroke="#44e2cd"
+          strokeWidth="0.6"
+          className="bioluminescent-path"
+          style={{ animationDelay: '1s' }}
+        />
+        <path
+          d="M30%,60% Q42%,50% 55%,75% T80%,50%"
+          fill="none"
+          stroke="#6bfb9a"
+          strokeWidth="0.7"
+          className="bioluminescent-path"
+          style={{ animationDelay: '2s' }}
+        />
+        <path
+          d="M15%,30% Q22%,55% 30%,60% T55%,75%"
+          fill="none"
+          stroke="#44e2cd"
+          strokeWidth="0.5"
+          className="bioluminescent-path"
+          style={{ animationDelay: '3s' }}
+        />
+        <path
+          d="M75%,35% Q80%,42% 85%,65%"
+          fill="none"
+          stroke="#ffb657"
+          strokeWidth="0.5"
+          className="bioluminescent-path"
+          style={{ animationDelay: '4s' }}
+        />
+      </svg>
+
+      {/* Header */}
+      <header className="relative z-10" style={{ borderBottom: '1px solid rgba(61,74,62,0.3)' }}>
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center breathing-pulse"
+              style={{ boxShadow: '0 0 12px rgba(107,251,154,0.15)' }}
+            >
+              <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: '"FILL" 1' }}>grain</span>
+            </div>
+            <span className="text-headline-md text-primary tracking-tight">Mush2</span>
+            <span className="hidden sm:inline font-label-caps text-label-caps text-outline ml-2">// v2.0.0</span>
+          </div>
+          <nav className="flex items-center gap-3">
+            <button
+              onClick={() => setShowAuth(true)}
+              className="btn btn-primary px-5 py-2 text-label-caps"
+              style={{ boxShadow: '0 0 16px rgba(74,222,128,0.15)' }}
+            >
+              INGRESAR
+            </button>
+          </nav>
         </div>
-        <nav className="flex items-center gap-4">
-          <button
-            onClick={() => setShowAuth(true)}
-            className="btn btn-primary px-6 py-2"
-          >
-            INGRESAR
-          </button>
-        </nav>
       </header>
 
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pt-20 pb-32">
-        <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-highest border border-primary/30 rounded-full mb-6">
-            <span className="w-2 h-2 rounded-full bg-primary breathing-pulse" />
-            <span className="font-label-caps text-label-caps text-primary">PLATAFORMA DE CULTIVO INTELIGENTE</span>
-          </div>
-          <h1 className="text-display-data text-[clamp(40px,7vw,72px)] text-white mb-6 leading-[0.85] tracking-tight">
-            MYCELIUM<br />NETWORK
-          </h1>
-          <p className="text-headline-md text-on-surface-variant mb-8 max-w-xl leading-relaxed">
-            Plataforma de código abierto para el monitoreo y control de cámaras de cultivo de hongos.
-            Automatiza, optimiza y escala tu producción con precisión.
-          </p>
-          <div className="flex gap-4">
-            <button
-              onClick={() => setShowAuth(true)}
-              className="btn btn-primary px-8 py-4 text-label-caps"
-              style={{ boxShadow: '0 0 12px var(--spore-glow)' }}
+      {/* Hero Section */}
+      <section ref={heroRef} className="relative z-10" style={{ minHeight: 'calc(100vh - 64px)' }}>
+        <div className="max-w-6xl mx-auto px-6 pt-16 pb-24 flex flex-col lg:flex-row lg:items-center lg:gap-16" style={{ minHeight: 'calc(100vh - 64px)' }}>
+          <div className="flex-1 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-highest border border-primary/20 rounded-full mb-8">
+              <span className="w-2 h-2 rounded-full bg-primary" style={{ boxShadow: '0 0 6px var(--spore-green)' }} />
+              <span className="font-label-caps text-label-caps text-primary tracking-widest">RED ACTIVA // CULTIVO INTELIGENTE</span>
+            </div>
+
+            <h1
+              className="font-mono font-semibold text-white mb-6 tracking-tight"
+              style={{
+                fontSize: 'clamp(48px, 8vw, 88px)',
+                lineHeight: '0.88',
+                letterSpacing: '-0.03em',
+                textShadow: '0 0 40px rgba(107,251,154,0.08)',
+              }}
             >
-              COMENZAR
-            </button>
-            <button
-              onClick={() => setShowAuth(true)}
-              className="px-8 py-4 border border-secondary text-secondary font-label-caps text-label-caps rounded hover:bg-secondary/10 transition-all cursor-pointer"
-              style={{ background: 'none' }}
-            >
-              MÁS INFORMACIÓN
-            </button>
-          </div>
-        </div>
-      </section>
+              MYCELIUM<br />
+              <span className="text-primary" style={{ textShadow: '0 0 60px rgba(107,251,154,0.15)' }}>NETWORK</span>
+            </h1>
 
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pb-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="glass-card p-6 rounded-xl border-t-2 border-t-primary flex flex-col">
-            <div className="w-12 h-12 bg-primary/10 flex items-center justify-center rounded-lg mb-4">
-              <span className="material-symbols-outlined text-primary">sensors</span>
-            </div>
-            <h3 className="text-headline-md text-white mb-2">Monitoreo en Tiempo Real</h3>
-            <p className="text-body-md text-on-surface-variant flex-1">
-              Sensores de temperatura, humedad, CO2 y más. Visualiza datos en vivo con gráficos y alertas inteligentes.
+            <p className="text-headline-md text-on-surface-variant mb-10 max-w-lg leading-relaxed" style={{ fontSize: '18px' }}>
+              Plataforma de código abierto para el monitoreo y control de cámaras de cultivo de hongos.
+              Automatiza, optimiza y escala tu producción con precisión milimétrica.
             </p>
-          </div>
 
-          <div className="glass-card p-6 rounded-xl border-t-2 border-t-secondary flex flex-col">
-            <div className="w-12 h-12 bg-secondary/10 flex items-center justify-center rounded-lg mb-4">
-              <span className="material-symbols-outlined text-secondary">potted_plant</span>
-            </div>
-            <h3 className="text-headline-md text-white mb-2">Recetas de Cultivo</h3>
-            <p className="text-body-md text-on-surface-variant flex-1">
-              Crea y programa perfiles ambientales personalizados para cada especie y etapa de crecimiento.
-            </p>
-          </div>
-
-          <div className="glass-card p-6 rounded-xl border-t-2 border-t-tertiary flex flex-col">
-            <div className="w-12 h-12 bg-tertiary/10 flex items-center justify-center rounded-lg mb-4">
-              <span className="material-symbols-outlined text-tertiary">devices</span>
-            </div>
-            <h3 className="text-headline-md text-white mb-2">Control de Actuadores</h3>
-            <p className="text-body-md text-on-surface-variant flex-1">
-              Ventiladores, humidificadores, luces y más. Control automatizado o manual desde cualquier lugar.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pb-32">
-        <div className="glass-card rounded-xl border border-outline-variant overflow-hidden">
-          <div className="p-8 md:p-12 flex flex-col md:flex-row items-center gap-8">
-            <div className="flex-1">
-              <span className="font-label-caps text-label-caps text-primary bg-primary/10 px-2 py-1 border border-primary/20 rounded inline-block mb-4">
-                OPEN SOURCE
-              </span>
-              <h2 className="text-headline-lg text-white mb-3">
-                Construido para la comunidad
-              </h2>
-              <p className="text-body-md text-on-surface-variant mb-6">
-                Mush2 es un proyecto de código abierto. Desde firmware ESP32 hasta la plataforma web,
-                todo está disponible para que contribuyas, lo adaptes y lo mejores.
-              </p>
+            <div className="flex flex-wrap gap-4">
               <button
                 onClick={() => setShowAuth(true)}
-                className="btn btn-primary px-8 py-3"
+                className="btn btn-primary px-8 py-4 text-label-caps relative overflow-hidden group"
+                style={{ boxShadow: '0 0 24px rgba(74,222,128,0.2)' }}
               >
-                UNIRSE
+                <span className="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: '"FILL" 1' }}>login</span>
+                COMENZAR
+              </button>
+              <button
+                onClick={() => setShowAuth(true)}
+                className="px-8 py-4 border border-secondary/40 text-secondary font-label-caps text-label-caps rounded-lg hover:bg-secondary/8 transition-all flex items-center gap-2 cursor-pointer"
+                style={{ background: 'transparent' }}
+              >
+                <span className="material-symbols-outlined text-sm">sensors</span>
+                EXPLORAR PLATAFORMA
               </button>
             </div>
-            <div className="flex-shrink-0 flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary text-3xl">code</span>
+
+            {/* Trust indicators */}
+            <div className="flex flex-wrap gap-8 mt-16">
+              <div>
+                <span className="font-label-caps text-label-caps text-outline">CÓDIGO ABIERTO</span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-headline-lg text-white font-mono font-semibold">100%</span>
+                  <span className="text-data-sm text-primary">MIT</span>
+                </div>
               </div>
-              <div className="w-16 h-16 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center">
-                <span className="material-symbols-outlined text-secondary text-3xl">groups</span>
+              <div>
+                <span className="font-label-caps text-label-caps text-outline">ARQUITECTURA</span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-headline-lg text-white font-mono font-semibold">IoT</span>
+                  <span className="text-data-sm text-secondary">ESP32</span>
+                </div>
               </div>
-              <div className="w-16 h-16 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center">
-                <span className="material-symbols-outlined text-tertiary text-3xl">iot</span>
+              <div>
+                <span className="font-label-caps text-label-caps text-outline">PROTOCOLO</span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-headline-lg text-white font-mono font-semibold">REST</span>
+                  <span className="text-data-sm text-tertiary">+MQTT</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Floating stats cards */}
+          <div className="hidden lg:flex flex-col gap-4 flex-shrink-0" style={{ minWidth: '280px' }}>
+            <div
+              className="glass-card rounded-xl p-5 relative overflow-hidden group"
+              style={{ border: '1px solid rgba(107,251,154,0.15)' }}
+            >
+              <div className="absolute -top-12 -right-12 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all duration-700" />
+              <div className="relative z-10">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="font-label-caps text-label-caps text-on-surface-variant">TEMPERATURA</span>
+                  <span className="material-symbols-outlined text-primary text-sm">device_thermostat</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-mono font-semibold text-white" style={{ fontSize: '36px', lineHeight: 1 }}>24.2</span>
+                  <span className="text-headline-md text-on-surface-variant">°C</span>
+                </div>
+                <div className="mt-4 flex items-center gap-2">
+                  <div className="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full" style={{ width: '62%', boxShadow: '0 0 6px rgba(107,251,154,0.3)' }} />
+                  </div>
+                  <span className="font-label-caps text-10px text-primary">ESTABLE</span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="glass-card rounded-xl p-5 relative overflow-hidden group"
+              style={{ border: '1px solid rgba(68,226,205,0.15)' }}
+            >
+              <div className="absolute -top-12 -right-12 w-24 h-24 bg-secondary/5 rounded-full blur-2xl group-hover:bg-secondary/10 transition-all duration-700" />
+              <div className="relative z-10">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="font-label-caps text-label-caps text-on-surface-variant">HUMEDAD</span>
+                  <span className="material-symbols-outlined text-secondary text-sm">humidity_high</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-mono font-semibold text-white" style={{ fontSize: '36px', lineHeight: 1 }}>92.1</span>
+                  <span className="text-headline-md text-on-surface-variant">%</span>
+                </div>
+                <div className="mt-4 flex gap-1 h-8 items-end">
+                  {[40, 55, 70, 85, 92, 88, 75].map((h, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 rounded-t-sm transition-all duration-300"
+                      style={{
+                        height: `${h}%`,
+                        background: h >= 85 ? 'var(--teal)' : `rgba(68,226,205,${0.2 + h * 0.008})`,
+                        boxShadow: h >= 85 ? '0 0 8px rgba(68,226,205,0.2)' : 'none',
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="glass-card rounded-xl p-5 relative overflow-hidden group"
+              style={{ border: '1px solid rgba(255,182,87,0.15)' }}
+            >
+              <div className="absolute -top-12 -right-12 w-24 h-24 bg-tertiary/5 rounded-full blur-2xl group-hover:bg-tertiary/10 transition-all duration-700" />
+              <div className="relative z-10">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="font-label-caps text-label-caps text-on-surface-variant">CO₂</span>
+                  <span className="material-symbols-outlined text-tertiary text-sm">co2</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-mono font-semibold text-white" style={{ fontSize: '36px', lineHeight: 1 }}>840</span>
+                  <span className="text-headline-md text-on-surface-variant">ppm</span>
+                </div>
+                <div className="mt-4 grid grid-cols-8 gap-1">
+                  {[1, 1, 1, 0.8, 0.5, 0.3, 0.2, 0.1].map((o, i) => (
+                    <div
+                      key={i}
+                      className="h-1.5 rounded-sm"
+                      style={{
+                        background: o >= 0.8 ? 'var(--amber)' : `rgba(255,182,87,${o})`,
+                        boxShadow: o >= 0.8 ? '0 0 6px rgba(255,182,87,0.3)' : 'none',
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-pulse-slow">
+          <span className="font-label-caps text-9px text-outline tracking-widest">DESCUBRE</span>
+          <div className="w-px h-8" style={{ background: 'linear-gradient(to bottom, var(--outline), transparent)' }} />
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="relative z-10 py-24" style={{ borderTop: '1px solid rgba(61,74,62,0.2)' }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="font-label-caps text-label-caps text-primary bg-primary/10 px-3 py-1 border border-primary/20 rounded-full inline-block mb-4">
+              CAPACIDADES
+            </span>
+            <h2 className="text-headline-lg text-white mb-3" style={{ fontSize: '36px' }}>
+              Todo lo que necesitas para cultivar
+            </h2>
+            <p className="text-body-md text-on-surface-variant max-w-lg mx-auto">
+              Una plataforma unificada que integra hardware, software y datos en tiempo real.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {FEATURES.map((f, i) => (
+              <div
+                key={i}
+                className={`glass-card rounded-xl p-6 border-t-2 ${f.borderClass} group hover:translate-y-[-4px] transition-all duration-300`}
+                style={{ animationDelay: `${i * 0.15}s` }}
+              >
+                <div className="flex items-start justify-between mb-5">
+                  <div className={`w-12 h-12 ${f.iconBg} flex items-center justify-center rounded-xl`}>
+                    <span className={`material-symbols-outlined ${f.iconColor} text-2xl`}>{f.icon}</span>
+                  </div>
+                  <span className={`font-label-caps text-label-caps ${f.iconColor} opacity-60 group-hover:opacity-100 transition-opacity`}>
+                    {f.label}
+                  </span>
+                </div>
+                <h3 className="text-headline-md text-white mb-2">{f.title}</h3>
+                <p className="text-body-md text-on-surface-variant flex-1">{f.desc}</p>
+                <div className="mt-5 flex items-center gap-2 text-data-sm" style={{ color: `var(--spore-green)` }}>
+                  <span className="font-label-caps text-label-caps">EXPLORAR</span>
+                  <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="relative z-10 py-24" style={{ background: 'rgba(12,18,15,0.5)' }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { value: '100%', label: 'OPEN SOURCE', sub: 'Licencia MIT', color: 'text-primary' },
+              { value: '24/7', label: 'MONITOREO', sub: 'Tiempo real', color: 'text-secondary' },
+              { value: 'ESP32', label: 'FIRMWARE', sub: 'Arquitectura dual', color: 'text-tertiary' },
+              { value: 'REST', label: 'API', sub: '+ WebSockets + MQTT', color: 'text-primary' },
+            ].map((stat, i) => (
+              <div key={i} className="text-center group">
+                <div className={`text-5xl md:text-6xl font-mono font-semibold ${stat.color} mb-2 transition-all duration-300 group-hover:scale-105`}
+                  style={{ textShadow: `0 0 30px rgba(107,251,154,0.08)` }}>
+                  {stat.value}
+                </div>
+                <div className="font-label-caps text-label-caps text-on-surface-variant">{stat.label}</div>
+                <div className="text-data-sm text-outline mt-1">{stat.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Open Source CTA */}
+      <section className="relative z-10 py-24">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="glass-card rounded-2xl overflow-hidden relative group"
+            style={{ border: '1px solid rgba(107,251,154,0.12)' }}>
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="absolute -top-32 -right-32 w-64 h-64 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all duration-700" />
+            <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center gap-8">
+              <div className="flex-1">
+                <span className="font-label-caps text-label-caps text-primary bg-primary/10 px-3 py-1.5 border border-primary/20 rounded-full inline-block mb-4">
+                  COMUNIDAD
+                </span>
+                <h2 className="text-headline-lg text-white mb-3" style={{ fontSize: '32px' }}>
+                  Construido para la comunidad
+                </h2>
+                <p className="text-body-md text-on-surface-variant mb-6 max-w-lg">
+                  Mush2 es un proyecto de código abierto. Desde el firmware ESP32 hasta la plataforma web,
+                  todo está disponible para que contribuyas, lo adaptes y lo hagas tuyo.
+                </p>
+                <button
+                  onClick={() => setShowAuth(true)}
+                  className="btn btn-primary px-8 py-3 text-label-caps"
+                  style={{ boxShadow: '0 0 20px rgba(74,222,128,0.15)' }}
+                >
+                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: '"FILL" 1' }}>person_add</span>
+                  UNIRSE AHORA
+                </button>
+              </div>
+              <div className="flex-shrink-0 flex items-center gap-5">
+                {[
+                  { icon: 'code', color: 'text-primary', bg: 'bg-primary/10' },
+                  { icon: 'groups', color: 'text-secondary', bg: 'bg-secondary/10' },
+                  { icon: 'iot', color: 'text-tertiary', bg: 'bg-tertiary/10' },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    className={`w-16 h-16 ${item.bg} rounded-2xl flex items-center justify-center border border-outline-variant/30 group/icon hover:scale-110 transition-all duration-300`}
+                  >
+                    <span className={`material-symbols-outlined ${item.color} text-3xl`}>{item.icon}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-outline-variant/30">
-        <div className="max-w-6xl mx-auto px-6 py-6 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-primary breathing-pulse" />
+      {/* Footer */}
+      <footer className="relative z-10" style={{ borderTop: '1px solid rgba(61,74,62,0.3)' }}>
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-primary" style={{ boxShadow: '0 0 6px var(--spore-green)' }} />
             <span className="font-label-caps text-label-caps text-on-surface-variant">MUSH2 // SISTEMA OPERATIVO</span>
           </div>
-          <div className="flex gap-6">
+          <div className="flex items-center gap-5">
+            <span className="font-label-caps text-label-caps text-outline hover:text-primary transition-colors cursor-pointer">DOCS</span>
+            <span className="font-label-caps text-label-caps text-outline hover:text-primary transition-colors cursor-pointer">GITHUB</span>
             <span className="font-label-caps text-label-caps text-outline">v2.0.0</span>
-            <span className="font-label-caps text-label-caps text-outline">DOCS</span>
-            <span className="font-label-caps text-label-caps text-outline">GITHUB</span>
           </div>
         </div>
       </footer>
