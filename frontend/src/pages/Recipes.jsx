@@ -92,7 +92,7 @@ function Recipes() {
         <button
           onClick={() => setShowForm(true)}
           className="btn btn-primary"
-          style={{ boxShadow: '0 0 12px rgba(74,222,128,0.1)' }}
+          style={{ boxShadow: '0 0 12px var(--spore-glow)' }}
         >
           <span className="material-symbols-outlined text-16px">add</span>
           NEW RECIPE
@@ -250,7 +250,7 @@ function Recipes() {
       )}
 
       {showForm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6" style={{ background: 'rgba(15, 20, 18, 0.85)', backdropFilter: 'blur(4px)' }}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6" style={{ background: 'color-mix(in srgb, var(--surface-dim) 85%, transparent)', backdropFilter: 'blur(4px)' }}>
           <div className="relative bg-surface border border-outline-variant rounded-xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
             <div className="px-6 py-4 border-b border-outline-variant flex justify-between items-center">
               <h2 className="text-headline-md text-primary">Compile New Organism Recipe</h2>
