@@ -4,10 +4,12 @@ import { getDevices, getLatestTelemetry } from '../api/client.js'
 
 function Home() {
   const navigate = useNavigate()
+  const [devices, setDevices] = useState([])
   const [stats, setStats] = useState({ sporeDensity: 84.2, nodeConn: 0.998, totalNodes: 12482, syncRate: 99.9, totalDevices: 0 })
 
   useEffect(() => {
     getDevices().then(devs => {
+      setDevices(devs)
       if (devs.length > 0) {
         setStats(prev => ({ ...prev, totalDevices: devs.length, totalNodes: devs.length * 3 }))
         Promise.all(devs.map(d => getLatestTelemetry(d.id).catch(() => null))).then(results => {
@@ -90,7 +92,10 @@ function Home() {
                   <span className="font-label-caps text-10px text-on-surface-variant">ACTIVE UNITS:</span>
                   <span className="text-headline-md text-primary">{stats.totalDevices}</span>
                 </div>
-                <button className="bg-surface border border-outline px-4 py-2 font-label-caps text-label-caps hover:bg-surface-bright rounded cursor-pointer" style={{ border: '1px solid var(--outline)' }}>
+                <button
+                  className="bg-surface border border-outline px-4 py-2 font-label-caps text-label-caps hover:bg-surface-bright rounded cursor-pointer"
+                  style={{ border: '1px solid var(--outline)' }}
+                  onClick={() => devices.length > 0 ? navigate(`/devices/${devices[0].id}`) : navigate('/dashboard')}>
                   ACCESS PANEL
                 </button>
               </div>
