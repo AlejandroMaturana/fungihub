@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release": "changeset publish"
+    "version-packages": "changeset version && node scripts/aggregate-changelog.cjs",
+    "aggregate": "node scripts/aggregate-changelog.cjs"
   },
   "keywords": [
     "node"
