@@ -9,7 +9,7 @@
 | Fecha             | 2026-07-05                        |
 | Versión           | 0.2.0                             |
 | ADRs relacionados | ADR-005, ADR-007, ADR-013         |
-| RFC relacionados  | RFC-0004 (multi-device dashboard) |
+| RFC relacionados  | RFC-0003 (multi-device dashboard) |
 
 ---
 

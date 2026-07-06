@@ -11,9 +11,8 @@
 | Fecha             | 2026-07-06                                              |
 | Versión           | 2.0.0                                                   |
 | Prioridad         | Alta                                                    |
-| RFC relacionado   | RFC-0006                                                |
+| RFC relacionado   | RFC-0005                                                |
 | ADRs relacionadas | ADR-001, ADR-004, ADR-012, ADR-014                      |
-| Roadmap asociado  | RM-005                                                  |
 
 ---
 
