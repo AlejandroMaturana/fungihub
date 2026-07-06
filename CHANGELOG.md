@@ -2,6 +2,38 @@
 
 ## 2026-07-06
 
+### Frontend — v1.0.3
+
+- **Mejora visual**: Matriz de Control de Actuadores (`ActuatorControl.jsx`)
+  - Aumentado padding del contenedor principal de `12px` → `16px`
+  - Iconos de actuadores: `fontSize` de `14px` → `28px`
+  - Etiquetas de título: `fontSize` de `7px` → `10px`
+  - Interruptor personalizado (Toggle): wrapper expandido de `22px × 12px` → `32px × 18px`
+  - Botón del interruptor: de `7px × 7px` → `12px × 12px` (centrado correctamente)
+  - Etiquetas de estado y modo: `fontSize` aumentado a `8px` y `9px`
+  - Texto grande de estado: `fontSize` de `14px` → `22px`
+  - Espaciado entre elementos mejorado (`gap` de `8px`/`10px`)
+
+- **Mejora visual**: Gráficos de Historial (`ChartPanel.jsx`)
+  - **Botones de rango de tiempo** en sidebar: texto de `7px` → `10px`, padding mejorado
+  - **Ancho de columna** del sidebar: `36px` → `48px` (evita recorte de texto)
+  - **Leyenda**: puntos de `6px × 6px` → `10px × 10px`, texto de `7px` → `10px`
+  - **Leyenda en footer**: texto de `7px` → `10px`, líneas de `10px × 2px` → `14px × 4px`
+  - **Bandas de referencia**: aumentada opacidad de fondo de las bandas de Temperatura y Humedad (`0.15` fill, `0.4` stroke) para mayor visibilidad
+  - **Nueva funcionalidad**: Toggle de visibilidad de líneas
+    - Estado `visibleLines` en React para controlar líneas activas
+    - Click en badges de la leyenda para activar/desactivar líneas
+    - Badges atenuados (`opacity: 0.35`) cuando están inactivos
+    - `computeRanges` actualizado para ignorar líneas ocultas y reajustar automáticamente el eje Y
+    - Plugin de bandas de referencia ahora solo dibuja las bandas de las líneas activas
+
+**Verificación**:
+- Compilación de producción exitosa (`pnpm build`) sin errores ni warnings.
+
+**Resultado**: Dashboard significativamente más legible, con mejor jerarquía visual, controles más grandes y funcionales, y gráficos más claros e interactivos.
+
+## 2026-07-06
+
 ### Frontend — v1.0.2
 
 - **Nuevo**: Botón **ADD DEVICE** en el header del Dashboard
