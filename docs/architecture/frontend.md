@@ -2,104 +2,101 @@
 
 ## Stack
 
-| Capa | Tecnología |
-|---|---|
-| Framework | React 18 |
-| Build tool | Vite |
-| Routing | React Router v6 |
-| Estado global | Context API + useReducer |
-| HTTP | axios |
-| Tiempo real | EventSource (SSE) |
-| Gráficos | Chart.js + react-chartjs-2 |
-| Estilos | CSS Modules |
-| Pruebas | Vitest + React Testing Library |
-| Linting | ESLint + Prettier |
+| Capa          | Tecnología                     |
+| ------------- | ------------------------------ |
+| Framework     | React 18                       |
+| Build tool    | Vite                           |
+| Routing       | React Router v6                |
+| Estado global | Context API + useReducer       |
+| HTTP          | axios                          |
+| Tiempo real   | EventSource (SSE)              |
+| Gráficos      | Chart.js + react-chartjs-2     |
+| Estilos       | CSS Modules                    |
+| Pruebas       | Vitest + React Testing Library |
+| Linting       | ESLint + Prettier              |
 
 ## Estructura de Directorios
 
 ```
 frontend/
-├── public/
-│   ├── favicon.ico
-│   └── manifest.json
-├── src/
-│   ├── main.jsx              # Punto de entrada
-│   ├── App.jsx               # Layout + Routing
-│   ├── router.jsx            # React Router configuración
-│   ├── api/
-│   │   ├── client.js         # Instancia axios con interceptors JWT
-│   │   ├── auth.js           # Endpoints de autenticación
-│   │   ├── devices.js        # Endpoints de dispositivos
-│   │   ├── telemetry.js      # Endpoints de telemetría
-│   │   ├── actuators.js      # Endpoints de control
-│   │   ├── recipes.js        # Endpoints de recetas
-│   │   └── cycles.js         # Endpoints de ciclos
-│   ├── context/
-│   │   ├── AuthContext.jsx   # Estado de autenticación
-│   │   ├── DeviceContext.jsx # Estado de dispositivos
-│   │   ├── TelemetryContext.jsx # Últimas lecturas
-│   │   └── ThemeContext.jsx  # Tema claro/oscuro
-│   ├── hooks/
-│   │   ├── useAuth.js
-│   │   ├── useSSE.js         # Hook para Server-Sent Events
-│   │   ├── useTelemetry.js
-│   │   ├── useDevice.js
-│   │   └── useMediaQuery.js
-│   ├── pages/
-│   │   ├── Login.jsx
-│   │   ├── Register.jsx
-│   │   ├── Dashboard.jsx
-│   │   ├── Devices.jsx       # Lista de dispositivos
-│   │   ├── DeviceDetail.jsx  # Detalle + control
-│   │   ├── Recipes.jsx
-│   │   ├── RecipeForm.jsx
-│   │   ├── Cycles.jsx
-│   │   ├── Alarms.jsx
-│   │   ├── Analytics.jsx
-│   │   ├── Settings.jsx
-│   │   └── NotFound.jsx
-│   ├── components/
-│   │   ├── layout/
-│   │   │   ├── Navbar.jsx
-│   │   │   ├── Sidebar.jsx
-│   │   │   └── Footer.jsx
-│   │   ├── common/
-│   │   │   ├── Button.jsx
-│   │   │   ├── Modal.jsx
-│   │   │   ├── Spinner.jsx
-│   │   │   ├── Pagination.jsx
-│   │   │   ├── Badge.jsx
-│   │   │   └── FilterBar.jsx
-│   │   ├── dashboard/
-│   │   │   ├── MetricCard.jsx
-│   │   │   ├── TelemetryChart.jsx
-│   │   │   └── ActuatorStatus.jsx
-│   │   ├── device/
-│   │   │   ├── DeviceCard.jsx
-│   │   │   ├── SensorReading.jsx
-│   │   │   └── ActuatorControl.jsx
-│   │   └── charts/
-│   │       ├── LineChart.jsx
-│   │       ├── GaugeChart.jsx
-│   │       └── HistoryChart.jsx
-│   ├── styles/
-│   │   ├── variables.css     # Tokens de diseño
-│   │   ├── global.css        # Reset + tipografía
-│   │   └── *.module.css      # Estilos por componente
-│   ├── utils/
-│   │   ├── format.js         # Formateo de fechas, números
-│   │   ├── constants.js      # Constantes de la app
-│   │   └── validators.js     # Validación de formularios
-│   └── assets/
-│       └── images/
-├── tests/
-│   ├── components/
-│   ├── pages/
-│   └── setup.js
-├── VERSION
-├── package.json
-├── vite.config.js
-└── .env.local
+│
+├───dist
+│   │   favicon.ico
+│   │   index.html
+│   │   preview.svg
+│
+├───public
+│       favicon.ico
+│       preview.svg
+│
+└───src
+    │   App.jsx                     # Layout + Routing
+    │   index.css                   # Estilos globales
+    │   main.jsx                    # Punto de entrada (renderiza App)
+    │
+    ├───api
+    │       AuthContext.jsx         # Contexto de autenticación
+    │       client.js               # Instancia axios con interceptors JWT
+    │       useSSE.js               # Hook para Server-Sent Events
+    │
+    ├───components
+    │   ├───auth
+    │   │       AuthModal.jsx       # Modal de login/registro
+    │   │
+    │   ├───dashboard
+    │   │       MetricCard.jsx      # Tarjeta de métricas del dashboard
+    │   │
+    │   ├───device
+    │   │       ActuatorControl.jsx # Control de actuadores (relés, etc.)
+    │   │
+    │   ├───layout
+    │   │       AppShell.jsx        # Contenedor principal de la app
+    │   │       BottomNav.jsx       # Navegación inferior (mobile)
+    │   │       Sidebar.jsx         # Sidebar de navegación (desktop)
+    │   │       StatusFooter.jsx    # Footer con estado del sistema
+    │   │       TopBar.jsx          # Barra superior con usuario, notificaciones, etc.
+    │   │
+    │   └───ui
+    │           ArcGauge.jsx        # Gauge circular
+    │           ChartPanel.jsx       # Panel contenedor para gráficos
+    │           DeviceHistoryChart.jsx # Gráfico histórico de dispositivo
+    │           DevicesEmptyState.jsx # Estado vacío para lista de dispositivos
+    │           DomeGauge.jsx        # Gauge específico (ej. cúpula/temperatura)
+    │           EmptyState.jsx       # Componente genérico de estado vacío
+    │           ErrorBoundary.jsx    # Captura de errores en React
+    │           ErrorState.jsx       # UI de error
+    │           Gauge.jsx            # Componente base de gauge
+    │           LoadingState.jsx     # Estados de carga
+    │           MetricCard.jsx       # Tarjeta de métrica reutilizable
+    │           OfflineBanner.jsx    # Banner de conexión perdida
+    │           OfflineOverlay.jsx   # Overlay cuando está offline
+    │           RecipesEmptyState.jsx # Estado vacío para recetas
+    │           SegmentedBar.jsx     # Barra segmentada (ej. progreso)
+    │           Skeleton.jsx         # Skeleton loaders
+    │           StatusBadge.jsx      # Badge de estado (online/offline, error, etc.)
+    │           SystemAlert.jsx      # Alertas del sistema
+    │           TerminalLog.jsx      # Visualizador de logs tipo terminal
+    │           ToggleSwitch.jsx     # Interruptor on/off
+    │
+    └───pages
+            Cycles.jsx              # Página de ciclos / historial
+            Dashboard.jsx           # Dashboard principal
+            DeviceDetail.jsx        # Detalle de dispositivo
+            Home.jsx                # Página de inicio (post-login)
+            Landing.jsx             # Landing page pública
+            Login.jsx               # Página de login
+            Provisioning.jsx        # Página de aprovisionamiento de dispositivos
+            Recipes.jsx             # Gestión de recetas
+            Settings.jsx            # Configuración de la aplicación
+│
+├─── index.html                     # Plantilla HTML principal (Vite)
+├─── package.json                   # Dependencias y scripts del proyecto
+├─── README.md                      # Documentación del frontend
+├─── VERSION                        # Archivo de versión actual
+├─── vite-dev.err.log               # Log de errores en desarrollo
+├─── vite-dev.log                   # Log de desarrollo
+└─── vite.config.js                 # Configuración de Vite (plugins, proxy, etc.)
+
 ```
 
 ## Flujo de Autenticación
@@ -133,15 +130,15 @@ const useSSE = (url) => {
     eventSource.onopen = () => setConnected(true);
     eventSource.onerror = () => setConnected(false);
 
-    eventSource.addEventListener('telemetry', (e) => {
+    eventSource.addEventListener("telemetry", (e) => {
       setData(JSON.parse(e.data));
     });
 
-    eventSource.addEventListener('actuator', (e) => {
+    eventSource.addEventListener("actuator", (e) => {
       // Actualizar estado actuador en UI
     });
 
-    eventSource.addEventListener('alarm', (e) => {
+    eventSource.addEventListener("alarm", (e) => {
       // Mostrar notificación
     });
 
