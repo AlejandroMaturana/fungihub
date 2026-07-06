@@ -10,8 +10,8 @@ function Toggle({ checked, onChange, disabled }) {
     <div
       className={`relative ${checked ? 'bg-primary' : 'bg-surface-variant'}`}
       style={{
-        width: '22px',
-        height: '12px',
+        width: '32px',
+        height: '18px',
         borderRadius: '9999px',
         border: checked ? 'none' : '1px solid var(--outline-variant)',
         boxShadow: checked ? '0 0 5px rgba(107,251,154,0.25)' : 'none',
@@ -26,12 +26,12 @@ function Toggle({ checked, onChange, disabled }) {
       <div
         className={`absolute ${checked ? 'bg-on-primary' : 'bg-outline'}`}
         style={{
-          width: '7px',
-          height: '7px',
+          width: '12px',
+          height: '12px',
           borderRadius: '9999px',
-          top: '1.5px',
-          right: checked ? '2.5px' : 'auto',
-          left: checked ? 'auto' : '2.5px',
+          top: '2px',
+          right: checked ? '3px' : 'auto',
+          left: checked ? 'auto' : '3px',
           transition: 'all 0.2s',
         }}
       />
@@ -54,24 +54,24 @@ function ActuatorControl({ actuator, meta, cmdState, onToggle, disabled }) {
       display: 'grid',
       gridTemplateColumns: '1fr auto',
       gridTemplateRows: '1fr auto',
-      padding: '12px',
+      padding: '16px',
     }}>
-      <div className="flex items-center" style={{ gap: '6px', minWidth: 0, alignSelf: 'center' }}>
-        <span className={`material-symbols-outlined shrink-0 ${isError ? 'text-error' : isOn ? 'text-primary' : 'text-on-surface-variant'}`} style={{ fontSize: '14px' }}>{rm.icon}</span>
-        <span className="text-7px text-on-surface" style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rm.label}</span>
+      <div className="flex items-center" style={{ gap: '10px', minWidth: 0, alignSelf: 'center' }}>
+        <span className={`material-symbols-outlined shrink-0 ${isError ? 'text-error' : isOn ? 'text-primary' : 'text-on-surface-variant'}`} style={{ fontSize: '28px' }}>{rm.icon}</span>
+        <span className="text-on-surface" style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rm.label}</span>
       </div>
-      <div className="flex flex-col items-end" style={{ gap: '2px', alignSelf: 'start' }}>
+      <div className="flex flex-col items-end" style={{ gap: '4px', alignSelf: 'start' }}>
         <Toggle checked={isOn} onChange={handleToggle} disabled={disabled || isPending || isError} />
-        <span className={`font-mono ${isPending ? 'text-amber' : cmdState === 'TIMEOUT' ? 'text-error' : isOn ? 'text-primary' : 'text-on-surface-variant'}`} style={{ fontSize: '6px', opacity: isOn && !isPending ? 0.7 : undefined }}>
+        <span className={`font-mono ${isPending ? 'text-amber' : cmdState === 'TIMEOUT' ? 'text-error' : isOn ? 'text-primary' : 'text-on-surface-variant'}`} style={{ fontSize: '8px', opacity: isOn && !isPending ? 0.7 : undefined }}>
           {isPending ? 'PEND' : cmdState === 'TIMEOUT' ? 'T/O' : isOn ? 'ON' : 'STBY'}
         </span>
       </div>
-      <div className="flex items-baseline" style={{ gap: '6px', alignSelf: 'end' }}>
-        <span className={`font-mono font-bold ${isError ? 'text-error' : isOn ? 'text-primary' : 'text-on-surface-variant'}`} style={{ fontSize: '14px', lineHeight: 1 }}>{isError ? 'ERR' : isOn ? 'ON' : 'OFF'}</span>
-        <span className="text-7px text-on-surface-variant" style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.6 }}>{rm.sublabel}</span>
+      <div className="flex items-baseline" style={{ gap: '8px', alignSelf: 'end' }}>
+        <span className={`font-mono font-bold ${isError ? 'text-error' : isOn ? 'text-primary' : 'text-on-surface-variant'}`} style={{ fontSize: '22px', lineHeight: 1 }}>{isError ? 'ERR' : isOn ? 'ON' : 'OFF'}</span>
+        <span className="text-on-surface-variant" style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.6 }}>{rm.sublabel}</span>
       </div>
       <div style={{ alignSelf: 'end', justifySelf: 'end' }}>
-        <span className={`text-7px ${actuator.mode === 'REMOTE' ? 'text-primary' : 'text-on-surface-variant'}`} style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: actuator.mode === 'REMOTE' ? 0.7 : 0.4 }}>{actuator.mode || 'LOCAL'}</span>
+        <span className={`${actuator.mode === 'REMOTE' ? 'text-primary' : 'text-on-surface-variant'}`} style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: actuator.mode === 'REMOTE' ? 0.7 : 0.4 }}>{actuator.mode || 'LOCAL'}</span>
       </div>
     </div>
   )

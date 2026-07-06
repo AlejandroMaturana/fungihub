@@ -16,6 +16,7 @@ const TIME_RANGES = [
 function computeRanges(datasets, margin, bands) {
   const byAxis = {}
   for (const ds of datasets) {
+    if (ds.hidden) continue
     const aid = ds.yAxisID || 'y'
     if (!byAxis[aid]) byAxis[aid] = { values: [] }
     for (const v of ds.data || []) {
@@ -26,6 +27,8 @@ function computeRanges(datasets, margin, bands) {
   }
   if (bands) {
     for (const b of bands) {
+      const hasVisibleDataset = datasets.some(ds => (ds.yAxisID || 'y') === b.ax && !ds.hidden)
+      if (!hasVisibleDataset) continue
       if (!byAxis[b.ax]) byAxis[b.ax] = { values: [] }
       byAxis[b.ax].values.push(b.min, b.max)
     }
@@ -68,6 +71,8 @@ function makeOptimalBands() {
       if (!bands) return
       const { ctx, chartArea: { left, right } } = chart
       for (const b of bands) {
+        const isAxisVisible = chart.data.datasets.some(ds => (ds.yAxisID || 'y') === b.ax && !ds.hidden)
+        if (!isAxisVisible) continue
         const sc = chart.scales[b.ax]
         if (!sc) continue
         const y1 = sc.getPixelForValue(b.max)
@@ -130,6 +135,12 @@ function ChartPanel({ deviceId, telemetry, has }) {
   const [data1, setData1] = useState({ temp: [], hum: [] })
   const [data2, setData2] = useState({ eco2: [], tvoc: [] })
   const [loading, setLoading] = useState(false)
+  const [visibleLines, setVisibleLines] = useState({
+    temp: true,
+    hum: true,
+    eco2: true,
+    tvoc: true,
+  })
 
   const canvas1Ref = useRef(null)
   const canvas2Ref = useRef(null)
@@ -147,12 +158,12 @@ function ChartPanel({ deviceId, telemetry, has }) {
   }
 
   const chart1Bands = [
-    { ax: 'y1', min: 22, max: 28, fill: 'rgba(245,158,11,0.06)', stroke: 'rgba(245,158,11,0.22)' },
-    { ax: 'y2', min: 70, max: 90, fill: 'rgba(56,189,248,0.06)', stroke: 'rgba(56,189,248,0.22)' },
+    { ax: 'y1', min: 22, max: 28, fill: 'rgba(245,158,11,0.15)', stroke: 'rgba(245,158,11,0.40)' },
+    { ax: 'y2', min: 70, max: 90, fill: 'rgba(56,189,248,0.15)', stroke: 'rgba(56,189,248,0.40)' },
   ]
   const chart2Bands = [
-    { ax: 'y1', min: 800, max: 2000, fill: 'rgba(167,139,250,0.06)', stroke: 'rgba(167,139,250,0.22)' },
-    { ax: 'y2', min: 0, max: 500, fill: 'rgba(251,113,133,0.06)', stroke: 'rgba(251,113,133,0.22)' },
+    { ax: 'y1', min: 800, max: 2000, fill: 'rgba(167,139,250,0.15)', stroke: 'rgba(167,139,250,0.40)' },
+    { ax: 'y2', min: 0, max: 500, fill: 'rgba(251,113,133,0.15)', stroke: 'rgba(251,113,133,0.40)' },
   ]
 
   function fmtTime(ts, fmt) {
@@ -233,39 +244,39 @@ function ChartPanel({ deviceId, telemetry, has }) {
   useEffect(() => {
     if (!chart1Ref.current || !chart2Ref.current) return
     const ds1 = [
-      { label: 'Temp', data: data1.temp, yAxisID: 'y1', borderColor: timeColors.temp, borderWidth: 1.5, tension: 0.4 },
-      { label: 'Hum', data: data1.hum, yAxisID: 'y2', borderColor: timeColors.hum, borderWidth: 1.5, borderDash: [4, 2], tension: 0.4 },
+      { label: 'Temp', data: data1.temp, yAxisID: 'y1', borderColor: timeColors.temp, borderWidth: 1.5, tension: 0.4, hidden: !visibleLines.temp },
+      { label: 'Hum', data: data1.hum, yAxisID: 'y2', borderColor: timeColors.hum, borderWidth: 1.5, borderDash: [4, 2], tension: 0.4, hidden: !visibleLines.hum },
     ]
     const ds2 = [
-      { label: 'eCO2', data: data2.eco2, yAxisID: 'y1', borderColor: timeColors.eco2, borderWidth: 1.5, tension: 0.4 },
-      { label: 'TVOC', data: data2.tvoc, yAxisID: 'y2', borderColor: timeColors.tvoc, borderWidth: 1.5, borderDash: [4, 2], tension: 0.4 },
+      { label: 'eCO2', data: data2.eco2, yAxisID: 'y1', borderColor: timeColors.eco2, borderWidth: 1.5, tension: 0.4, hidden: !visibleLines.eco2 },
+      { label: 'TVOC', data: data2.tvoc, yAxisID: 'y2', borderColor: timeColors.tvoc, borderWidth: 1.5, borderDash: [4, 2], tension: 0.4, hidden: !visibleLines.tvoc },
     ]
     updateChart(chart1Ref.current, labels, ds1, chart1Bands)
     updateChart(chart2Ref.current, labels, ds2, chart2Bands)
-  }, [labels, data1, data2])
+  }, [labels, data1, data2, visibleLines])
 
   const SX = {
     section: { display: 'flex', flexDirection: 'column', gap: '4px' },
     label: { fontSize: '9px', color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', paddingLeft: '2px' },
     wrapper: { display: 'flex', gap: 0, height: '380px' },
-    sidebar: { display: 'flex', flexDirection: 'column', gap: '2px', width: '36px', flexShrink: 0, paddingTop: '32px', paddingBottom: '8px' },
+    sidebar: { display: 'flex', flexDirection: 'column', gap: '2px', width: '48px', flexShrink: 0, paddingTop: '32px', paddingBottom: '8px' },
     chartBox: { flex: 1, background: 'var(--surface-container)', border: '1px solid var(--outline-variant)', borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column', minWidth: 0 },
     chartInner: { flex: 1, display: 'flex', minHeight: 0 },
     pane: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' },
     paneBorder: { borderRight: '1px solid rgba(61,74,62,0.3)' },
-    barHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px 4px' },
-    barLabel: { fontSize: '8px', color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' },
-    badge: (c) => ({ display: 'flex', alignItems: 'center', gap: '4px', padding: '2px 6px', borderRadius: '4px', border: `1px solid ${c}40`, background: `${c}08` }),
-    dot: (c) => ({ width: '6px', height: '6px', borderRadius: '50%', background: c, display: 'inline-block', boxShadow: `0 0 4px ${c}` }),
-    badgeLabel: (c) => ({ fontSize: '7px', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: c }),
+    barHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px 6px' },
+    barLabel: { fontSize: '9px', color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' },
+    badge: (c) => ({ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', borderRadius: '4px', border: `1px solid ${c}40`, background: `${c}08` }),
+    dot: (c) => ({ width: '10px', height: '10px', borderRadius: '50%', background: c, display: 'inline-block', boxShadow: `0 0 5px ${c}` }),
+    badgeLabel: (c) => ({ fontSize: '10px', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: c }),
     canvasWrap: { flex: 1, position: 'relative', padding: '0 8px 8px' },
     canvas: { position: 'absolute', inset: 0, width: '100%', height: '100%', padding: '12px 4px 4px' },
-    footer: { display: 'flex', alignItems: 'center', gap: '12px', padding: '6px 12px', borderTop: '1px solid rgba(61,74,62,0.3)', background: 'rgba(38,43,41,0.5)' },
-    legendItem: { display: 'flex', alignItems: 'center', gap: '4px' },
-    legendLine: (c) => ({ width: '10px', height: '2px', borderRadius: '1px', background: c }),
-    legendLabel: { fontSize: '7px', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' },
-    optimal: { width: '10px', height: '4px', border: '1px dashed rgba(34,197,94,0.3)', borderRadius: '1px', background: 'rgba(34,197,94,0.07)' },
-    loading: { fontSize: '7px', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--spore-green)', marginLeft: 'auto' },
+    footer: { display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 16px', borderTop: '1px solid rgba(61,74,62,0.3)', background: 'rgba(38,43,41,0.5)' },
+    legendItem: { display: 'flex', alignItems: 'center', gap: '6px' },
+    legendLine: (c) => ({ width: '14px', height: '4px', borderRadius: '2px', background: c }),
+    legendLabel: { fontSize: '10px', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' },
+    optimal: { width: '14px', height: '6px', border: '1px dashed rgba(34,197,94,0.3)', borderRadius: '1px', background: 'rgba(34,197,94,0.07)' },
+    loading: { fontSize: '10px', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--spore-green)', marginLeft: 'auto' },
   }
 
   return (
@@ -281,14 +292,14 @@ function ChartPanel({ deviceId, telemetry, has }) {
                 flex: 1,
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 700,
-                fontSize: '7px',
+                fontSize: '10px',
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
                 border: 'none',
                 background: timeRange === tr.value ? 'rgba(107,251,154,0.08)' : 'transparent',
                 color: timeRange === tr.value ? 'var(--spore-green)' : 'var(--on-surface-variant)',
                 borderLeft: timeRange === tr.value ? '2px solid var(--spore-green)' : '2px solid transparent',
-                padding: '2px 6px',
+                padding: '4px 8px',
                 borderRadius: 0,
                 textAlign: 'left',
                 cursor: 'pointer',
@@ -304,12 +315,31 @@ function ChartPanel({ deviceId, telemetry, has }) {
               <div style={SX.barHeader}>
                 <span style={SX.barLabel}>TEMPERATURE & HUMIDITY</span>
                 <div className="flex gap-2">
-                  {['temp', 'hum'].map(k => (
-                    <div key={k} style={SX.badge(timeColors[k])}>
-                      <span style={SX.dot(timeColors[k])} />
-                      <span style={SX.badgeLabel(timeColors[k])}>{k === 'temp' ? 'T°' : 'HR%'}</span>
-                    </div>
-                  ))}
+                  {['temp', 'hum'].map(k => {
+                    const isVisible = visibleLines[k]
+                    const color = timeColors[k]
+                    return (
+                      <button
+                        key={k}
+                        onClick={() => setVisibleLines(prev => ({ ...prev, [k]: !prev[k] }))}
+                        style={{
+                          ...SX.badge(color),
+                          opacity: isVisible ? 1 : 0.35,
+                          cursor: 'pointer',
+                          background: isVisible ? `${color}08` : 'transparent',
+                          borderColor: isVisible ? `${color}40` : 'var(--outline-variant)',
+                          transition: 'all 0.2s',
+                          border: '1px solid',
+                          outline: 'none',
+                        }}
+                      >
+                        <span style={SX.dot(isVisible ? color : 'var(--outline)')} />
+                        <span style={SX.badgeLabel(isVisible ? color : 'var(--on-surface-variant)')}>
+                          {k === 'temp' ? 'T°' : 'HR%'}
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
               <div style={SX.canvasWrap}>
@@ -320,12 +350,31 @@ function ChartPanel({ deviceId, telemetry, has }) {
               <div style={SX.barHeader}>
                 <span style={SX.barLabel}>ECO₂ & TVOC</span>
                 <div className="flex gap-2">
-                  {['eco2', 'tvoc'].map(k => (
-                    <div key={k} style={SX.badge(timeColors[k])}>
-                      <span style={SX.dot(timeColors[k])} />
-                      <span style={SX.badgeLabel(timeColors[k])}>{k === 'eco2' ? 'eCO₂' : 'TVOC'}</span>
-                    </div>
-                  ))}
+                  {['eco2', 'tvoc'].map(k => {
+                    const isVisible = visibleLines[k]
+                    const color = timeColors[k]
+                    return (
+                      <button
+                        key={k}
+                        onClick={() => setVisibleLines(prev => ({ ...prev, [k]: !prev[k] }))}
+                        style={{
+                          ...SX.badge(color),
+                          opacity: isVisible ? 1 : 0.35,
+                          cursor: 'pointer',
+                          background: isVisible ? `${color}08` : 'transparent',
+                          borderColor: isVisible ? `${color}40` : 'var(--outline-variant)',
+                          transition: 'all 0.2s',
+                          border: '1px solid',
+                          outline: 'none',
+                        }}
+                      >
+                        <span style={SX.dot(isVisible ? color : 'var(--outline)')} />
+                        <span style={SX.badgeLabel(isVisible ? color : 'var(--on-surface-variant)')}>
+                          {k === 'eco2' ? 'eCO₂' : 'TVOC'}
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
               <div style={SX.canvasWrap}>
@@ -335,13 +384,13 @@ function ChartPanel({ deviceId, telemetry, has }) {
           </div>
           <div style={SX.footer}>
             {[
-              { id: 't', c: timeColors.temp, lbl: `Temp ${has.temp ? telemetry.temperature.toFixed(1) : '--'} °C` },
-              { id: 'h', c: timeColors.hum, lbl: `Hum ${has.hum ? telemetry.humidity.toFixed(1) : '--'} %RH` },
-              { id: 'e', c: timeColors.eco2, lbl: `eCO₂ ${has.eco2 ? Math.round(telemetry.co2) : '--'} ppm` },
-              { id: 'v', c: timeColors.tvoc, lbl: `TVOC ${has.tvoc ? Math.round(telemetry.voc) : '--'} ppb` },
+              { id: 't', c: timeColors.temp, lbl: `Temp ${has.temp ? telemetry.temperature.toFixed(1) : '--'} °C`, visible: visibleLines.temp },
+              { id: 'h', c: timeColors.hum, lbl: `Hum ${has.hum ? telemetry.humidity.toFixed(1) : '--'} %RH`, visible: visibleLines.hum },
+              { id: 'e', c: timeColors.eco2, lbl: `eCO₂ ${has.eco2 ? Math.round(telemetry.co2) : '--'} ppm`, visible: visibleLines.eco2 },
+              { id: 'v', c: timeColors.tvoc, lbl: `TVOC ${has.tvoc ? Math.round(telemetry.voc) : '--'} ppb`, visible: visibleLines.tvoc },
             ].map(item => (
-              <div key={item.id} style={SX.legendItem}>
-                <span style={SX.legendLine(item.c)} />
+              <div key={item.id} style={{ ...SX.legendItem, opacity: item.visible ? 1 : 0.35, transition: 'all 0.2s' }}>
+                <span style={SX.legendLine(item.visible ? item.c : 'var(--outline)')} />
                 <span style={SX.legendLabel}>{item.lbl}</span>
               </div>
             ))}
