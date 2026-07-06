@@ -57,15 +57,16 @@ Registro de **decisiones de arquitectura** tomadas y su justificación. Una vez 
 | ADR-007 a ADR-010 | JWT/RBAC, protocolo HTTP, control histéresis, fail-safe |
 | ADR-011 a ADR-014 | Recetas/ciclos, FreeRTOS, seguridad, OTA v3 |
 
-### 🧩 Engineering Design Documents (`docs/edd/`)
+### 🧩 Engineering Design Documents (`docs/EDD/`)
 Documentos de **diseño de alto nivel** para subsistemas complejos. Se crean _antes_ de implementar.
 
 | Documento | Contenido |
 |---|---|
-| [`EDD-001`](edd/EDD-001-sistema-control-ambiental.md) | Sistema de control ambiental end-to-end |
-| [`EDD-002`](edd/EDD-002-motor-reglas-recetas.md) | Motor de reglas y recetas de cultivo |
-| [`EDD-003`](edd/EDD-003-ota-v3-canary-deployment.md) | OTA v3 con canary deployment |
-| [`EDD-004`](edd/EDD-004-estrategia-multitenant.md) | Estrategia multi-tenant y escalabilidad |
+| [`EDD-001`](EDD/EDD-001-sistema-control-ambiental.md) | Sistema de control ambiental end-to-end |
+| [`EDD-002`](EDD/EDD-002-motor-reglas-recetas.md) | Motor de reglas y recetas de cultivo |
+| [`EDD-003`](EDD/EDD-003-ota-v3-canary-deployment.md) | OTA v3 con canary deployment |
+| [`EDD-004`](EDD/EDD-004-estrategia-multitenant.md) | Estrategia multi-tenant y escalabilidad |
+| [`EDD-005`](EDD/EDD-005-BLE-provisioning.md) | BLE Provisioning — configuración inicial por Bluetooth |
 
 ### 💬 Propuestas (RFC) (`docs/rfc/`)
 **Request for Comments** — propuestas formales para cambios significativos antes de decidir.
