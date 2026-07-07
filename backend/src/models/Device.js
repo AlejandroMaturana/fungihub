@@ -15,6 +15,7 @@ const Device = sequelize.define('Device', {
   chamberId: { type: DataTypes.INTEGER, allowNull: true },
   chamberName: { type: DataTypes.STRING(128) },
   chamberLocation: { type: DataTypes.STRING(255) },
+  ssrActiveLow: { type: DataTypes.BOOLEAN, defaultValue: true },
 }, {
   tableName: 'devices',
   timestamps: true,

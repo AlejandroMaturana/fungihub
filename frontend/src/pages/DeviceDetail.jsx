@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getDevice, getActuators, setActuatorDirect, getLatestTelemetry } from '../api/client.js'
+import { getDevice, getActuators, setActuatorDirect, getLatestTelemetry, updateDeviceSsrMode } from '../api/client.js'
 import { useSSE } from '../api/useSSE.js'
 import DomeGauge from '../components/ui/DomeGauge.jsx'
 import ChartPanel from '../components/ui/ChartPanel.jsx'
@@ -180,8 +180,7 @@ function DeviceDetail() {
 
   async function handleToggle(channel) {
     const act = actuators.find(a => a.channel === channel)
-    if (!act) return
-    const newState = act.state === 'ON' ? 'OFF' : 'ON'
+    const newState = !act || act.state === 'OFF' ? 'ON' : 'OFF'
     const label = ACTUATOR_META[channel]?.label || `CH${channel}`
     setPendingChannels(prev => new Set([...prev, channel]))
     addLog(`${label} → CMD ${newState}`, 'warn')
@@ -424,6 +423,41 @@ function DeviceDetail() {
           )}
         </div>
       </div>
+
+      <section className="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-outline-variant bg-surface-container">
+          <span className="material-symbols-outlined text-primary text-sm">tune</span>
+          <span className="text-9px text-on-surface font-mono font-bold tracking-wider uppercase">SSR CONFIGURATION</span>
+          <span className="text-8px text-on-surface-variant opacity-50">{clockStr}</span>
+        </div>
+        <div className="p-3">
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <p className="text-body-md text-on-surface">Active Low</p>
+              <p className="text-body-sm text-on-surface-variant">
+                {device.ssrActiveLow ? 'HIGH=OFF, LOW=ON (low-level)' : 'HIGH=ON, LOW=OFF (high-level)'}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={device.ssrActiveLow}
+              onClick={async () => {
+                const newVal = !device.ssrActiveLow
+                try {
+                  setDevice(prev => ({ ...prev, ssrActiveLow: newVal }))
+                  await updateDeviceSsrMode(id, newVal)
+                } catch {
+                  setDevice(prev => ({ ...prev, ssrActiveLow: !newVal }))
+                }
+              }}
+              className={`relative w-12 h-7 rounded-full transition-colors shrink-0 ${device.ssrActiveLow ? 'bg-primary' : 'bg-surface-container-highest'}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${device.ssrActiveLow ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+          </label>
+        </div>
+      </section>
 
       <ChartPanel deviceId={id} telemetry={telemetry} has={has} />
     </div>

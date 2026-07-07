@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { createDevice } from '../api/client.js'
 
 const PROV_SERVICE_UUID = 'a7c3d6e0-f1b2-4a5b-8c9d-0e1f2a3b4c5d'
 const PROV_CHAR_DEVICE_INFO = 'a7c3d6e1-f1b2-4a5b-8c9d-0e1f2a3b4c5d'
@@ -7,6 +8,7 @@ const PROV_CHAR_WIFI_SSID = 'a7c3d6e2-f1b2-4a5b-8c9d-0e1f2a3b4c5d'
 const PROV_CHAR_WIFI_PASS = 'a7c3d6e3-f1b2-4a5b-8c9d-0e1f2a3b4c5d'
 const PROV_CHAR_CMD = 'a7c3d6e4-f1b2-4a5b-8c9d-0e1f2a3b4c5d'
 const PROV_CHAR_STATUS = 'a7c3d6e5-f1b2-4a5b-8c9d-0e1f2a3b4c5d'
+const PROV_CHAR_SSR_MODE = 'a7c3d6e6-f1b2-4a5b-8c9d-0e1f2a3b4c5d'
 
 const STEPS = { SCAN: 0, CONFIG: 1, PROVISIONING: 2, DONE: 3, ERROR: -1 }
 
@@ -19,6 +21,7 @@ function Provisioning() {
   const [deviceInfo, setDeviceInfo] = useState(null)
   const [ssid, setSsid] = useState('')
   const [password, setPassword] = useState('')
+  const [ssrActiveLow, setSsrActiveLow] = useState(true)
   const [statusMsg, setStatusMsg] = useState('')
   const [bleNotSupported, setBleNotSupported] = useState(false)
   const serverRef = useRef(null)
@@ -66,6 +69,11 @@ function Provisioning() {
 
       statusCharRef.current = await service.getCharacteristic(PROV_CHAR_STATUS)
       await statusCharRef.current.startNotifications()
+
+      const ssrModeChar = await service.getCharacteristic(PROV_CHAR_SSR_MODE)
+      const ssrModeValue = await ssrModeChar.readValue()
+      const ssrModeStr = new TextDecoder().decode(ssrModeValue)
+      setSsrActiveLow(ssrModeStr === '1')
       statusCharRef.current.addEventListener('characteristicvaluechanged', (event) => {
         const val = new TextDecoder().decode(event.target.value)
         try {
@@ -114,6 +122,8 @@ function Provisioning() {
       const encoder = new TextEncoder()
       await ssidChar.writeValue(encoder.encode(ssid))
       await passChar.writeValue(encoder.encode(password))
+      const ssrModeChar = await service.getCharacteristic(PROV_CHAR_SSR_MODE)
+      await ssrModeChar.writeValue(encoder.encode(ssrActiveLow ? '1' : '0'))
       await cmdChar.writeValue(encoder.encode('provision'))
 
       setStatusMsg('Credenciales enviadas. El dispositivo se reiniciará...')
@@ -218,6 +228,27 @@ function Provisioning() {
         </div>
       </div>
 
+      <div className="glass-card p-5 rounded-xl border border-outline-variant mb-6">
+        <h3 className="font-label-caps text-label-caps text-secondary mb-4">CONFIGURACIÓN SSR</h3>
+        <label className="flex items-center justify-between cursor-pointer">
+          <div>
+            <p className="text-body-md text-on-surface">SSR Active Low</p>
+            <p className="text-body-sm text-on-surface-variant">
+              {ssrActiveLow ? 'HIGH=OFF, LOW=ON (low-level)' : 'HIGH=ON, LOW=OFF (high-level)'}
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={ssrActiveLow}
+            onClick={() => setSsrActiveLow(v => !v)}
+            className={`relative w-12 h-7 rounded-full transition-colors ${ssrActiveLow ? 'bg-primary' : 'bg-surface-container-highest'}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${ssrActiveLow ? 'translate-x-5' : 'translate-x-0'}`} />
+          </button>
+        </label>
+      </div>
+
       <div className="flex gap-3">
         <button onClick={handleProvision} className="btn-primary flex-1 py-3 rounded-xl text-body-md font-medium">
           <span className="material-symbols-outlined mr-2">settings_ethernet</span>
@@ -239,6 +270,19 @@ function Provisioning() {
       <p className="text-on-surface-variant text-body-md">{statusMsg || 'Enviando configuración al dispositivo'}</p>
     </div>
   )
+
+  // Register device with user account after provisioning succeeds
+  useEffect(() => {
+    if (step === STEPS.DONE && deviceInfo?.deviceId) {
+      createDevice({
+        deviceId: deviceInfo.deviceId,
+        macAddress: deviceInfo.deviceId,
+        chamberName: `Mush2-${deviceInfo.deviceId.slice(-4)}`,
+      }).catch(() => {
+        // Non-critical — device already self-registered via firmware
+      })
+    }
+  }, [step, deviceInfo])
 
   const renderDone = () => (
     <div className="flex flex-col items-center justify-center py-16">
