@@ -10,11 +10,11 @@ Estrategias, patrones y best practices para escalar Mush2 a miles de dispositivo
 
 **Setup:**
 - PostgreSQL local o Docker container
-- Broker MQTT simple (Mosquitto)
+- Backend Node.js con endpoints HTTP
 - Backend en máquina personal
 
 **Límites:**
-- ~100 mensajes MQTT/segundo
+- ~100 peticiones HTTP/segundo
 - ~50 usuarios concurrentes
 - ~500GB histórico máximo
 
@@ -29,8 +29,8 @@ Estrategias, patrones y best practices para escalar Mush2 a miles de dispositivo
 
 **Setup:**
 - PostgreSQL en VM dedicado
-- MQTT broker en VPS
 - Backend containerizado (Docker)
+- Balanceador de carga simple
 - Frontend static site
 
 **Optimizaciones necesarias:**
@@ -40,7 +40,7 @@ Estrategias, patrones y best practices para escalar Mush2 a miles de dispositivo
 - [ ] Caching de recetas frecuentes
 
 **Límites:**
-- ~1000 mensajes MQTT/segundo
+- ~1000 peticiones HTTP/segundo
 - ~500 usuarios concurrentes
 - ~5TB histórico
 
@@ -56,8 +56,8 @@ Estrategias, patrones y best practices para escalar Mush2 a miles de dispositivo
 
 **Setup:**
 - PostgreSQL replicado (primary + replicas)
-- MQTT broker cluster (3+ nodos HiveMQ)
 - Backend múltiples instancias (load balancer)
+- Redis para cola de comandos y telemetría reciente
 - Frontend CDN global
 
 **Optimizaciones necesarias:**
@@ -65,11 +65,10 @@ Estrategias, patrones y best practices para escalar Mush2 a miles de dispositivo
 - [ ] Redis cache para sesiones + recetas
 - [ ] Connection pooling avanzado (pgBouncer)
 - [ ] Compresión de histórico viejo
-- [ ] Replication de MQTT
 - [ ] Auto-scaling de backend
 
 **Límites:**
-- ~10,000 mensajes MQTT/segundo
+- ~10,000 peticiones HTTP/segundo
 - ~5,000 usuarios concurrentes
 - ~50TB histórico
 
@@ -85,8 +84,8 @@ Estrategias, patrones y best practices para escalar Mush2 a miles de dispositivo
 
 **Setup:**
 - PostgreSQL multi-regional con replicación lógica
-- MQTT broker geo-distribuido (AWS IoT Core / Azure IoT Hub)
 - Kubernetes cluster para backend
+- API Gateway con rate limiting global
 - GraphQL API para queries complejas
 - Search engine (Elasticsearch) para auditoría
 
@@ -99,7 +98,7 @@ Estrategias, patrones y best practices para escalar Mush2 a miles de dispositivo
 - [ ] Service mesh (Istio)
 
 **Límites:**
-- ~100,000+ mensajes/segundo
+- ~100,000+ peticiones/segundo
 - ~50,000+ usuarios concurrentes
 - Terabytes histórico con query <100ms
 
@@ -277,34 +276,26 @@ import { FixedSizeList as List } from 'react-window';
 
 ---
 
-### Firmware (ESP8266)
+### Firmware (ESP32-S3 / FreeRTOS)
 
 #### Batching de Telemetría
 
 ```cpp
-// Antes: envía cada lectura (30/segundo) = bloat MQTT
-void loop() {
-  float temp = readTemp();
-  mqttClient.publish("mush2/telemetry/...", jsonPayload);
-  delay(1000);
-}
-
-// Después: agrupa 10 lecturas, envía cada 30s
+// Agrupa N lecturas, envía cada 30s
 telemetryBuffer[bufferIndex++] = { temp, humidity, co2 };
 if (bufferIndex >= 10 || timeElapsed >= 30000) {
   StaticJsonDocument<512> doc;
   doc["readings"] = serializeArray(telemetryBuffer);
-  mqttClient.publish("mush2/telemetry/...", payload);
+  httpPOST("/api/v1/telemetry/batch", payload);
   bufferIndex = 0;
 }
 ```
 
-**Impacto:** -90% mensajes MQTT, -85% WiFi overhead
+**Impacto:** -90% peticiones HTTP, -85% WiFi overhead
 
 #### Deep Sleep para Modo Bajo Consumo
 
 ```cpp
-// Configurable por receta
 if (shouldEnterLowPowerMode()) {
   WiFi.mode(WIFI_OFF);
   rtc_gpio_pullup_dis(GPIO_NUM_15);
@@ -315,6 +306,19 @@ if (shouldEnterLowPowerMode()) {
 ```
 
 **Impacto:** -95% consumo energía en fases pasivas
+
+#### FreeRTOS: Ajuste de Prioridades y Stack
+
+```cpp
+// Monitorear uso de stack por tarea
+UBaseType_t highWaterMark = uxTaskGetStackHighWaterMark(taskSensorsHandle);
+Serial.printf("[STACK] Sensors: %u words remaining\n", highWaterMark);
+
+// Ajustar stack size en config.h si < 20% libre
+#define STACK_SENSORS  8192
+```
+
+**Impacto:** Evita stack overflow, permite dimensionamiento preciso
 
 ---
 
@@ -437,12 +441,12 @@ console.timeEnd('GET /devices');  // ~45ms
 // DB connection pool
 console.log(pool.idleCount, '/', pool.totalCount);  // 8 / 20
 
-// MQTT throughput
-let msgCount = 0;
-mqtt.on('message', () => {
-  msgCount++;
-  if (msgCount % 1000 === 0) {
-    console.log(`[MQTT] ${msgCount} messages processed this minute`);
+// HTTP throughput
+let reqCount = 0;
+app.on('request', () => {
+  reqCount++;
+  if (reqCount % 1000 === 0) {
+    console.log(`[HTTP] ${reqCount} requests processed this minute`);
   }
 });
 
@@ -464,7 +468,7 @@ setInterval(() => {
 | CPU | >80% | Escalar horizontalmente |
 | Memory | >85% | Revisar memory leaks, escalar |
 | DB connections | >90% maxPool | Aumentar pool size |
-| MQTT disconnect | >30s | Verificar broker, reconnect |
+| HTTP timeout | >30s | Verificar backend, heartbeat |
 | Error rate | >1% | Revisar logs, rollback si es reciente |
 
 ---
@@ -474,7 +478,7 @@ setInterval(() => {
 | Métrica | Nivel 2 | Nivel 3 | Escalable? |
 |---|---|---|---|
 | Dispositivos conectados | 100 | 1,000 | ✅ Sharding |
-| Mensajes MQTT/sec | 1,000 | 10,000 | ✅ MQTT cluster |
+| Peticiones HTTP/sec | 1,000 | 10,000 | ✅ Load balancer |
 | Usuarios concurrentes | 500 | 5,000 | ✅ Load balancer |
 | Histórico (dias) | 30 | 365 | ✅ Compresión |
 | Query latency p95 | 100ms | <500ms | ✅ Índices + caché |
@@ -499,14 +503,5 @@ Antes de pasar a siguiente nivel:
 
 ---
 
-## Referencias
-
-- PostgreSQL Scalability: https://wiki.postgresql.org/wiki/Performance_Optimization
-- Node.js Best Practices: https://nodejs.org/en/docs/guides/nodejs-performance/
-- MQTT Scalability: https://www.hivemq.com/article/mqtt-scalability/
-- React Performance: https://react.dev/learn/render-and-commit
-
----
-
-**Última actualización:** 2026-06-13  
-**Aplicable a:** Mush2 v0.1.0+
+**Última actualización:** 2026-06-28  
+**Aplicable a:** Mush2 v0.9.0+
