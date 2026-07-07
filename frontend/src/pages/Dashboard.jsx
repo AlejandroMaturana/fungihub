@@ -77,7 +77,7 @@ function ChamberCard({ device, telemetry }) {
       </div>
 
       <Link to={`/devices/${device.id}`} className="w-full py-3 rounded bg-primary text-on-primary hover:brightness-110 font-label-caps text-label-caps transition-all flex justify-center items-center gap-2 mt-auto no-underline"
-        style={{ boxShadow: '0 0 12px var(--primary), 0 0 4px var(--glow-primary, var(--primary))' }}>
+        style={{ boxShadow: '0 0 12px var(--spore-green), 0 0 4px var(--glow-primary, var(--spore-green))' }}>
         VIEW TELEMETRY
         <span className="material-symbols-outlined text-14px">query_stats</span>
       </Link>
