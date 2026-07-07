@@ -109,7 +109,7 @@ router.get('/devices/:id', checkDeviceAccess, async (req, res) => {
 router.patch('/devices/:id', checkDeviceAccess, async (req, res) => {
   try {
     const device = req.device;
-    const allowed = ['chamberName', 'chamberLocation', 'chamberId'];
+    const allowed = ['chamberName', 'chamberLocation', 'chamberId', 'ssrActiveLow'];
     const updates = {};
     for (const field of allowed) {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
