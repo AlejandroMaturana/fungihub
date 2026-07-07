@@ -2,6 +2,18 @@
 
 ## 2026-07-08
 
+### Frontend — v1.1.3 → Preparación React Router v7
+
+- **Actualización**: Añadido prop `future` a `<BrowserRouter>` en `App.jsx`
+- **Configuración**:
+  - Activados: `v7_startTransition` y `v7_relativeSplatPath`
+- **Limpieza**: Silenciados los warnings de deprecación del inspector de React Router
+- Preparación anticipada para la migración a **React Router v7**
+
+**Resultado**: Código futuro-compatible y sin warnings de deprecación.
+
+## 2026-07-08
+
 ### Frontend — v1.1.2 → Fixes React + Gauge Consistency
 
 - **Bug fix**: Añadido `key={i}` en el `.map()` de logs (línea 348)
