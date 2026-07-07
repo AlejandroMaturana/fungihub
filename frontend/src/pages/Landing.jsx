@@ -287,8 +287,6 @@ function Landing() {
               <button
                 onClick={() => setShowAuth(true)}
                 className="px-8 py-4 border border-secondary/40 text-secondary font-label-caps text-label-caps rounded-lg transition-all flex items-center gap-2 cursor-pointer"
-                style={{ background: 'transparent' }}
-                style={{ background: 'transparent' }}
               >
                 <span className="material-symbols-outlined text-sm">sensors</span>
                 EXPLORAR PLATAFORMA
