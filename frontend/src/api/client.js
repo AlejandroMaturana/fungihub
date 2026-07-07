@@ -118,6 +118,16 @@ export async function refreshToken() {
   return data
 }
 
+export async function createDevice(device) {
+  const { data } = await client.post('/devices', device)
+  return data
+}
+
+export async function updateDeviceSsrMode(id, ssrActiveLow) {
+  const { data } = await client.patch(`/devices/${id}`, { ssrActiveLow })
+  return data
+}
+
 export async function getMe() {
   const { data } = await client.get('/auth/me')
   return data
