@@ -2,7 +2,7 @@
 
 ## Motor
 
-PostgreSQL 18, ORM Sequelize 6.
+PostgreSQL 16, ORM Sequelize 6.
 
 ## Entidades y Relaciones
 
@@ -10,13 +10,17 @@ PostgreSQL 18, ORM Sequelize 6.
 Device ──1:N── Sensor
   ├──1:N── Actuator
   ├──1:N── Telemetry
+  ├──1:1── ApiKey
   └──1:N── Event
 
 User ──1:N── AuditLog
-  └──N:M── Device (via UserChamberAccess)
+  ├──1:N── Subscription
+  └──N:M── Chamber (via UserChamberAccess)
 
 Recipe ──1:N── CultivationCycle
-                └──1:N── CycleState
+                  └──1:N── CycleState
+
+Chamber ──1:N── Device
 ```
 
 ## Modelos
@@ -25,8 +29,8 @@ Recipe ──1:N── CultivationCycle
 | Campo | Tipo | Descripción |
 |---|---|---|
 | id | UUID PK | — |
-| deviceId | VARCHAR(50) UNIQUE | ID del dispositivo (ej: esp8266_001) |
-| macAddress | VARCHAR(17) | MAC del ESP8266 |
+| deviceId | VARCHAR(50) UNIQUE | ID del dispositivo (ej: mush2_A0F262E55CBC) |
+| macAddress | VARCHAR(17) | MAC del ESP32-S3 |
 | userId | UUID FK(user) | Propietario (nullable = legacy) |
 | chamberName | VARCHAR(100) | Nombre de la cámara |
 | chamberLocation | VARCHAR(200) | Ubicación |
@@ -48,7 +52,7 @@ Recipe ──1:N── CultivationCycle
 |---|---|---|
 | id | UUID PK | — |
 | deviceId | UUID FK(device) | Dispositivo padre |
-| channel | INTEGER | Canal SSR (1-3) |
+| channel | INTEGER | Canal SSR (1-4) |
 | state | ENUM(ON,OFF) | Estado actual |
 | mode | ENUM(LOCAL,REMOTE,OFF) | Modo de control |
 | lastCommand | VARCHAR(50) | Último cmdId |
@@ -75,6 +79,16 @@ Recipe ──1:N── CultivationCycle
 | payload | JSONB | Datos del evento |
 | timestamp | TIMESTAMP | — |
 
+### ApiKey
+| Campo | Tipo | Descripción |
+|---|---|---|
+| id | UUID PK | — |
+| deviceId | UUID FK(device) | Dispositivo asociado |
+| key | VARCHAR(64) | API key única |
+| prefix | VARCHAR(10) | Prefijo visible (ej: mush2_) |
+| isActive | BOOLEAN | Key activa/revocada |
+| createdAt | TIMESTAMP | — |
+
 ### Recipe
 | Campo | Tipo | Descripción |
 |---|---|---|
@@ -84,15 +98,15 @@ Recipe ──1:N── CultivationCycle
 | species | VARCHAR(100) | Especie de hongo |
 | incubationTempMin/Max | DECIMAL(5,2) | Rango incubación |
 | incubationHumMin/Max | DECIMAL(5,2) | Rango humedad incubación |
-| incubationCo2Max | INTEGER | CO2 max incubación |
+| incubationCo2Max | INTEGER | CO₂ max incubación |
 | incubationDuration | INTEGER | Duración en días |
 | fruitingTempMin/Max | DECIMAL(5,2) | Rango fructificación |
 | fruitingHumMin/Max | DECIMAL(5,2) | Rango humedad fructificación |
-| fruitingCo2Max | INTEGER | CO2 max fructificación |
+| fruitingCo2Max | INTEGER | CO₂ max fructificación |
 | fruitingDuration | INTEGER | Duración en días |
 | maintenanceTempMin/Max | DECIMAL(5,2) | Rango mantenimiento |
 | maintenanceHumMin/Max | DECIMAL(5,2) | Rango humedad mantenimiento |
-| maintenanceCo2Max | INTEGER | CO2 max mantenimiento |
+| maintenanceCo2Max | INTEGER | CO₂ max mantenimiento |
 | faeInterval | INTEGER | Intervalo ventilación (min) |
 | faeLevel | ENUM(LOW,MEDIUM,HIGH) | Nivel de intercambio de aire |
 | lightCycleHours | INTEGER | Horas de luz por día |
@@ -105,7 +119,7 @@ Recipe ──1:N── CultivationCycle
 | recipeId | UUID FK(recipe) | Receta aplicada |
 | deviceId | UUID FK(device) | Dispositivo asociado |
 | status | ENUM(PLANNED,ACTIVE,COMPLETED,ABORTED) | Estado |
-| currentPhase | ENUM(INCUBATION,FRUITING,MAINTENANCE,COMPLETED) | Fase |
+| currentPhase | ENUM(INCUBATION,PRIMORDIA,FRUITING,HARVESTING) | Fase |
 | startDate | DATE | Inicio |
 | estimatedEndDate | DATE | Fin estimado |
 
@@ -117,7 +131,7 @@ Recipe ──1:N── CultivationCycle
 | phase | ENUM | Fase al momento del snapshot |
 | temperature | DECIMAL(5,2) | Temp promedio |
 | humidity | DECIMAL(5,2) | HR promedio |
-| co2 | INTEGER | CO2 promedio |
+| co2 | INTEGER | CO₂ promedio |
 | status | VARCHAR(20) | Estado del snapshot |
 | snapshotDate | DATE | Fecha del snapshot |
 
@@ -154,3 +168,4 @@ Recipe ──1:N── CultivationCycle
 ## Sincronización
 
 En desarrollo: `sequelize.sync({ alter: true })` al iniciar.
+En producción: migraciones versionadas (ADR-013 Fase 3).

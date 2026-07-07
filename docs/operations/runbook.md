@@ -13,9 +13,9 @@ Procedimientos y runbooks para operar Mush2 en producción: monitoring, troubles
 curl http://localhost:3797/health
 # { "status": "ok", "uptime": 3600 }
 
-# MQTT Health
-curl http://localhost:3797/monitoring/health/mqtt
-# { "status": "ok", "mqtt": "connected" }
+# HTTP Polling Health
+curl http://localhost:3797/monitoring/health/polling
+# { "status": "ok", "activeDevices": 3, "commandsPending": 0 }
 
 # DB Health (endpoint admin)
 curl http://localhost:3797/monitoring/health/db -H "Authorization: Bearer $ADMIN_TOKEN"
@@ -72,7 +72,7 @@ app.use((req, res, next) => {
 psql -U postgres -c "SELECT version();"
 
 # 2. Verificar variables de entorno
-cat .env.local | grep DB_
+cat .env | grep DB_
 
 # 3. Verificar conectividad
 telnet localhost 5432
@@ -89,31 +89,31 @@ sudo tail -f /var/log/postgresql/postgresql.log
 
 **Causas posibles:**
 1. WiFi inestable
-2. Broker MQTT con límite de conexiones
-3. Firewall bloqueando puerto MQTT
+2. Timeout de petición HTTP
+3. Firewall bloqueando puerto
 
 **Diagnosticar:**
 
 ```bash
-# 1. Verificar logs de broker MQTT
-mosquitto_sub -h mqtt.broker -v -t 'mush2/state/+/online'
+# 1. Verificar logs de backend
+tail -f /var/log/mush2/backend.log | grep -i "timeout\|poll"
 
-# 2. Verificar keepalive en firmware
-# En config.h: #define MQTT_KEEPALIVE 30
+# 2. Verificar watchdog en firmware (Serial)
+# [WDT] Software watchdog timeout — reiniciando
 
-# 3. Verificar firewall
-sudo iptables -L -n | grep 1883
+# 3. Verificar conectividad
+curl -I http://localhost:3797/health
 
-# 4. Monitorear conexiones MQTT
-watch -n 1 "mqtt_sub -h localhost -t '\$SYS/broker/clients/connected'"
+# 4. Monitorear dispositivos activos
+curl http://localhost:3797/monitoring/health/polling | jq
 ```
 
 **Fix:**
 
 ```cpp
-// firmware/src/mqtt_handler.cpp
-mqttClient.setKeepAlive(60);  // aumentar de 30 a 60 segundos
-mqttClient.setConnectTimeout(5000);  // más tolerante
+// firmware-esp32/src/http_poller.cpp
+http.setTimeout(10000);  // aumentar timeout
+http.setConnectTimeout(5000);  // más tolerante
 ```
 
 ---
@@ -187,7 +187,7 @@ curl http://localhost:3797/debug/memory | jq
 - Event listeners no removidos
 - Timers sin clearInterval
 - Caches sin TTL
-- Conexiones MQTT no cerradas
+- Conexiones HTTP no cerradas
 
 ---
 
@@ -252,7 +252,7 @@ pnpm run compress:telemetry
 | **P1 Critical** | Servicio caído | 5 min | 30 min |
 | **P2 High** | Funcionalidad degradada | 15 min | 2 horas |
 | **P3 Medium** | Bug afectando usuarios | 1 hora | 8 horas |
-| **P4 Low** | Mejora, no urgent | 1 día | 2 semanas |
+| **P4 Low** | Mejora, no urgente | 1 día | 2 semanas |
 
 ### Runbook: Backend Crashed
 
@@ -281,55 +281,61 @@ node backend/src/server.js
 
 # Posibles errores:
 # - DB unreachable → check postgres
-# - MQTT unreachable → check broker
 # - Port 3797 en uso → kill $pid
 ```
 
-### Runbook: MQTT Broker Down
+### Runbook: Watchdog Timeout en Firmware
 
-**Detectar:** `isMQTTConnected() === false` por >60s
+**Detectar:** Múltiples reinicios del ESP32-S3 reportados en telemetría
 
 ```bash
-# 1. Verificar conectividad
-telnet mqtt.broker.com 1883
+# 1. Verificar contador de reboots en el firmware (estado SAFE si >5)
+# 2. Revisar logs seriales: "[WDT] Software watchdog timeout"
+# 3. Causas típicas:
+#    - delay() bloqueante en taskSensors (AHT21 80ms)
+#    - heap insuficiente en taskPoller
+#    - I2C lock
 
-# 2. Verificar broker
-mosquitto -v  # si es local
-
-# 3. Si es HiveMQ, revisar dashboard
-# https://admin.mqtt.broker.com/
-
-# 4. Verificar logs broker
-tail -f /var/log/mosquitto/mosquitto.log
-
-# 5. Reiniciar si es necesario
-systemctl restart mosquitto
-
-# Backend automáticamente reconecta con backoff
+# 4. Acción inmediata:
+#    - Verificar que TASK_WDT_TIMEOUT >= delay más largo * 2
+#    - Verificar esp_task_wdt_reset() en cada rama del código
+#    - Conectar Serial para ver último mensaje antes del crash
 ```
 
-### Runbook: DB Replication Lag
+---
 
-**Detectar:** `SELECT pg_last_xlog_receive_location()` lag > 10MB
+## Security Maintenance
 
-```sql
--- En Primary
-SELECT slot_name, slot_type, restart_lsn FROM pg_replication_slots;
+### Weekly Security Checks
 
--- Ver lag
-SELECT
-  slot_name,
-  pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn) AS lag_bytes
-FROM pg_replication_slots;
+```bash
+# 1. Verificar dependencias desactualizadas
+pnpm audit
 
--- Si lag > 500MB, revisar:
--- - Network latency (ifconfig, ping)
--- - Replica disk space
--- - Replica CPU/memory
+# 2. Revisar JWT secrets (nunca loguear)
+grep -r "JWT_SECRET\|token" src/ | grep -v "test\|example"
 
--- Aumentar WAL retention
-ALTER SYSTEM SET wal_keep_size = '5GB';
-SELECT pg_reload_conf();
+# 3. Verificar .env en git (nunca!)
+git log --all --full-history -- ".env*"
+
+# 4. Ver users con acceso admin
+psql -U postgres -d mush2 -c "SELECT username, role FROM user WHERE role = 'ADMIN';"
+
+# 5. Revisar logs de acceso fallido
+grep "401\|403" logs/access.log | tail -20
+```
+
+### Certificate Renewal (HTTPS)
+
+```bash
+# Si usas Let's Encrypt
+sudo certbot renew --force-renewal
+
+# Restart nginx/reverse proxy
+sudo systemctl restart nginx
+
+# Verify
+curl https://your-domain.com/health
 ```
 
 ---
@@ -371,7 +377,7 @@ curl http://localhost:3797/health
 
 ### Data Cleanup
 
-```bash
+```sql
 -- Borrar ciclos completados >1 año
 DELETE FROM cycle_state WHERE cycleId IN (
   SELECT id FROM cultivation_cycle
@@ -384,84 +390,8 @@ SELECT * FROM telemetry WHERE timestamp < NOW() - INTERVAL '30 days';
 
 DELETE FROM telemetry WHERE timestamp < NOW() - INTERVAL '30 days';
 
--- Vacío
+-- Vació
 VACUUM ANALYZE;
-```
-
----
-
-## Security Maintenance
-
-### Weekly Security Checks
-
-```bash
-# 1. Verificar dependencias desactualiz adas
-pnpm audit
-
-# 2. Revisar JWT secrets (nunca loguear)
-grep -r "JWT_SECRET\|token" src/ | grep -v "test\|example"
-
-# 3. Verificar .env en git (nunca!)
-git log --all --full-history -- ".env*"
-
-# 4. Ver users con acceso admin
-psql -U postgres -d mush2 -c "SELECT username, role FROM user WHERE role = 'ADMIN';"
-
-# 5. Revisar logs de acceso fallido
-grep "401\|403" logs/access.log | tail -20
-```
-
-### Certificate Renewal (HTTPS)
-
-```bash
-# Si usas Let's Encrypt
-sudo certbot renew --force-renewal
-
-# Restart nginx/reverse proxy
-sudo systemctl restart nginx
-
-# Verify
-curl https://your-domain.com/health
-```
-
----
-
-## Performance Tuning
-
-### PostgreSQL Parameters
-
-```sql
--- Ver parametros actuales
-SHOW max_connections;
-SHOW shared_buffers;
-SHOW effective_cache_size;
-SHOW work_mem;
-
--- Recommendations (8GB RAM server)
-ALTER SYSTEM SET max_connections = 100;
-ALTER SYSTEM SET shared_buffers = '2GB';
-ALTER SYSTEM SET effective_cache_size = '6GB';
-ALTER SYSTEM SET work_mem = '50MB';
-ALTER SYSTEM SET maintenance_work_mem = '512MB';
-
-SELECT pg_reload_conf();
-SELECT pg_reload_conf();  -- sí, dos veces
-
--- Restart para tomar efecto
-sudo systemctl restart postgresql
-```
-
-### Node.js Flags
-
-```bash
-# Aumentar memory heap
-node --max-old-space-size=4096 backend/src/server.js
-
-# Enable profiling (producción NO)
-node --prof backend/src/server.js
-
-# Abort on uncaught exception (early exit)
-node --abort-on-uncaught-exception backend/src/server.js
 ```
 
 ---
@@ -490,7 +420,7 @@ node --abort-on-uncaught-exception backend/src/server.js
 
 4. **Validate** (5 min)
    - Queries funcionan
-   - MQTT conecta
+   - HTTP polling funciona
    - API responde
 
 5. **Communicate recovery** (2 min)
@@ -499,64 +429,5 @@ node --abort-on-uncaught-exception backend/src/server.js
 
 ---
 
-## Logs y Auditoría
-
-### Log Locations
-
-```
-/var/log/mush2/
-├── backend.log        # Node.js app logs
-├── access.log         # HTTP access logs (Nginx)
-├── error.log          # HTTP errors (Nginx)
-├── mqtt.log           # MQTT connection logs
-└── db/
-    └── postgresql.log # PostgreSQL logs
-```
-
-### Centralized Logging (recomendado)
-
-```bash
-# Con ELK Stack (Elasticsearch, Logstash, Kibana)
-# Instalar beats (lightweight collectors)
-
-curl -L https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.x.x-linux-x86_64.tar.gz | tar xz
-
-# Configurar filebeat.yml
-filebeat.inputs:
-- type: log
-  enabled: true
-  paths:
-    - /var/log/mush2/*.log
-  fields:
-    service: mush2-backend
-
-output.elasticsearch:
-  hosts: ["elasticsearch:9200"]
-
-# Dashboard en Kibana
-# https://kibana:5601
-```
-
----
-
-## Checklist de Operaciones
-
-**Diario:**
-- [ ] Health checks passing
-- [ ] No P1 incidents
-- [ ] Backup completado
-
-**Semanal:**
-- [ ] Revisar logs (errors, warnings)
-- [ ] Verificar disk space
-- [ ] Analizar performance
-
-**Mensual:**
-- [ ] Security audit
-- [ ] Dependency updates
-- [ ] Capacity planning
-
----
-
-**Última actualización:** 2026-06-13  
-**Aplicable a:** Mush2 v0.1.0+
+**Última actualización:** 2026-06-28  
+**Aplicable a:** Mush2 v0.9.0+
