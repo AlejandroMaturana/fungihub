@@ -1,5 +1,80 @@
 # Changelog — Mush2
 
+## 2026-07-07
+
+### Backend — v0.9.0
+
+- **POST /devices/register** (público): crea dispositivo sin `userId` si no existe (soporte inicial de provisioning)
+- **PATCH /devices/:id** (autenticado): permite actualizar `ssrActiveLow` y asignar `userId`
+- Mejorado `findOrCreate` para el flujo completo de provisioning BLE
+- Devuelve `ssrActiveLow` en el endpoint de polling `GET /`
+- Soporte para que el firmware sincronice la configuración de polaridad desde el backend
+- Nuevo campo `ssrActiveLow`: BOOLEAN, default: `true`
+- Permite configurar polaridad de los SSR (active-LOW / active-HIGH) por dispositivo
+
+**Resultado**: Backend ahora soporta completamente el flujo de provisioning BLE + configuración dinámica de polaridad SSR por dispositivo, con endpoints más flexibles y seguros.
+
+### Frontend — v1.1.0
+
+- **Provisioning.jsx**: toggle de modo SSR + claim device (asignación de `userId`)
+- **DeviceDetail.jsx**: nuevo panel **SSR CONFIGURATION** con toggle persistente
+- Corregido control de actuadores en dispositivos nuevos (integración con `findOrCreate` del backend)
+- Mejora general en UX de configuración de polaridad SSR
+
+**Resultado**: La interfaz ahora ofrece una experiencia de provisioning y configuración de hardware (SSR) mucho más intuitiva y robusta, corrigiendo problemas en dispositivos recién registrados y asegurando un canal para añadir dispositivos.
+
+### Firmware (ESP32-S3) — v0.11.0
+
+- Agrega soporte completo para `SSR_ACTIVE_LOW` y constantes BLE
+- Mantiene sincronización entre `config.example.h` y el script de generación de configuración
+- `SSR_ACTIVE_LOW` ahora es configurable en runtime vía NVS
+- Nueva characteristic BLE: **SSR_MODE**
+- `http_poller` sincroniza valor de polaridad desde el backend
+- Persistencia y aplicación dinámica de la polaridad SSR
+- Agrega y documenta `SSR_ACTIVE_LOW` (default: `true`)
+- Agrega constantes BLE (`BLE_PROV_TIMEOUT_MS`, `BLE_DEVICE_NAME_PREFIX`, etc.)
+- Mejora significativa de comentarios y estructura del template de configuración
+- Crea servicio GATT con 6 characteristics: `DEVICE_INFO`, `WIFI_SSID`, `WIFI_PASS`, `PROV_CMD`, `PROV_STATUS`, `SSR_MODE`
+- Soporta comandos: `provision`, `reset`, `factory_reset`
+- Advertising name: `Mush2-{last4MAC}`
+- Persistencia en NVS (`mush2_prov` namespace)
+- LED pulsing durante modo provisioning
+- Registro automático del dispositivo vía `HTTP POST /devices/register`
+
+**Resultado**: Firmware ahora es mucho más configurable y mantenible, con sincronización bidireccional de polaridad SSR, mejor experiencia de provisioning BLE y código más limpio y documentado.
+
+### Documentación y Gobernanza — Auditoría & Reestructuración
+
+- **Reestructuración completa de directorios**: Implementada la nueva taxonomía definida en `ADR-015`.
+- **Nuevo**: `docs/README.md` — Índice navegable maestro del proyecto para colaboradores humanos y agentes de IA.
+- **Nuevo**: `design/components.md` — Catálogo completo de componentes organizados por capas.
+- **Nuevo**: `design/design-tokens.md` — Sistema de tokens centralizado.
+- **Nuevo**: Carpeta `docs/edd/` (Engineering Design Documents) con template y los siguientes documentos:
+  - `EDD-001-sistema-control-ambiental.md` (Visión completa del sistema)
+  - `EDD-002-motor-reglas-recetas.md` (Motor de reglas e histéresis)
+  - `EDD-003-ota-v3-canary-deployment.md` (Estrategia de actualizaciones en 4 capas)
+  - `EDD-004-estrategia-multitenant.md` (Aislamiento de datos y escalabilidad)
+- **Nuevo**: Carpeta `docs/rfc/` (Request for Comments) con template y propuestas iniciales en estado DRAFT:
+  - `RFC-0001-template.md` (Plantilla estándar)
+  - `RFC-0002-https-tls-firmware.md` (Migración a HTTPS/TLS en firmware)
+  - `RFC-0003-mqtt-v2-upgrade.md` (Broker propio + TLS + ACL)
+  - `RFC-0004-multi-device-dashboard.md` (Dashboard multi-dispositivo)
+  - `RFC-0005-notificaciones-push.md` (Alertas vía Telegram/Email)
+- **Nuevo**: `docs/ADR/ADR-015-docs-restructure.md` — Registro formal de la decisión arquitectónica de esta reestructuración.
+- **Consolidación**: Unificación de todos los roadmaps en un único archivo autoritativo `docs/roadmap/roadmap.md`. Versiones antiguas archivadas en `docs/roadmap/archive/`.
+- **Limpieza y movimientos**:
+  - Eliminado `docs/firmware.md` (duplicado obsoleto).
+  - Reescrito completamente `docs/architecture/firmware.md` con el estado actual (ESP32-S3 + FreeRTOS + 6 tareas + HTTP Polling).
+  - Movido `docs/database.md` → `docs/architecture/database.md`
+  - Movido `docs/ui-standards.md` → `docs/design/ui-standards.md`
+  - Movido `docs/deployment.md` → `docs/operations/deployment.md`
+  - Movido `docs/operations.md` → `docs/operations/runbook.md`
+  - Eliminadas carpetas obsoletas `docs/context/` y `docs/issues/`.
+  - Expandido `docs/governance/decision-tree.md` con lineamientos de gobernanza, protocolos y control de fallos.
+  - Creado `docs/diagrams/exports/README.md` con instrucciones de exportación de diagramas `.drawio`.
+
+**Resultado**: La documentación técnica ahora está limpia, modular, profesional y preparada para la colaboración tanto humana como con agentes de inteligencia artificial.
+
 ## 2026-07-06
 
 ### Frontend — v1.0.3
@@ -103,11 +178,11 @@
   - `EDD-003-ota-v3-canary-deployment.md` (OTA v3 4-capas)
   - `EDD-004-estrategia-multitenant.md` (Aislamiento de datos y escalabilidad)
 - **Nuevo**: Carpeta `docs/rfc/` (Request for Comments) con template y propuestas iniciales en DRAFT:
-  - `RFC-0001-template.md` (Plantilla de propuesta)
-  - `RFC-0002-https-tls-firmware.md` (Migración HTTPS/TLS en firmware)
-  - `RFC-0003-mqtt-v2-upgrade.md` (Broker propio + TLS + autenticación ACL)
-  - `RFC-0004-multi-device-dashboard.md` (Dashboard multi-dispositivo simultáneo)
-  - `RFC-0005-notificaciones-push.md` (Alertas Telegram/Email)
+  - `RFC-template.md` (Plantilla de propuesta)
+  - `RFC-0001-https-tls-firmware.md` (Migración HTTPS/TLS en firmware)
+  - `RFC-0002-mqtt-v2-upgrade.md` (Broker propio + TLS + autenticación ACL)
+  - `RFC-0003-multi-device-dashboard.md` (Dashboard multi-dispositivo simultáneo)
+  - `RFC-0004-notificaciones-push.md` (Alertas Telegram/Email)
 - **Nuevo**: `docs/ADR/ADR-015-docs-restructure.md` — Registro de decisión arquitectónica de esta reestructuración.
 - **Consolidación**: Unificación de roadmaps (`roadmap.md`, `roadmap-frontend.md`, `roadmap-consolidacion.md`, `roadmap-ota.md`) en un único `docs/roadmap/roadmap.md` autoritativo. Archivos antiguos movidos a `docs/roadmap/archive/`.
 - **Mantenimiento**:
