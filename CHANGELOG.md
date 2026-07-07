@@ -1,5 +1,35 @@
 # Changelog — Mush2
 
+## 2026-07-08
+
+### Frontend — v1.1.2 → Fixes React + Gauge Consistency
+
+- **Bug fix**: Añadido `key={i}` en el `.map()` de logs (línea 348)
+  - Eliminado warning de React: *"Each child in a list should have a unique key"*
+  - Build limpio (0 warnings)
+- **Corrección**: Solucionada referencia a `GREEN` en la rama fallback del operador ternario (línea 68)
+  - Ahora usa `GAUGE_COLORS.green` de forma consistente
+  - Gradient recibe correctamente el array `[{ offset: 0, color: GAUGE_COLORS.green }, ...]`
+
+**Resultado**: Eliminación completa de warnings en build y mayor consistencia en el manejo de colores del sistema de gauges.
+
+## 2026-07-08
+
+### Frontend — v1.1.1 → Mejoras CSS + Limpieza Design System
+
+- **Corrección**: `var(--primary)` inexistente en `focus-visible` → reemplazado por `--spore-green`
+- **Refactor**: Reemplazado toggle local en `ActuatorControl` por import desde `ui/`
+  - Mayor consistencia con el Design System
+- **Limpieza**:
+  - Resuelto warning de estilo duplicado preexistente
+  - Eliminado `dashboard/MetricCard.jsx` (código muerto, no era importado)
+  - Convertidos más de 30 estilos inline a 20 clases CSS dedicadas
+  - Eliminadas definiciones duplicadas de `scrollbar` y `shimmer`
+  - Migrados colores a variables `--gauge-*`
+  - Lectura de colores vía `getComputedStyle()` para mayor flexibilidad
+
+**Resultado**: Código más limpio, mantenible y coherente con el Design System. Reducción significativa de estilos inline y eliminación de código muerto.
+
 ## 2026-07-07
 
 ### Backend — v0.9.0
