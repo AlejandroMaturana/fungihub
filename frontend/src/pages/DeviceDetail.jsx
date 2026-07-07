@@ -346,7 +346,7 @@ function DeviceDetail() {
               <div className="opacity-30" style={{ padding: '4px' }}>[--:--:--] Waiting for data...</div>
             )}
             {logs.map((entry, i) => (
-              <div className="flex gap-2" style={{ padding: '1px 0', opacity: i === 0 ? 1 : 0.6 }}>
+              <div key={i} className="flex gap-2" style={{ padding: '1px 0', opacity: i === 0 ? 1 : 0.6 }}>
                 <span className="text-outline shrink-0">{entry.ts}</span>
                 <span className={
                   entry.type === 'error' ? 'text-error' :
