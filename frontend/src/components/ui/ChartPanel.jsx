@@ -255,65 +255,31 @@ function ChartPanel({ deviceId, telemetry, has }) {
     updateChart(chart2Ref.current, labels, ds2, chart2Bands)
   }, [labels, data1, data2, visibleLines])
 
-  const SX = {
-    section: { display: 'flex', flexDirection: 'column', gap: '4px' },
-    label: { fontSize: '9px', color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', paddingLeft: '2px' },
-    wrapper: { display: 'flex', gap: 0, height: '380px' },
-    sidebar: { display: 'flex', flexDirection: 'column', gap: '2px', width: '48px', flexShrink: 0, paddingTop: '32px', paddingBottom: '8px' },
-    chartBox: { flex: 1, background: 'var(--surface-container)', border: '1px solid var(--outline-variant)', borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column', minWidth: 0 },
-    chartInner: { flex: 1, display: 'flex', minHeight: 0 },
-    pane: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' },
-    paneBorder: { borderRight: '1px solid rgba(61,74,62,0.3)' },
-    barHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px 6px' },
-    barLabel: { fontSize: '9px', color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' },
-    badge: (c) => ({ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', borderRadius: '4px', border: `1px solid ${c}40`, background: `${c}08` }),
-    dot: (c) => ({ width: '10px', height: '10px', borderRadius: '50%', background: c, display: 'inline-block', boxShadow: `0 0 5px ${c}` }),
-    badgeLabel: (c) => ({ fontSize: '10px', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: c }),
-    canvasWrap: { flex: 1, position: 'relative', padding: '0 8px 8px' },
-    canvas: { position: 'absolute', inset: 0, width: '100%', height: '100%', padding: '12px 4px 4px' },
-    footer: { display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 16px', borderTop: '1px solid rgba(61,74,62,0.3)', background: 'rgba(38,43,41,0.5)' },
-    legendItem: { display: 'flex', alignItems: 'center', gap: '6px' },
-    legendLine: (c) => ({ width: '14px', height: '4px', borderRadius: '2px', background: c }),
-    legendLabel: { fontSize: '10px', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' },
-    optimal: { width: '14px', height: '6px', border: '1px dashed rgba(34,197,94,0.3)', borderRadius: '1px', background: 'rgba(34,197,94,0.07)' },
-    loading: { fontSize: '10px', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--spore-green)', marginLeft: 'auto' },
-  }
-
   return (
-    <section style={SX.section}>
-      <div style={SX.label}>HISTORY CHARTS</div>
-      <div style={SX.wrapper}>
-        <div style={SX.sidebar}>
+    <section className="chart-panel-section">
+      <div className="chart-panel-label">HISTORY CHARTS</div>
+      <div className="chart-panel-wrapper">
+        <div className="chart-panel-sidebar">
           {TIME_RANGES.map(tr => (
             <button
               key={tr.value}
               onClick={() => setTimeRange(tr.value)}
+              className="chart-panel-time-btn"
               style={{
-                flex: 1,
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 700,
-                fontSize: '10px',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                border: 'none',
                 background: timeRange === tr.value ? 'rgba(107,251,154,0.08)' : 'transparent',
                 color: timeRange === tr.value ? 'var(--spore-green)' : 'var(--on-surface-variant)',
                 borderLeft: timeRange === tr.value ? '2px solid var(--spore-green)' : '2px solid transparent',
-                padding: '4px 8px',
-                borderRadius: 0,
-                textAlign: 'left',
-                cursor: 'pointer',
               }}
             >
               {tr.label}
             </button>
           ))}
         </div>
-        <div style={SX.chartBox}>
-          <div style={SX.chartInner}>
-            <div style={{ ...SX.pane, ...SX.paneBorder }}>
-              <div style={SX.barHeader}>
-                <span style={SX.barLabel}>TEMPERATURE & HUMIDITY</span>
+        <div className="chart-panel-box">
+          <div className="chart-panel-inner">
+            <div className="chart-panel-pane chart-panel-pane-border">
+              <div className="chart-panel-bar-header">
+                <span className="chart-panel-bar-label">TEMPERATURE & HUMIDITY</span>
                 <div className="flex gap-2">
                   {['temp', 'hum'].map(k => {
                     const isVisible = visibleLines[k]
@@ -322,19 +288,15 @@ function ChartPanel({ deviceId, telemetry, has }) {
                       <button
                         key={k}
                         onClick={() => setVisibleLines(prev => ({ ...prev, [k]: !prev[k] }))}
+                        className="chart-panel-sensor-btn"
                         style={{
-                          ...SX.badge(color),
                           opacity: isVisible ? 1 : 0.35,
-                          cursor: 'pointer',
                           background: isVisible ? `${color}08` : 'transparent',
                           borderColor: isVisible ? `${color}40` : 'var(--outline-variant)',
-                          transition: 'all 0.2s',
-                          border: '1px solid',
-                          outline: 'none',
                         }}
                       >
-                        <span style={SX.dot(isVisible ? color : 'var(--outline)')} />
-                        <span style={SX.badgeLabel(isVisible ? color : 'var(--on-surface-variant)')}>
+                        <span className="chart-panel-sensor-dot" style={{ background: isVisible ? color : 'var(--outline)', boxShadow: isVisible ? `0 0 5px ${color}` : 'none' }} />
+                        <span className="chart-panel-sensor-label" style={{ color: isVisible ? color : 'var(--on-surface-variant)' }}>
                           {k === 'temp' ? 'T°' : 'HR%'}
                         </span>
                       </button>
@@ -342,13 +304,13 @@ function ChartPanel({ deviceId, telemetry, has }) {
                   })}
                 </div>
               </div>
-              <div style={SX.canvasWrap}>
-                <canvas ref={canvas1Ref} style={SX.canvas} />
+              <div className="chart-panel-canvas-wrap">
+                <canvas ref={canvas1Ref} className="chart-panel-canvas" />
               </div>
             </div>
-            <div style={SX.pane}>
-              <div style={SX.barHeader}>
-                <span style={SX.barLabel}>ECO₂ & TVOC</span>
+            <div className="chart-panel-pane">
+              <div className="chart-panel-bar-header">
+                <span className="chart-panel-bar-label">ECO₂ & TVOC</span>
                 <div className="flex gap-2">
                   {['eco2', 'tvoc'].map(k => {
                     const isVisible = visibleLines[k]
@@ -357,19 +319,15 @@ function ChartPanel({ deviceId, telemetry, has }) {
                       <button
                         key={k}
                         onClick={() => setVisibleLines(prev => ({ ...prev, [k]: !prev[k] }))}
+                        className="chart-panel-sensor-btn"
                         style={{
-                          ...SX.badge(color),
                           opacity: isVisible ? 1 : 0.35,
-                          cursor: 'pointer',
                           background: isVisible ? `${color}08` : 'transparent',
                           borderColor: isVisible ? `${color}40` : 'var(--outline-variant)',
-                          transition: 'all 0.2s',
-                          border: '1px solid',
-                          outline: 'none',
                         }}
                       >
-                        <span style={SX.dot(isVisible ? color : 'var(--outline)')} />
-                        <span style={SX.badgeLabel(isVisible ? color : 'var(--on-surface-variant)')}>
+                        <span className="chart-panel-sensor-dot" style={{ background: isVisible ? color : 'var(--outline)', boxShadow: isVisible ? `0 0 5px ${color}` : 'none' }} />
+                        <span className="chart-panel-sensor-label" style={{ color: isVisible ? color : 'var(--on-surface-variant)' }}>
                           {k === 'eco2' ? 'eCO₂' : 'TVOC'}
                         </span>
                       </button>
@@ -377,28 +335,28 @@ function ChartPanel({ deviceId, telemetry, has }) {
                   })}
                 </div>
               </div>
-              <div style={SX.canvasWrap}>
-                <canvas ref={canvas2Ref} style={SX.canvas} />
+              <div className="chart-panel-canvas-wrap">
+                <canvas ref={canvas2Ref} className="chart-panel-canvas" />
               </div>
             </div>
           </div>
-          <div style={SX.footer}>
+          <div className="chart-panel-footer">
             {[
               { id: 't', c: timeColors.temp, lbl: `Temp ${has.temp ? telemetry.temperature.toFixed(1) : '--'} °C`, visible: visibleLines.temp },
               { id: 'h', c: timeColors.hum, lbl: `Hum ${has.hum ? telemetry.humidity.toFixed(1) : '--'} %RH`, visible: visibleLines.hum },
               { id: 'e', c: timeColors.eco2, lbl: `eCO₂ ${has.eco2 ? Math.round(telemetry.co2) : '--'} ppm`, visible: visibleLines.eco2 },
               { id: 'v', c: timeColors.tvoc, lbl: `TVOC ${has.tvoc ? Math.round(telemetry.voc) : '--'} ppb`, visible: visibleLines.tvoc },
             ].map(item => (
-              <div key={item.id} style={{ ...SX.legendItem, opacity: item.visible ? 1 : 0.35, transition: 'all 0.2s' }}>
-                <span style={SX.legendLine(item.visible ? item.c : 'var(--outline)')} />
-                <span style={SX.legendLabel}>{item.lbl}</span>
+              <div key={item.id} className="chart-panel-legend-item" style={{ opacity: item.visible ? 1 : 0.35, transition: 'all 0.2s' }}>
+                <span className="chart-panel-legend-line" style={{ background: item.visible ? item.c : 'var(--outline)' }} />
+                <span className="chart-panel-legend-label">{item.lbl}</span>
               </div>
             ))}
-            <div style={SX.legendItem}>
-              <span style={SX.optimal} />
-              <span style={SX.legendLabel}>optimal</span>
+            <div className="chart-panel-legend-item">
+              <span className="chart-panel-optimal" />
+              <span className="chart-panel-legend-label">optimal</span>
             </div>
-            {loading && <span style={SX.loading}>loading...</span>}
+            {loading && <span className="chart-panel-loading">loading...</span>}
           </div>
         </div>
       </div>
