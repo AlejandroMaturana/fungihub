@@ -14,7 +14,12 @@ function App() {
   const { user, logout } = useAuth()
 
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       {!user ? (
         <Routes>
           <Route path="*" element={<Landing />} />
