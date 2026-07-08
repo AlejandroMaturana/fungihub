@@ -1,8 +1,15 @@
 import { Op } from 'sequelize';
 import { Router } from 'express';
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { Device, Telemetry, Event, User, CultivationCycle, AuditLog } from '../models/index.js';
 import sequelize from '../config/database.js';
 import os from 'os';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const backendPkg = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf-8'));
+const rootPkg = JSON.parse(readFileSync(join(__dirname, '../../../package.json'), 'utf-8'));
 
 const router = Router();
 
@@ -23,7 +30,11 @@ router.get('/metrics', async (req, res) => {
     res.json({
       timestamp: now.toISOString(),
       uptime: process.uptime(),
-      version: '0.8.0',
+      version: backendPkg.version,
+      versions: {
+        backend: backendPkg.version,
+        os: rootPkg.version,
+      },
       system: {
         memory: process.memoryUsage(),
         cpu: os.cpus().length,
