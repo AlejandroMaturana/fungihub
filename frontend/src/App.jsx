@@ -5,6 +5,11 @@ import DeviceDetail from './pages/DeviceDetail.jsx'
 import Recipes from './pages/Recipes.jsx'
 import Cycles from './pages/Cycles.jsx'
 import Settings from './pages/Settings.jsx'
+import SettingsHub from './pages/settings/SettingsHub.jsx'
+import UserSettings from './pages/settings/UserSettings.jsx'
+import DeviceSettings from './pages/settings/DeviceSettings.jsx'
+import CultivationSettings from './pages/settings/CultivationSettings.jsx'
+import SystemSettings from './pages/settings/SystemSettings.jsx'
 import Provisioning from './pages/Provisioning.jsx'
 import Landing from './pages/Landing.jsx'
 import { useAuth } from './api/AuthContext.jsx'
@@ -32,7 +37,13 @@ function App() {
             <Route path="/devices/:id" element={<DeviceDetail />} />
             <Route path="/recipes" element={<Recipes />} />
             <Route path="/cycles" element={<Cycles />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/settings" element={<Settings />}>
+              <Route index element={<SettingsHub />} />
+              <Route path="user" element={<UserSettings />} />
+              <Route path="device" element={<DeviceSettings />} />
+              <Route path="cultivation" element={<CultivationSettings />} />
+              <Route path="system" element={<SystemSettings />} />
+            </Route>
             <Route path="/provisioning" element={<Provisioning />} />
           </Routes>
         </AppShell>
