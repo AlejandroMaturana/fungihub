@@ -11,7 +11,7 @@ RUN pnpm install --frozen-lockfile
 COPY frontend/ frontend/
 RUN pnpm --filter mush2-frontend run build
 
-RUN pnpm --filter mush2-backend deploy --legacy --prod /app/deploy
+RUN pnpm --filter mush2-backend deploy --prod /app/deploy
 
 FROM node:20-alpine
 WORKDIR /app/deploy
