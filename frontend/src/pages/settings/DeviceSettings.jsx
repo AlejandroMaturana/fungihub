@@ -1,46 +1,26 @@
 import { useState, useEffect } from 'react'
-import { getDevices, updateDevice, getLatestTelemetry, getActuators } from '../../api/client.js'
+import { getDevices, getDevice, updateDevice } from '../../api/client.js'
 import LoadingState from '../../components/ui/LoadingState.jsx'
 import ErrorState from '../../components/ui/ErrorState.jsx'
 import EmptyState from '../../components/ui/EmptyState.jsx'
-
-const SENSOR_TYPES = [
-  { key: 'temperature', label: 'Temperature', unit: '°C', icon: 'thermostat' },
-  { key: 'humidity', label: 'Humidity', unit: '%', icon: 'water_drop' },
-  { key: 'co2', label: 'CO2', unit: 'ppm', icon: 'co2' },
-  { key: 'voc', label: 'VOC', unit: 'ppb', icon: 'air' },
-]
 
 function DeviceSettings() {
   const [devices, setDevices] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [device, setDevice] = useState(null)
-  const [telemetry, setTelemetry] = useState(null)
-  const [actuators, setActuators] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingDetail, setLoadingDetail] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [renameValue, setRenameValue] = useState('')
   const [renameMsg, setRenameMsg] = useState(null)
-  const [firmwareCmd, setFirmwareCmd] = useState('')
-  const [firmwareLog, setFirmwareLog] = useState([])
 
-  async function loadData() {
+  async function loadDevices() {
     try {
       const devs = await getDevices()
       setDevices(devs)
-      const targetId = selectedId || devs[0]?.id
-      if (targetId) {
-        setSelectedId(targetId)
-        const dev = devs.find(d => d.id === Number(targetId)) || devs[0]
-        setDevice(dev)
-        setRenameValue(dev.chamberName || dev.deviceId || '')
-        const [tel, acts] = await Promise.all([
-          getLatestTelemetry(dev.id).catch(() => null),
-          getActuators(dev.id).catch(() => []),
-        ])
-        setTelemetry(tel)
-        setActuators(acts)
+      if (!selectedId && devs[0]) {
+        setSelectedId(devs[0].id)
       }
       setError(null)
     } catch (err) {
@@ -50,7 +30,23 @@ function DeviceSettings() {
     }
   }
 
-  useEffect(() => { loadData() }, [])
+  async function loadDeviceDetail(id) {
+    if (!id) return
+    setLoadingDetail(true)
+    try {
+      const dev = await getDevice(id)
+      setDevice(dev)
+      setRenameValue(dev.chamberName || dev.deviceId || '')
+      setError(null)
+    } catch (err) {
+      setError(err.message || 'Connection error')
+    } finally {
+      setLoadingDetail(false)
+    }
+  }
+
+  useEffect(() => { loadDevices() }, [])
+  useEffect(() => { loadDeviceDetail(selectedId) }, [selectedId])
 
   async function handleRename() {
     if (!device || !renameValue.trim()) return
@@ -67,24 +63,17 @@ function DeviceSettings() {
     }
   }
 
-  function handleFirmwareCmd(e) {
-    if (e.key === 'Enter' && firmwareCmd.trim()) {
-      setFirmwareLog(prev => [...prev, { text: `$ ${firmwareCmd}`, type: 'info' }])
-      setFirmwareCmd('')
-    }
-  }
-
   if (loading) return <LoadingState message="Loading device configuration..." icon="developer_board" />
-  if (error && devices.length === 0) return <ErrorState message={error} onRetry={loadData} />
+  if (error && devices.length === 0) return <ErrorState message={error} onRetry={loadDevices} />
   if (devices.length === 0) return <EmptyState icon="developer_board" title="No devices" message="Connect a device to configure hardware settings." />
 
   return (
-    <div className="max-w-[1600px] mx-auto">
+    <div className="max-w-4xl mx-auto">
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-headline-lg text-on-surface mb-1">Device Configuration</h1>
-            <p className="text-on-surface-variant text-body-md">Identity, telemetry and actuator status.</p>
+            <p className="text-on-surface-variant text-body-md">Identity and hardware parameters.</p>
           </div>
           <select
             className="bg-surface-container border border-outline-variant rounded-md text-body-md text-on-surface px-3 py-1.5 cursor-pointer"
@@ -98,8 +87,10 @@ function DeviceSettings() {
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 lg:col-span-4 space-y-4">
+      {loadingDetail ? (
+        <LoadingState message="Loading device details..." />
+      ) : device ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <section className="glass-card p-5 rounded-xl border border-outline-variant">
             <div className="flex items-center gap-3 mb-4">
               <span className="material-symbols-outlined text-secondary">badge</span>
@@ -108,7 +99,7 @@ function DeviceSettings() {
             <div className="space-y-3">
               <div>
                 <p className="font-label-caps text-9px text-on-surface-variant mb-1">DEVICE ID</p>
-                <p className="font-mono text-data-sm text-secondary tracking-widest">{device?.deviceId || '—'}</p>
+                <p className="font-mono text-data-sm text-secondary tracking-widest">{device.deviceId || '—'}</p>
               </div>
               <div>
                 <p className="font-label-caps text-9px text-on-surface-variant mb-1">CHAMBER NAME</p>
@@ -131,118 +122,50 @@ function DeviceSettings() {
                   <p className={`text-10px mt-1 ${renameMsg.type === 'ok' ? 'text-primary' : 'text-error'}`}>{renameMsg.text}</p>
                 )}
               </div>
-              <div>
-                <p className="font-label-caps text-9px text-on-surface-variant mb-1">STATUS</p>
+            </div>
+          </section>
+
+          <section className="glass-card p-5 rounded-xl border border-outline-variant">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="material-symbols-outlined text-secondary">settings</span>
+              <h3 className="font-label-caps text-label-caps text-on-surface-variant">HARDWARE</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-2.5 bg-surface-container-low rounded">
+                <span className="font-label-caps text-9px text-on-surface-variant">STATUS</span>
                 <div className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${device?.status === 'ONLINE' ? 'bg-primary breathing-pulse' : 'bg-outline-variant'}`} />
-                  <span className="font-mono text-data-sm text-on-surface">{device?.status || '—'}</span>
+                  <span className={`w-2 h-2 rounded-full ${device.status === 'ONLINE' ? 'bg-primary breathing-pulse' : 'bg-outline-variant'}`} />
+                  <span className="font-mono text-data-sm text-on-surface">{device.status || '—'}</span>
                 </div>
               </div>
-              <div>
-                <p className="font-label-caps text-9px text-on-surface-variant mb-1">MAC ADDRESS</p>
-                <p className="font-mono text-data-sm text-on-surface">{device?.macAddress || '—'}</p>
+              <div className="flex items-center justify-between p-2.5 bg-surface-container-low rounded">
+                <span className="font-label-caps text-9px text-on-surface-variant">MAC ADDRESS</span>
+                <span className="font-mono text-data-sm text-on-surface">{device.macAddress || '—'}</span>
               </div>
-              <div>
-                <p className="font-label-caps text-9px text-on-surface-variant mb-1">FIRMWARE</p>
-                <p className="font-mono text-data-sm text-on-surface">{device?.firmwareVersion || '—'}</p>
+              <div className="flex items-center justify-between p-2.5 bg-surface-container-low rounded">
+                <span className="font-label-caps text-9px text-on-surface-variant">FIRMWARE</span>
+                <span className="font-mono text-data-sm text-on-surface">{device.firmwareVersion || '—'}</span>
               </div>
-              <div>
-                <p className="font-label-caps text-9px text-on-surface-variant mb-1">LAST SEEN</p>
-                <p className="font-mono text-data-sm text-on-surface">{device?.lastSeen ? new Date(device.lastSeen).toLocaleString() : '—'}</p>
+              <div className="flex items-center justify-between p-2.5 bg-surface-container-low rounded">
+                <span className="font-label-caps text-9px text-on-surface-variant">CHAMBER ID</span>
+                <span className="font-mono text-data-sm text-on-surface">{device.chamberId != null ? device.chamberId : '—'}</span>
+              </div>
+              <div className="flex items-center justify-between p-2.5 bg-surface-container-low rounded">
+                <span className="font-label-caps text-9px text-on-surface-variant">LOCATION</span>
+                <span className="font-mono text-data-sm text-on-surface">{device.chamberLocation || '—'}</span>
+              </div>
+              <div className="flex items-center justify-between p-2.5 bg-surface-container-low rounded">
+                <span className="font-label-caps text-9px text-on-surface-variant">SSR MODE</span>
+                <span className="font-mono text-data-sm text-on-surface">{device.ssrActiveLow ? 'Active Low' : 'Active High'}</span>
+              </div>
+              <div className="flex items-center justify-between p-2.5 bg-surface-container-low rounded">
+                <span className="font-label-caps text-9px text-on-surface-variant">LAST SEEN</span>
+                <span className="font-mono text-data-sm text-on-surface">{device.lastSeen ? new Date(device.lastSeen).toLocaleString() : '—'}</span>
               </div>
             </div>
           </section>
         </div>
-
-        <div className="col-span-12 lg:col-span-8 space-y-4">
-          <section className="glass-card p-5 rounded-xl border border-outline-variant">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="material-symbols-outlined text-primary">sensors</span>
-              <h3 className="font-label-caps text-label-caps text-on-surface-variant">LATEST TELEMETRY</h3>
-              <span className="text-10px text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">REALTIME</span>
-            </div>
-            {!telemetry ? (
-              <p className="text-body-md text-on-surface-variant py-4 text-center">No telemetry data available</p>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {SENSOR_TYPES.map(st => {
-                  const value = telemetry[st.key]
-                  const unitKey = `${st.key}_unit`
-                  const unit = telemetry[unitKey] || st.unit
-                  return (
-                    <div key={st.key} className="p-4 bg-surface-container-low rounded-lg border border-outline-variant/30">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="material-symbols-outlined text-sm text-on-surface-variant">{st.icon}</span>
-                        <span className="font-label-caps text-9px text-on-surface-variant">{st.label}</span>
-                      </div>
-                      <p className="text-headline-md text-primary">{value != null ? `${value}${unit}` : '—'}</p>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </section>
-
-          <section className="glass-card p-5 rounded-xl border border-outline-variant">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="material-symbols-outlined text-secondary">settings_power</span>
-              <h3 className="font-label-caps text-label-caps text-on-surface-variant">ACTUATOR STATUS</h3>
-            </div>
-            {actuators.length === 0 ? (
-              <p className="text-body-md text-on-surface-variant py-4 text-center">No actuators configured</p>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {actuators.map(a => {
-                  const isOn = a.state === 'ON'
-                  return (
-                    <div key={a.channel} className={`p-4 rounded-lg border text-center transition-all ${isOn ? 'bg-primary/10 border-primary/30' : 'bg-surface-container-low border-outline-variant/30'}`}>
-                      <span className="text-9px font-label-caps text-on-surface-variant">CH{a.channel}</span>
-                      <p className="text-10px mt-1 font-semibold text-on-surface">{a.label || `Actuator ${a.channel}`}</p>
-                      <p className="font-mono text-data-sm mt-2">{a.state || '—'}</p>
-                      <div className={`mt-2 w-2 h-2 rounded-full mx-auto ${isOn ? 'bg-primary breathing-pulse' : 'bg-outline-variant'}`} />
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </section>
-
-          <section className="glass-card rounded-xl border border-outline-variant overflow-hidden">
-            <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-high">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">terminal</span>
-                <h3 className="font-label-caps text-label-caps text-on-surface">FIRMWARE TERMINAL</h3>
-              </div>
-              <div className="flex gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-error" />
-                <div className="w-2 h-2 rounded-full bg-tertiary" />
-                <div className="w-2 h-2 rounded-full bg-primary" />
-              </div>
-            </div>
-            <div className="p-4 font-mono text-data-sm text-primary/80 bg-black/40 min-h-[200px] max-h-[260px] overflow-y-auto" style={{ fontFamily: 'var(--font-mono)' }}>
-              {firmwareLog.length === 0 && (
-                <p className="text-on-surface-variant mb-2">Terminal ready. Type a command.</p>
-              )}
-              {firmwareLog.map((entry, i) => (
-                <div key={i} className={`mb-1 ${entry.type === 'err' ? 'text-error' : 'text-on-surface-variant'}`}>
-                  {entry.text}
-                </div>
-              ))}
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-secondary">$</span>
-                <input
-                  className="bg-transparent border-none p-0 focus:ring-0 text-primary w-full outline-none font-mono"
-                  type="text"
-                  value={firmwareCmd}
-                  onChange={e => setFirmwareCmd(e.target.value)}
-                  onKeyDown={handleFirmwareCmd}
-                  placeholder="Type command..."
-                />
-              </div>
-            </div>
-          </section>
-        </div>
-      </div>
+      ) : null}
     </div>
   )
 }

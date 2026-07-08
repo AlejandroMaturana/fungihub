@@ -8,6 +8,13 @@ const ENV_PARAMS = [
   { key: 'humidity', label: 'HUMIDITY', unit: '%', icon: 'water_drop', min: 60, max: 100, optimal: 'High Saturation' },
 ]
 
+const STATUS_META = {
+  ONLINE: { color: 'bg-primary', label: 'Online' },
+  OFFLINE: { color: 'bg-error', label: 'Offline' },
+  MAINTENANCE: { color: 'bg-tertiary', label: 'Maintenance' },
+  ERROR: { color: 'bg-amber', label: 'Error' },
+}
+
 function CultivationSettings() {
   const [devices, setDevices] = useState([])
   const [telemetry, setTelemetry] = useState(null)
@@ -43,13 +50,11 @@ function CultivationSettings() {
   if (loading) return <LoadingState message="Loading cultivation configuration..." icon="potted_plant" />
   if (error) return <ErrorState message={error} onRetry={loadData} />
 
-  const activeRecipe = recipes.length > 0 ? recipes[0] : null
-
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-headline-lg text-on-surface mb-1">Cultivation Configuration</h1>
-        <p className="text-on-surface-variant text-body-md">Environmental parameters, recipe and cycles status.</p>
+        <p className="text-on-surface-variant text-body-md">Environmental parameters, connection status, recipes and cycles.</p>
       </div>
 
       <div className="grid grid-cols-12 gap-4">
@@ -84,18 +89,39 @@ function CultivationSettings() {
               )
             })}
           </div>
+
           <div className="h-36 w-full bg-surface-container-lowest rounded-lg overflow-hidden relative border border-outline-variant/20">
-            <div className="absolute top-2 left-2 font-label-caps text-9px text-on-surface-variant opacity-50">GROWTH PROJECTION (24H)</div>
-            <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 400 80">
-              <defs>
-                <linearGradient id="growthGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#4ade80" stopOpacity="1" />
-                  <stop offset="100%" stopColor="#0f1412" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <path d="M0 60 Q 100 50, 200 30 T 400 10" fill="none" stroke="#6bfb9a" strokeWidth="1.5" className="bioluminescent-path" />
-              <path d="M0 60 Q 100 50, 200 30 T 400 10 L 400 80 L 0 80 Z" fill="url(#growthGrad)" opacity="0.1" />
-            </svg>
+            <div className="absolute top-2 left-2 font-label-caps text-9px text-on-surface-variant opacity-50">CONNECTION CONTINUITY</div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-full px-4 space-y-3">
+                {devices.length === 0 ? (
+                  <p className="text-body-md text-on-surface-variant text-center">No devices</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {devices.map(d => {
+                      const meta = STATUS_META[d.status] || STATUS_META.OFFLINE
+                      const lastSeen = d.lastSeen ? new Date(d.lastSeen) : null
+                      const ago = lastSeen ? Math.floor((Date.now() - lastSeen.getTime()) / 1000) : null
+                      const agoStr = ago != null
+                        ? ago < 60 ? `${ago}s ago`
+                        : ago < 3600 ? `${Math.floor(ago / 60)}m ago`
+                        : ago < 86400 ? `${Math.floor(ago / 3600)}h ago`
+                        : `${Math.floor(ago / 86400)}d ago`
+                        : '—'
+                      return (
+                        <div key={d.id} className="flex items-center gap-3 text-10px">
+                          <span className="w-2 h-2 rounded-full shrink-0 breathing-pulse" style={{ background: d.status === 'ONLINE' ? 'var(--primary)' : 'var(--error)' }} />
+                          <span className="w-24 font-mono text-data-sm text-on-surface truncate">{d.chamberName || d.deviceId}</span>
+                          <span className="w-3 h-3 rounded flex items-center justify-center text-8px font-bold" style={{ background: d.status === 'ONLINE' ? 'var(--primary)' : 'var(--surface-container-high)', color: d.status === 'ONLINE' ? 'var(--on-primary)' : 'var(--on-surface-variant)' }}>{d.status === 'ONLINE' ? '✓' : '✗'}</span>
+                          <span className="text-on-surface-variant">{d.status || '—'}</span>
+                          <span className="text-on-surface-variant ml-auto">{agoStr}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </section>
 

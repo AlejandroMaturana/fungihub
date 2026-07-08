@@ -137,6 +137,11 @@ export async function getMe() {
   return data
 }
 
+export async function updateProfile(payload) {
+  const { data } = await client.patch('/auth/me', payload)
+  return data
+}
+
 export async function getSystemMetrics() {
   const { data } = await client.get('/monitoring/metrics')
   return data
