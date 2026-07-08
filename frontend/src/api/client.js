@@ -137,4 +137,9 @@ export async function getMe() {
   return data
 }
 
+export async function getSystemMetrics() {
+  const { data } = await client.get('/monitoring/metrics')
+  return data
+}
+
 export default client

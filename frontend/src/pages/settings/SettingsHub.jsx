@@ -62,7 +62,7 @@ function SettingsHub() {
   if (loading) return <LoadingState message="Loading system configuration..." icon="settings" />
   if (error) return <ErrorState message={error} onRetry={fetchDevices} />
 
-  const onlineCount = devices.filter(d => d.status === 'ONLINE' || d.status !== 'OFFLINE').length
+  const onlineCount = devices.filter(d => d.status === 'ONLINE').length
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -106,9 +106,9 @@ function SettingsHub() {
         <div className="flex items-center gap-3 text-10px font-label-caps text-on-surface-variant">
           <span className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            {user?.username || 'OPERATOR'}
+            {user?.username || '—'}
           </span>
-          <span>FIRMWARE v2.4.0</span>
+          <span>{devices[0]?.firmwareVersion ? `FW ${devices[0].firmwareVersion}` : '—'}</span>
         </div>
       </div>
     </div>

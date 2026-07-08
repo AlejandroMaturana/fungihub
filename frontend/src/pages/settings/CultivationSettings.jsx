@@ -1,32 +1,35 @@
 import { useState, useEffect } from 'react'
-import { getRecipes, getCycles } from '../../api/client.js'
-import ToggleSwitch from '../../components/ui/ToggleSwitch.jsx'
+import { getDevices, getLatestTelemetry, getRecipes, getCycles } from '../../api/client.js'
 import LoadingState from '../../components/ui/LoadingState.jsx'
 import ErrorState from '../../components/ui/ErrorState.jsx'
-import EmptyState from '../../components/ui/EmptyState.jsx'
 
-const ALERTS = [
-  { label: 'CRIT: Pump Failure', desc: 'Notify via SMS + Push', severity: 'critical', enabled: true },
-  { label: 'TEMP > 30°C', desc: 'Priority: High', severity: 'high', enabled: true },
-  { label: 'HUM < 70%', desc: 'Priority: Medium', severity: 'medium', enabled: false },
+const ENV_PARAMS = [
+  { key: 'temperature', label: 'TEMPERATURE', unit: '°C', icon: 'thermostat', min: 18, max: 32, optimal: 'Optimal Range' },
+  { key: 'humidity', label: 'HUMIDITY', unit: '%', icon: 'water_drop', min: 60, max: 100, optimal: 'High Saturation' },
 ]
 
 function CultivationSettings() {
+  const [devices, setDevices] = useState([])
+  const [telemetry, setTelemetry] = useState(null)
   const [recipes, setRecipes] = useState([])
   const [cycles, setCycles] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [tempVal] = useState(24.5)
-  const [humVal] = useState(92)
 
   async function loadData() {
     try {
-      const [rec, cyc] = await Promise.all([
+      const [devs, rec, cyc] = await Promise.all([
+        getDevices().catch(() => []),
         getRecipes().catch(() => []),
         getCycles().catch(() => []),
       ])
+      setDevices(devs)
       setRecipes(rec)
       setCycles(cyc)
+      if (devs[0]) {
+        const tel = await getLatestTelemetry(devs[0].id).catch(() => null)
+        setTelemetry(tel)
+      }
       setError(null)
     } catch (err) {
       setError(err.message || 'Connection error')
@@ -46,7 +49,7 @@ function CultivationSettings() {
     <div className="max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-headline-lg text-on-surface mb-1">Cultivation Configuration</h1>
-        <p className="text-on-surface-variant text-body-md">Environmental parameters, automation logic and critical thresholds.</p>
+        <p className="text-on-surface-variant text-body-md">Environmental parameters, recipe and cycles status.</p>
       </div>
 
       <div className="grid grid-cols-12 gap-4">
@@ -56,42 +59,33 @@ function CultivationSettings() {
               <span className="material-symbols-outlined text-primary">settings_input_composite</span>
               <h3 className="font-label-caps text-label-caps text-on-surface-variant">ENVIRONMENT PARAMETERS</h3>
             </div>
-            <span className="text-data-sm text-secondary bg-secondary/10 px-2 py-1 rounded">REAL-TIME SYNC</span>
+            <span className="text-data-sm text-secondary bg-secondary/10 px-2 py-1 rounded">REAL-TIME</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-            <div className="p-4 bg-surface-container-low rounded-lg border border-outline-variant/30">
-              <div className="flex justify-between items-end mb-2">
-                <label className="font-label-caps text-10px text-on-surface-variant">TEMPERATURE (°C)</label>
-                <span className="text-headline-md text-primary">{tempVal}</span>
-              </div>
-              <div className="relative h-2 bg-background rounded-full overflow-hidden mt-3">
-                <div className="absolute left-1/4 right-1/4 h-full bg-primary/40" />
-                <div className="absolute left-1/2 -ml-1 w-2 h-full bg-primary" />
-              </div>
-              <div className="flex justify-between font-data-sm text-on-surface-variant mt-2">
-                <span>18°C</span>
-                <span className="text-primary">Optimal Range</span>
-                <span>32°C</span>
-              </div>
-            </div>
-            <div className="p-4 bg-surface-container-low rounded-lg border border-outline-variant/30">
-              <div className="flex justify-between items-end mb-2">
-                <label className="font-label-caps text-10px text-on-surface-variant">HUMIDITY (%)</label>
-                <span className="text-headline-md text-secondary">{humVal}</span>
-              </div>
-              <div className="relative h-2 bg-background rounded-full overflow-hidden mt-3">
-                <div className="absolute left-2/3 right-1/4 h-full bg-secondary/40" />
-                <div className="absolute left-[92%] -ml-1 w-2 h-full bg-secondary" />
-              </div>
-              <div className="flex justify-between font-data-sm text-on-surface-variant mt-2">
-                <span>60%</span>
-                <span className="text-secondary">High Saturation</span>
-                <span>100%</span>
-              </div>
-            </div>
+            {ENV_PARAMS.map(param => {
+              const value = telemetry ? telemetry[param.key] : null
+              const pct = value != null ? ((value - param.min) / (param.max - param.min)) * 100 : 50
+              return (
+                <div key={param.key} className="p-4 bg-surface-container-low rounded-lg border border-outline-variant/30">
+                  <div className="flex justify-between items-end mb-2">
+                    <label className="font-label-caps text-10px text-on-surface-variant">{param.label} ({param.unit})</label>
+                    <span className="text-headline-md text-primary">{value != null ? value : '—'}</span>
+                  </div>
+                  <div className="relative h-2 bg-background rounded-full overflow-hidden mt-3">
+                    <div className="absolute inset-0 opacity-30" style={{ background: `linear-gradient(to right, transparent ${pct}%, var(--primary))` }} />
+                    <div className="absolute w-2 h-full bg-primary rounded-full" style={{ left: `calc(${pct}% - 4px)` }} />
+                  </div>
+                  <div className="flex justify-between font-data-sm text-on-surface-variant mt-2">
+                    <span>{param.min}{param.unit}</span>
+                    <span className="text-primary">{param.optimal}</span>
+                    <span>{param.max}{param.unit}</span>
+                  </div>
+                </div>
+              )
+            })}
           </div>
           <div className="h-36 w-full bg-surface-container-lowest rounded-lg overflow-hidden relative border border-outline-variant/20">
-            <div className="absolute top-2 left-2 font-label-caps text-9px text-on-surface-variant opacity-50">MYCELIAL GROWTH PROJECTION (24H)</div>
+            <div className="absolute top-2 left-2 font-label-caps text-9px text-on-surface-variant opacity-50">GROWTH PROJECTION (24H)</div>
             <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 400 80">
               <defs>
                 <linearGradient id="growthGrad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -121,9 +115,9 @@ function CultivationSettings() {
                 <div key={r.id} className="p-3 bg-surface-container border-l-2 border-primary rounded-r-md cursor-pointer hover:bg-surface-container-high transition-all group">
                   <div className="flex justify-between items-start">
                     <p className="font-mono text-data-sm text-primary">{r.name || `Recipe #${r.id}`}</p>
-                    <span className="material-symbols-outlined text-on-surface-variant text-sm group-hover:text-primary">check_circle</span>
+                    <span className="material-symbols-outlined text-on-surface-variant text-sm">check_circle</span>
                   </div>
-                  {r.type && <p className="text-10px text-on-surface-variant mt-1">{r.type}</p>}
+                  {r.species && <p className="text-10px text-on-surface-variant mt-1">{r.species}</p>}
                 </div>
               ))}
             </div>
@@ -133,52 +127,26 @@ function CultivationSettings() {
           </button>
         </section>
 
-        <section className="col-span-12 md:col-span-7 glass-card p-5 rounded-xl border border-outline-variant">
+        <section className="col-span-12 glass-card p-5 rounded-xl border border-outline-variant">
           <div className="flex items-center gap-3 mb-5">
-            <span className="material-symbols-outlined text-secondary">precision_manufacturing</span>
-            <h3 className="font-label-caps text-label-caps text-on-surface-variant">AUTOMATION ENGINE</h3>
+            <span className="material-symbols-outlined text-secondary">cyclone</span>
+            <h3 className="font-label-caps text-label-caps text-on-surface-variant">ACTIVE CYCLES</h3>
           </div>
-          <div className="space-y-3">
-            {[
-              { condition: 'CO2 Sensor > 1000 ppm', action: 'Extract Air' },
-              { condition: 'Light (UV) ON for 12 hrs', action: 'Darkness Cycle' },
-            ].map((rule, i) => (
-              <div key={i} className="flex items-center gap-3 bg-surface-container-lowest p-3 rounded border border-outline-variant/30">
-                <span className="font-label-caps bg-primary/20 text-primary px-2 py-1 rounded text-9px">IF</span>
-                <span className="flex-1 text-data-sm text-on-surface-variant">{rule.condition}</span>
-                <span className="font-label-caps bg-secondary/20 text-secondary px-2 py-1 rounded text-9px">THEN</span>
-                <span className="text-data-sm text-secondary">{rule.action}</span>
-              </div>
-            ))}
-          </div>
-          <button className="w-full mt-3 py-2 border border-dashed border-outline text-on-surface-variant font-label-caps text-label-caps rounded hover:border-secondary hover:text-secondary transition-all">
-            + ADD RULE
-          </button>
-        </section>
-
-        <section className="col-span-12 md:col-span-5 glass-card p-5 rounded-xl border border-outline-variant">
-          <div className="flex items-center gap-3 mb-5">
-            <span className="material-symbols-outlined text-error">notification_important</span>
-            <h3 className="font-label-caps text-label-caps text-on-surface-variant">ALERT THRESHOLDS</h3>
-          </div>
-          <div className="space-y-3">
-            {ALERTS.map((alert, i) => (
-              <div
-                key={i}
-                className={`flex justify-between items-center p-3 rounded ${
-                  alert.severity === 'critical'
-                    ? 'bg-error-container/10 border border-error/20'
-                    : 'bg-surface-container-low border border-outline-variant/30'
-                }`}
-              >
-                <div>
-                  <p className={`text-data-sm ${alert.severity === 'critical' ? 'text-error' : 'text-on-surface'}`}>{alert.label}</p>
-                  <p className="text-10px text-on-surface-variant">{alert.desc}</p>
+          {cycles.length === 0 ? (
+            <p className="text-body-md text-on-surface-variant py-4 text-center">No active cultivation cycles</p>
+          ) : (
+            <div className="space-y-3">
+              {cycles.map(c => (
+                <div key={c.id} className="flex items-center justify-between p-3 bg-surface-container-low rounded border border-outline-variant/30">
+                  <div>
+                    <p className="text-data-sm text-on-surface">{c.species || `Cycle #${c.id}`}</p>
+                    <p className="text-10px text-on-surface-variant">{c.status} — {c.currentPhase || '—'}</p>
+                  </div>
+                  <span className={`text-10px font-bold ${c.status === 'ACTIVE' ? 'text-primary' : 'text-on-surface-variant'}`}>{c.status}</span>
                 </div>
-                <ToggleSwitch checked={alert.enabled} onChange={() => {}} />
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </div>
