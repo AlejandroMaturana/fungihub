@@ -123,9 +123,13 @@ export async function createDevice(device) {
   return data
 }
 
-export async function updateDeviceSsrMode(id, ssrActiveLow) {
-  const { data } = await client.patch(`/devices/${id}`, { ssrActiveLow })
+export async function updateDevice(id, payload) {
+  const { data } = await client.patch(`/devices/${id}`, payload)
   return data
+}
+
+export async function updateDeviceSsrMode(id, ssrActiveLow) {
+  return updateDevice(id, { ssrActiveLow })
 }
 
 export async function getMe() {
