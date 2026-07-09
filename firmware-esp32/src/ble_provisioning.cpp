@@ -1,4 +1,5 @@
 #include "ble_provisioning.h"
+#include "config.h"
 #include <Preferences.h>
 
 static const char* NVS_NS = "mush2_prov";
@@ -128,7 +129,7 @@ void BLEProvisioning::start() {
   );
   String infoJson = "{\"deviceId\":\"" + _deviceId
     + "\",\"fwVer\":\"" + _fwVer
-    + "\",\"hwRev\":\"1.0\"}";
+    + "\",\"hwRev\":\"" HW_REVISION "\"}";
   _charDeviceInfo->setValue(infoJson.c_str());
 
   _charWifiSsid = _service->createCharacteristic(

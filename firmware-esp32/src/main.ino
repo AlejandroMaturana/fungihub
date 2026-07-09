@@ -59,6 +59,9 @@ volatile float fallbackHum = 0;
 volatile bool fallbackActive = false;
 volatile unsigned long sensorFailCount = 0;
 char systemState[16] = "NORMAL";
+char sharedMac[18] = "";
+char sharedFwVer[20] = "";
+char sharedHwRev[10] = "";
 
 // Actuator desired states (written by Core 0, read by Core 1)
 volatile uint8_t actuatorDesired[4] = {0, 0, 0, 0};
@@ -573,7 +576,7 @@ void taskTelemetry(void* pvParameters) {
         CtrlMode ctrlMode = hyst.getMode();
         const char* modeStr = (ctrlMode == CTRL_LOCAL) ? "LOCAL"
           : (ctrlMode == CTRL_REMOTE) ? "REMOTE" : "OFF";
-        mqtt.publishStatus(sm.getStateName(), modeStr, wifi.getRSSI());
+        mqtt.publishStatus(sm.getStateName(), modeStr, wifi.getRSSI(), sharedMac, sharedFwVer, sharedHwRev);
       }
     }
 
@@ -722,14 +725,19 @@ void setup() {
 
     sm.fsmTransition(wifi.isConnected() ? ST_NORMAL : ST_DEGRADED, "setup complete");
 
-    // Registro en backend (self-registration post-provisioning)
+    // Capturar info del dispositivo para MQTT y backend
     uint8_t mac[6];
     WiFi.macAddress(mac);
     char macStr[18];
     snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X",
       mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    strncpy(sharedMac, macStr, sizeof(sharedMac) - 1);
+    strncpy(sharedFwVer, ota.getVersion(), sizeof(sharedFwVer) - 1);
+    strncpy(sharedHwRev, HW_REVISION, sizeof(sharedHwRev) - 1);
+
+    // Registro en backend (self-registration post-provisioning)
     for (int i = 0; i < 5; i++) {
-      if (httpPoller.registerDevice(FIRMWARE_VERSION, macStr)) break;
+      if (httpPoller.registerDevice(sharedFwVer, sharedMac, sharedHwRev)) break;
       vTaskDelay(pdMS_TO_TICKS(2000));
     }
 

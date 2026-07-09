@@ -27,7 +27,7 @@ public:
   void init(const char* deviceId, const char* host, uint16_t port);
   void loop();
   bool isConnected();
-  bool registerDevice(const char* fwVersion, const char* macAddress);
+  bool registerDevice(const char* fwVersion, const char* macAddress, const char* hwRevision = "");
   void getDesired(int ch, uint8_t* state, uint8_t* mode);
   unsigned int getFailCount() { return failCount; }
   bool getSsrActiveLow();
