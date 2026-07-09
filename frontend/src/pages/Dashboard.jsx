@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { getDevices, getLatestTelemetry } from '../api/client.js'
 import { useSSE } from '../api/useSSE.js'
 import LoadingState from '../components/ui/LoadingState.jsx'
@@ -8,36 +8,39 @@ import StatusBadge from '../components/ui/StatusBadge.jsx'
 import DevicesEmptyState from '../components/ui/DevicesEmptyState.jsx'
 
 function DeviceRow({ device, telemetry }) {
+  const navigate = useNavigate()
   const isOnline = device.status === 'ONLINE'
   return (
-    <Link to={`/devices/${device.id}`} className="no-underline" style={{ display: 'contents' }}>
-      <tr className="hover:bg-surface-container-highest/40 transition-colors" style={{ cursor: 'pointer' }}>
-        <td className="p-3">
-          <div className="flex items-center gap-3">
-            <span className={`status-dot ${isOnline ? 'online' : 'offline'}`} />
-            <span className="text-body-md text-on-surface">{device.chamberName || device.deviceId}</span>
-          </div>
-        </td>
-        <td className="p-3">
-          <StatusBadge status={isOnline ? 'online' : 'offline'} label={device.status} />
-        </td>
-        <td className="p-3 font-mono text-data-sm text-on-surface-variant">
-          {telemetry?.temperature != null ? `${telemetry.temperature.toFixed(1)} °C` : '--'}
-        </td>
-        <td className="p-3 font-mono text-data-sm text-on-surface-variant">
-          {telemetry?.humidity != null ? `${telemetry.humidity.toFixed(1)} %` : '--'}
-        </td>
-        <td className="p-3 font-mono text-data-sm text-on-surface-variant">
-          {telemetry?.co2 != null ? `${telemetry.co2} ppm` : '--'}
-        </td>
-        <td className="p-3 font-mono text-data-sm text-on-surface-variant">
-          {telemetry?.voc != null ? `${telemetry.voc} ppb` : '--'}
-        </td>
-        <td className="p-3 text-right">
-          <span className="material-symbols-outlined text-on-surface-variant text-18px">chevron_right</span>
-        </td>
-      </tr>
-    </Link>
+    <tr
+      className="hover:bg-surface-container-highest/40 transition-colors"
+      style={{ cursor: 'pointer' }}
+      onClick={() => navigate(`/devices/${device.id}`)}
+    >
+      <td className="p-3">
+        <div className="flex items-center gap-3">
+          <span className={`status-dot ${isOnline ? 'online' : 'offline'}`} />
+          <span className="text-body-md text-on-surface">{device.chamberName || device.deviceId}</span>
+        </div>
+      </td>
+      <td className="p-3">
+        <StatusBadge status={isOnline ? 'online' : 'offline'} label={device.status} />
+      </td>
+      <td className="p-3 font-mono text-data-sm text-on-surface-variant">
+        {telemetry?.temperature != null ? `${telemetry.temperature.toFixed(1)} °C` : '--'}
+      </td>
+      <td className="p-3 font-mono text-data-sm text-on-surface-variant">
+        {telemetry?.humidity != null ? `${telemetry.humidity.toFixed(1)} %` : '--'}
+      </td>
+      <td className="p-3 font-mono text-data-sm text-on-surface-variant">
+        {telemetry?.co2 != null ? `${telemetry.co2} ppm` : '--'}
+      </td>
+      <td className="p-3 font-mono text-data-sm text-on-surface-variant">
+        {telemetry?.voc != null ? `${telemetry.voc} ppb` : '--'}
+      </td>
+      <td className="p-3 text-right">
+        <span className="material-symbols-outlined text-on-surface-variant text-18px">chevron_right</span>
+      </td>
+    </tr>
   )
 }
 
