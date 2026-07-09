@@ -56,6 +56,17 @@ function createClient(broker, isFallback) {
       } else if (type === 'status') {
         connectedDevices.add(deviceId);
         events.emit('state', { deviceId, ...data });
+        if (data.mac || data.fwVer || data.hwRev) {
+          Device.findOrCreate({ where: { deviceId }, defaults: { deviceId, status: 'ONLINE' } })
+            .then(([device]) => {
+              const updates = {};
+              if (data.mac) updates.macAddress = data.mac;
+              if (data.fwVer) updates.firmwareVersion = data.fwVer;
+              if (data.hwRev) updates.hwRevision = data.hwRev;
+              device.update(updates).catch(() => {});
+            })
+            .catch(() => {});
+        }
         if (data.actuatorState || data.channel) {
           events.emit('ack', {
             deviceId,

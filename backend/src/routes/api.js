@@ -31,21 +31,24 @@ router.post('/devices', async (req, res) => {
       return res.status(401).json({ error: 'Autenticación requerida' });
     }
 
-    const { deviceId, macAddress, chamberName, chamberLocation, chamberId } = req.body;
+    const { deviceId, macAddress, chamberName, chamberLocation, chamberId, firmwareVersion, hwRevision } = req.body;
     if (!deviceId || !macAddress) {
       return res.status(400).json({ error: 'deviceId y macAddress requeridos' });
     }
 
     const [device, created] = await Device.findOrCreate({
       where: { deviceId },
-      defaults: { deviceId, macAddress, userId: req.user.id, chamberName, chamberLocation, chamberId, status: 'ONLINE' },
+      defaults: { deviceId, macAddress, userId: req.user.id, chamberName, chamberLocation, chamberId, firmwareVersion, hwRevision, status: 'ONLINE' },
     });
 
     if (!created) {
       const updates = { userId: req.user.id };
+      if (macAddress) updates.macAddress = macAddress;
       if (chamberName !== undefined) updates.chamberName = chamberName;
       if (chamberLocation !== undefined) updates.chamberLocation = chamberLocation;
       if (chamberId !== undefined) updates.chamberId = chamberId;
+      if (firmwareVersion) updates.firmwareVersion = firmwareVersion;
+      if (hwRevision) updates.hwRevision = hwRevision;
       await device.update(updates);
     }
 
@@ -73,7 +76,7 @@ router.post('/devices', async (req, res) => {
 
 router.post('/devices/register', async (req, res) => {
   try {
-    const { deviceId, macAddress, firmwareVersion } = req.body;
+    const { deviceId, macAddress, firmwareVersion, hwRevision } = req.body;
     if (!deviceId) {
       return res.status(400).json({ error: 'deviceId requerido' });
     }
@@ -84,18 +87,18 @@ router.post('/devices/register', async (req, res) => {
         deviceId,
         macAddress: macAddress || deviceId,
         firmwareVersion: firmwareVersion || '0.0.0',
+        hwRevision: hwRevision || '',
         status: 'ONLINE',
         lastSeen: new Date(),
       },
     });
 
     if (!created) {
-      await device.update({
-        macAddress: macAddress || device.macAddress,
-        firmwareVersion: firmwareVersion || device.firmwareVersion,
-        status: 'ONLINE',
-        lastSeen: new Date(),
-      });
+      const updates = { status: 'ONLINE', lastSeen: new Date() };
+      if (macAddress) updates.macAddress = macAddress;
+      if (firmwareVersion) updates.firmwareVersion = firmwareVersion;
+      if (hwRevision) updates.hwRevision = hwRevision;
+      await device.update(updates);
     }
 
     console.log(`[REGISTER] Dispositivo ${created ? 'registrado' : 'actualizado'}: ${deviceId}`);
@@ -165,7 +168,7 @@ router.get('/devices/:id', checkDeviceAccess, async (req, res) => {
 router.patch('/devices/:id', checkDeviceAccess, async (req, res) => {
   try {
     const device = req.device;
-    const allowed = ['chamberName', 'chamberLocation', 'chamberId', 'ssrActiveLow'];
+    const allowed = ['chamberName', 'chamberLocation', 'chamberId', 'ssrActiveLow', 'firmwareVersion', 'hwRevision'];
     const updates = {};
     for (const field of allowed) {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
