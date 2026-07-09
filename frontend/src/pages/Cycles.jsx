@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getCycles, getRecipes, createCycle, updateCycle } from '../api/client.js'
+import { getCycles, getRecipes, createCycle, updateCycle, getDevices } from '../api/client.js'
 import LoadingState from '../components/ui/LoadingState.jsx'
 
 const STATUS_LABELS = { PLANNED: 'Planned', ACTIVE: 'Active', COMPLETED: 'Completed', ABORTED: 'Aborted' }
@@ -76,18 +76,20 @@ function CycleCard({ cycle, onUpdate }) {
 function Cycles() {
   const [cycles, setCycles] = useState([])
   const [recipes, setRecipes] = useState([])
+  const [devices, setDevices] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ recipeId: '', species: '', strain: '', startDate: '' })
+  const [form, setForm] = useState({ recipeId: '', species: '', strain: '', startDate: '', deviceId: '' })
   const [submitting, setSubmitting] = useState(false)
 
   async function load() {
     try {
       setError(null)
-      const [c, r] = await Promise.all([getCycles(), getRecipes()])
+      const [c, r, d] = await Promise.all([getCycles(), getRecipes(), getDevices()])
       setCycles(c)
       setRecipes(r)
+      setDevices(d)
     } catch (err) {
       setError(err.message || 'Error loading cycles')
     } finally {
@@ -106,10 +108,10 @@ function Cycles() {
         species: form.species,
         strain: form.strain || undefined,
         startDate: form.startDate || undefined,
-        status: 'PLANNED',
+        deviceId: form.deviceId ? parseInt(form.deviceId, 10) : undefined,
       })
       setShowForm(false)
-      setForm({ recipeId: '', species: '', strain: '', startDate: '' })
+      setForm({ recipeId: '', species: '', strain: '', startDate: '', deviceId: '' })
       await load()
     } catch (err) {
       setError(err.message || 'Error creating cycle')
@@ -235,6 +237,18 @@ function Cycles() {
                   className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 text-data-sm focus:outline-none focus:border-primary cursor-pointer">
                   <option value="">— Select Recipe —</option>
                   {recipes.map(r => <option key={r.id} value={r.id}>{r.name} ({r.species})</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="font-label-caps text-9px text-on-surface-variant block mb-1">Device / Chamber</label>
+                <select value={form.deviceId} onChange={e => setForm({...form, deviceId: e.target.value})}
+                  className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 text-data-sm focus:outline-none focus:border-primary cursor-pointer">
+                  <option value="">— No device (manual) —</option>
+                  {devices.map(d => (
+                    <option key={d.id} value={d.id}>
+                      {d.chamberName || d.deviceId}{d.chamberId != null ? ` (Chamber ${d.chamberId})` : ''} {d.macAddress ? `· ${d.macAddress}` : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
