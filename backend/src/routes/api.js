@@ -168,7 +168,7 @@ router.get('/devices/:id', checkDeviceAccess, async (req, res) => {
 router.patch('/devices/:id', checkDeviceAccess, async (req, res) => {
   try {
     const device = req.device;
-    const allowed = ['chamberName', 'chamberLocation', 'chamberId', 'ssrActiveLow', 'firmwareVersion', 'hwRevision'];
+    const allowed = ['chamberName', 'chamberLocation', 'chamberId', 'ssrActiveLow', 'firmwareVersion', 'hwRevision', 'thingSpeakEnabled', 'thingSpeakChannelId', 'thingSpeakReadKey', 'thingSpeakWriteKey', 'thingSpeakSyncInterval'];
     const updates = {};
     for (const field of allowed) {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
