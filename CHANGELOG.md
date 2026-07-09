@@ -1,5 +1,75 @@
 # Changelog — Mush2
 
+## 2026-07-09
+
+### Backend — v0.10.0
+
+#### Database & Models
+- Nuevo campo `hwRevision: STRING(10)` en modelo `Device`
+- `firmwareVersion` ampliado a `STRING(20)` para soportar SemVer
+- Nuevo campo `deviceId: INTEGER` con FK a `Device` en `CultivationCycle`
+- Añadidas asociaciones: `Device.hasMany(CultivationCycle)` y `CultivationCycle.belongsTo(Device)`
+- Búsqueda prioritaria por `cycle.deviceId` con fallback a `chamberId`
+
+#### Auth & Devices
+- Mejorado registro y reclamación de dispositivos con `UserChamberAccess`
+  - `POST /api/devices` crea automáticamente registro con rol `OWNER`
+  - Nuevo endpoint `POST /api/devices/:id/claim`
+  - Mejorado flujo de `POST /api/devices/register`
+- Script de backfill: `backfill-user-chamber-access.js` para dispositivos existentes
+- Validaciones mejoradas en creación de ciclos (recipeId, species, deviceId)
+
+#### Monitoring & Sync
+- `server.js`: `sequelize.sync({ alter: true })` en desarrollo
+- Nuevo script `backend/src/sync-db.js` para sincronización manual
+- Mejoras en `POST /devices/register`, claim y PATCH para persistir `hwRevision`
+
+#### Seed
+- Añadidas 7 recetas adicionales (Pearl Oyster, Pink Oyster, Shiitake, Lion's Mane, Reishi, Cordyceps, Turkey Tail)
+- Parámetros adaptados al modelo actual
+
+**Resultado**: Base de datos más robusta, asociaciones claras entre dispositivos y ciclos, y mejor soporte para registro/reclamación de hardware.
+
+---
+
+### Frontend — v1.3.0
+
+#### Settings Panel (Arquitectura Completa)
+- `Settings.jsx` convertido en layout con rutas anidadas + `SettingsNav`
+- Implementadas páginas dedicadas: `DeviceSettings`, `CultivationSettings`, `SystemSettings`, `UserSettings` y `SettingsHub`
+- Sistema global de tema claro/oscuro con `ThemeContext`
+- Flujo completo de **2FA** en `UserSettings`
+- Reorganización de secciones y limpieza visual
+
+#### Conexión Real con Backend
+- Eliminados todos los mocks en Settings
+- Añadidos métodos: `getSystemMetrics()`, `updateProfile()`, `updateDevice()`, `claimDevice()`
+- `StatusFooter` ahora muestra versión real del sistema
+- Fix global de color de texto en inputs para tema oscuro
+
+#### Limpieza General
+- `Landing.jsx`: Eliminados elementos decorativos (partículas, micelio, parallax, stats falsos)
+- `Dashboard`, `DeviceDetail`, `Cycles` y `Recipes`: Eliminados datos hardcodeados y componentes sci-fi
+- `Home.jsx` reemplazado por redirección a `/dashboard`
+- Terminología estandarizada (sci-fi → técnica)
+- Fixes menores: key en logs, React Router v7 flags, navegación en TopBar
+
+**Resultado**: Frontend mucho más limpio, profesional y completamente conectado al backend.
+
+---
+
+### Firmware (ESP32-S3) — v0.12.0
+
+- Mejora en flujo de registro y status MQTT
+  - Al recibir status se actualiza/inserta dispositivo con datos reales
+  - Segunda oportunidad de registro si HTTP falla
+- Variables compartidas: `sharedMac`, `sharedFwVer`, `sharedHwRev`
+- `publishStatus()` ahora incluye `macAddress`, `firmwareVersion` y `hwRevision`
+- `registerDevice()` envía `hwRevision`
+- BLE Provisioning soporta `HW_REVISION` configurable
+
+---
+
 ## 2026-07-08
 
 ### Frontend — v1.1.3 → Preparación React Router v7
