@@ -102,6 +102,16 @@ export async function getCycles() {
   return data.data
 }
 
+export async function createCycle(cycle) {
+  const { data } = await client.post('/cycles', cycle)
+  return data
+}
+
+export async function updateCycle(id, payload) {
+  const { data } = await client.patch(`/cycles/${id}`, payload)
+  return data
+}
+
 export async function register(username, email, password) {
   const { data } = await client.post('/auth/register', { username, email, password })
   return data
