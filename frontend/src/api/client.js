@@ -133,6 +133,11 @@ export async function createDevice(device) {
   return data
 }
 
+export async function claimDevice(id, payload = {}) {
+  const { data } = await client.post(`/devices/${id}/claim`, payload)
+  return data
+}
+
 export async function updateDevice(id, payload) {
   const { data } = await client.patch(`/devices/${id}`, payload)
   return data
