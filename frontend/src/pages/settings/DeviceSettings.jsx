@@ -14,6 +14,12 @@ function DeviceSettings() {
   const [error, setError] = useState(null)
   const [renameValue, setRenameValue] = useState('')
   const [renameMsg, setRenameMsg] = useState(null)
+  const [tsEnabled, setTsEnabled] = useState(false)
+  const [tsChannelId, setTsChannelId] = useState('')
+  const [tsReadKey, setTsReadKey] = useState('')
+  const [tsWriteKey, setTsWriteKey] = useState('')
+  const [tsSyncInterval, setTsSyncInterval] = useState(300000)
+  const [tsMsg, setTsMsg] = useState(null)
 
   async function loadDevices() {
     try {
@@ -37,6 +43,12 @@ function DeviceSettings() {
       const dev = await getDevice(id)
       setDevice(dev)
       setRenameValue(dev.chamberName || dev.deviceId || '')
+      setTsEnabled(dev.thingSpeakEnabled || false)
+      setTsChannelId(dev.thingSpeakChannelId || '')
+      setTsReadKey(dev.thingSpeakReadKey || '')
+      setTsWriteKey(dev.thingSpeakWriteKey || '')
+      setTsSyncInterval(dev.thingSpeakSyncInterval || 300000)
+      setTsMsg(null)
       setError(null)
     } catch (err) {
       setError(err.message || 'Connection error')
@@ -58,6 +70,28 @@ function DeviceSettings() {
       setRenameMsg({ type: 'ok', text: 'Device name updated' })
     } catch (err) {
       setRenameMsg({ type: 'err', text: err.message || 'Failed to rename' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleSaveThingSpeak() {
+    if (!device) return
+    setSaving(true)
+    setTsMsg(null)
+    try {
+      const payload = {
+        thingSpeakEnabled: tsEnabled,
+        thingSpeakChannelId: tsEnabled ? tsChannelId : null,
+        thingSpeakReadKey: tsEnabled ? tsReadKey : null,
+        thingSpeakWriteKey: tsEnabled ? tsWriteKey : null,
+        thingSpeakSyncInterval: tsEnabled ? parseInt(tsSyncInterval, 10) || 300000 : 300000,
+      }
+      await updateDevice(device.id, payload)
+      setDevice(prev => ({ ...prev, ...payload }))
+      setTsMsg({ type: 'ok', text: 'ThingSpeak configuration saved' })
+    } catch (err) {
+      setTsMsg({ type: 'err', text: err.message || 'Failed to save' })
     } finally {
       setSaving(false)
     }
@@ -166,6 +200,82 @@ function DeviceSettings() {
                 <span className="font-label-caps text-9px text-on-surface-variant">LAST SEEN</span>
                 <span className="font-mono text-data-sm text-on-surface">{device.lastSeen ? new Date(device.lastSeen).toLocaleString() : '—'}</span>
               </div>
+            </div>
+          </section>
+
+          <section className="glass-card p-5 rounded-xl border border-outline-variant md:col-span-2">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="material-symbols-outlined text-secondary">cloud_sync</span>
+              <h3 className="font-label-caps text-label-caps text-on-surface-variant">THINGSPEAK</h3>
+              <span className="font-label-caps text-9px text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded">OPTIONAL</span>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-2.5 bg-surface-container-low rounded">
+                <span className="font-label-caps text-9px text-on-surface-variant">ENABLED</span>
+                <button
+                  onClick={() => setTsEnabled(!tsEnabled)}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${tsEnabled ? 'bg-primary' : 'bg-outline-variant'}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-on-primary transition-transform ${tsEnabled ? 'translate-x-5' : ''}`} />
+                </button>
+              </div>
+              {tsEnabled && (
+                <>
+                  <div className="flex items-center justify-between p-2.5 bg-surface-container-low rounded">
+                    <span className="font-label-caps text-9px text-on-surface-variant">CHANNEL ID</span>
+                    <input
+                      className="w-40 bg-surface-container-lowest border border-outline-variant rounded px-3 py-1.5 text-data-sm text-on-surface font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                      value={tsChannelId}
+                      onChange={e => setTsChannelId(e.target.value)}
+                      placeholder="e.g. 1234567"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-2.5 bg-surface-container-low rounded">
+                    <span className="font-label-caps text-9px text-on-surface-variant">READ KEY</span>
+                    <input
+                      className="w-40 bg-surface-container-lowest border border-outline-variant rounded px-3 py-1.5 text-data-sm text-on-surface font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                      value={tsReadKey}
+                      onChange={e => setTsReadKey(e.target.value)}
+                      placeholder="Read API key"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-2.5 bg-surface-container-low rounded">
+                    <span className="font-label-caps text-9px text-on-surface-variant">WRITE KEY</span>
+                    <input
+                      className="w-40 bg-surface-container-lowest border border-outline-variant rounded px-3 py-1.5 text-data-sm text-on-surface font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                      value={tsWriteKey}
+                      onChange={e => setTsWriteKey(e.target.value)}
+                      placeholder="Write API key"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-2.5 bg-surface-container-low rounded">
+                    <span className="font-label-caps text-9px text-on-surface-variant">SYNC INTERVAL</span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        className="w-24 bg-surface-container-lowest border border-outline-variant rounded px-3 py-1.5 text-data-sm text-on-surface font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                        type="number"
+                        min="60000"
+                        step="60000"
+                        value={tsSyncInterval}
+                        onChange={e => setTsSyncInterval(e.target.value)}
+                      />
+                      <span className="font-label-caps text-9px text-on-surface-variant">ms</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleSaveThingSpeak}
+                      disabled={saving || !tsChannelId.trim()}
+                      className="px-3 py-1.5 bg-primary text-on-primary font-label-caps text-10px rounded hover:opacity-90 disabled:opacity-40 transition-all"
+                    >
+                      {saving ? '...' : 'SAVE'}
+                    </button>
+                  </div>
+                </>
+              )}
+              {tsMsg && (
+                <p className={`text-10px ${tsMsg.type === 'ok' ? 'text-primary' : 'text-error'}`}>{tsMsg.text}</p>
+              )}
             </div>
           </section>
         </div>

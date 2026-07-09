@@ -11,7 +11,7 @@ import { syncAllFromThingSpeak } from './services/thingSpeakSync.js';
 
 installTimestampedConsole();
 
-const TS_SYNC_INTERVAL = parseInt(process.env.TS_SYNC_INTERVAL || '300000', 10); // 5 min default
+const TS_CHECK_INTERVAL = 60000;
 let tsSyncHandle = null;
 
 async function start() {
@@ -35,11 +35,9 @@ async function start() {
     httpServer.listen(env.PORT, () => {
       console.log(`[Server] Mush2 backend en puerto ${env.PORT}`);
 
-      if (env.TS.apiKey) {
-        syncAllFromThingSpeak().catch(() => {});
-        tsSyncHandle = setInterval(() => syncAllFromThingSpeak().catch(() => {}), TS_SYNC_INTERVAL);
-        console.log(`[ThingSpeak] Sync activo cada ${TS_SYNC_INTERVAL / 1000}s`);
-      }
+      syncAllFromThingSpeak().catch(() => {});
+      tsSyncHandle = setInterval(() => syncAllFromThingSpeak().catch(() => {}), TS_CHECK_INTERVAL);
+      console.log(`[ThingSpeak] Sync check cada ${TS_CHECK_INTERVAL / 1000}s (intervalos por dispositivo)`);
     });
 
     const publishActuators = (data) => {
