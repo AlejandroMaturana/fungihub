@@ -48,6 +48,9 @@
 #ifndef DEVICE_ID
 #define DEVICE_ID "mush2_s3_001"
 #endif
+#ifndef HW_REVISION
+#define HW_REVISION "1.0"
+#endif
 
 // ---- Backend HTTP ----
 #ifndef BACKEND_HOST

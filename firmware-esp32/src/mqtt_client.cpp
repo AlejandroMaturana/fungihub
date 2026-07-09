@@ -72,11 +72,11 @@ bool MQTTClient::publishTelemetry(float temp, float hum, uint16_t eco2, uint16_t
   return publish("telemetry", payload);
 }
 
-bool MQTTClient::publishStatus(const char* state, const char* mode, int rssi) {
-  char payload[128];
+bool MQTTClient::publishStatus(const char* state, const char* mode, int rssi, const char* mac, const char* fwVer, const char* hwRev) {
+  char payload[256];
   snprintf(payload, sizeof(payload),
-    "{\"state\":\"%s\",\"mode\":\"%s\",\"rssi\":%d,\"ts\":%lu}",
-    state, mode, rssi, millis());
+    "{\"state\":\"%s\",\"mode\":\"%s\",\"rssi\":%d,\"mac\":\"%s\",\"fwVer\":\"%s\",\"hwRev\":\"%s\",\"ts\":%lu}",
+    state, mode, rssi, mac, fwVer, hwRev, millis());
   return publish("status", payload);
 }
 

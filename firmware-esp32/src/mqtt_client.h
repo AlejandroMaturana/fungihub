@@ -20,7 +20,7 @@ public:
 
   bool publish(const char* topic, const char* payload, bool retained = false);
   bool publishTelemetry(float temp, float hum, uint16_t eco2, uint16_t tvoc, uint8_t aqi);
-  bool publishStatus(const char* state, const char* mode, int rssi);
+  bool publishStatus(const char* state, const char* mode, int rssi, const char* mac = "", const char* fwVer = "", const char* hwRev = "");
   bool publishAlarm(const char* reason);
 
   void setOtaCallback(void (*cb)(const char* url, const char* version));

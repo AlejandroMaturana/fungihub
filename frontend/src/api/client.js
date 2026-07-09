@@ -102,6 +102,16 @@ export async function getCycles() {
   return data.data
 }
 
+export async function createCycle(cycle) {
+  const { data } = await client.post('/cycles', cycle)
+  return data
+}
+
+export async function updateCycle(id, payload) {
+  const { data } = await client.patch(`/cycles/${id}`, payload)
+  return data
+}
+
 export async function register(username, email, password) {
   const { data } = await client.post('/auth/register', { username, email, password })
   return data
@@ -123,13 +133,32 @@ export async function createDevice(device) {
   return data
 }
 
-export async function updateDeviceSsrMode(id, ssrActiveLow) {
-  const { data } = await client.patch(`/devices/${id}`, { ssrActiveLow })
+export async function claimDevice(id, payload = {}) {
+  const { data } = await client.post(`/devices/${id}/claim`, payload)
   return data
+}
+
+export async function updateDevice(id, payload) {
+  const { data } = await client.patch(`/devices/${id}`, payload)
+  return data
+}
+
+export async function updateDeviceSsrMode(id, ssrActiveLow) {
+  return updateDevice(id, { ssrActiveLow })
 }
 
 export async function getMe() {
   const { data } = await client.get('/auth/me')
+  return data
+}
+
+export async function updateProfile(payload) {
+  const { data } = await client.patch('/auth/me', payload)
+  return data
+}
+
+export async function getSystemMetrics() {
+  const { data } = await client.get('/monitoring/metrics')
   return data
 }
 

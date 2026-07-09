@@ -27,7 +27,7 @@ void HTTPPoller::init(const char* id, const char* h, uint16_t p) {
   client.setTimeout(3000);
 }
 
-bool HTTPPoller::registerDevice(const char* fwVersion, const char* macAddress) {
+bool HTTPPoller::registerDevice(const char* fwVersion, const char* macAddress, const char* hwRevision) {
   if (WiFi.status() != WL_CONNECTED) return false;
 
   WiFiClient regClient;
@@ -45,6 +45,8 @@ bool HTTPPoller::registerDevice(const char* fwVersion, const char* macAddress) {
   body += macAddress;
   body += "\",\"firmwareVersion\":\"";
   body += fwVersion;
+  body += "\",\"hwRevision\":\"";
+  body += hwRevision;
   body += "\"}";
 
   regClient.printf("POST /api/v1/devices/register HTTP/1.1\r\n"

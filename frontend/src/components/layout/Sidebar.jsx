@@ -1,7 +1,6 @@
 import { NavLink } from 'react-router-dom'
 
 const PRIMARY_ITEMS = [
-  { to: '/', icon: 'hub', label: 'Home' },
   { to: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
   { to: '/recipes', icon: 'potted_plant', label: 'Recipes' },
   { to: '/cycles', icon: 'cyclone', label: 'Cycles' },
@@ -9,11 +8,7 @@ const PRIMARY_ITEMS = [
 
 const SYSTEM_ITEMS = [
   { to: '/settings', icon: 'settings', label: 'System' },
-]
-
-const BOTTOM_ITEMS = [
-  { icon: 'help', label: '' },
-  { icon: 'terminal', label: '' },
+  { to: '/provisioning', icon: 'bluetooth', label: 'Provision' },
 ]
 
 function Sidebar() {
@@ -47,13 +42,7 @@ function Sidebar() {
           </NavLink>
         ))}
       </div>
-      <div className="sidebar-bottom">
-        {BOTTOM_ITEMS.map((item, i) => (
-          <button key={i} className="sidebar-item sidebar-bottom-item">
-            <span className="material-symbols-outlined sidebar-icon">{item.icon}</span>
-          </button>
-        ))}
-      </div>
+      <div className="sidebar-bottom" />
     </aside>
   )
 }

@@ -187,7 +187,12 @@ async function evaluateCycle(cycle) {
     const thresholds = getPhaseThresholds(recipe, cycle.currentPhase);
     if (!thresholds) return;
 
-    const device = await Device.findOne({ where: { chamberId: cycle.chamberId } });
+    let device = null;
+    if (cycle.deviceId) {
+      device = await Device.findByPk(cycle.deviceId);
+    } else if (cycle.chamberId) {
+      device = await Device.findOne({ where: { chamberId: cycle.chamberId } });
+    }
     if (!device) return;
 
     const readings = await getLatestReadings(device.id);

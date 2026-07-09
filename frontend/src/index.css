@@ -641,6 +641,9 @@ section h3 { font-size: 16px; margin-bottom: 16px; color: var(--text2); }
 ::-webkit-scrollbar-thumb { background: var(--outline-variant); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--outline); }
 
+/* === Form element color fix (invisible text on dark bg) === */
+input, select, textarea, button { color: var(--on-surface); }
+
 /* === Focus Visible === */
 *:focus-visible { outline: 2px solid var(--spore-green); outline-offset: 2px; border-radius: 2px; }
 
