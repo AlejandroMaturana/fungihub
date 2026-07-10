@@ -1,17 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { Chart, registerables } from 'chart.js'
 import { getTelemetryHistory } from '../../api/client.js'
+import TemporalEngine from '../../services/TemporalEngine.js'
 
 Chart.register(...registerables)
 
-const TIME_RANGES = [
-  { label: '15m', value: '15m', limit: 15,  hours: 0.25,  resolution: 0 },
-  { label: '1H', value: '1h', limit: 500,  hours: 1,  resolution: 0 },
-  { label: '6H', value: '6h', limit: 200,  hours: 6,  resolution: 5 },
-  { label: '1D', value: '1d', limit: 500,  hours: 24, resolution: 15 },
-  { label: '3D', value: '3d', limit: 500,  hours: 72, resolution: 60 },
-  { label: '7D', value: '7d', limit: 2000, hours: 168,resolution: 60 },
-]
+const TIME_RANGES = TemporalEngine.TIME_RANGES
 
 function computeRanges(datasets, margin, bands) {
   const byAxis = {}
@@ -166,33 +160,26 @@ function ChartPanel({ deviceId, telemetry, has }) {
     { ax: 'y2', min: 0, max: 500, fill: 'rgba(251,113,133,0.15)', stroke: 'rgba(251,113,133,0.40)' },
   ]
 
-  function fmtTime(ts, fmt) {
-    const d = new Date(ts)
-    const pad = (n) => String(n).padStart(2, '0')
-    if (fmt === 'HH:mm') return `${pad(d.getHours())}:${pad(d.getMinutes())}`
-    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-  }
-
-  function pickFormat(hours) {
-    return hours <= 24 ? 'HH:mm' : 'DD/MM HH:mm'
-  }
-
   async function loadHistory(range) {
     if (!deviceId) return
     setLoading(true)
     const entry = TIME_RANGES.find(t => t.value === range)
     const limit = entry ? entry.limit : 500
-    const resolution = entry ? entry.resolution : 0
+    const resolution = entry ? entry.resolution.value : 0
     cancelledRef.current = false
     currentRange.current = range
     try {
       const rows = await getTelemetryHistory(deviceId, { limit, resolution })
       if (cancelledRef.current || currentRange.current !== range) return
-      const reshaped = reshapeRows(rows)
-      const fmt = pickFormat(entry ? entry.hours : 24)
-      setLabels(reshaped.map(r => fmtTime(r.t, fmt)))
-      setData1({ temp: reshaped.map(r => r.temp ?? 0), hum: reshaped.map(r => r.hum ?? 0) })
-      setData2({ eco2: reshaped.map(r => r.eco2 ?? 0), tvoc: reshaped.map(r => r.tvoc ?? 0) })
+      const reshaped = TemporalEngine.reshapeRows(rows)
+      const agg = entry && entry.resolution.value > 0
+        ? TemporalEngine.aggregate(reshaped, entry.resolution, 'mean')
+        : reshaped
+      const fmt = TemporalEngine.pickTimeFormat(entry ? entry.hours : 24)
+      const charted = TemporalEngine.formatForChart(agg, fmt)
+      setLabels(charted.labels)
+      setData1({ temp: charted.temp, hum: charted.hum })
+      setData2({ eco2: charted.eco2, tvoc: charted.tvoc })
     } catch {
       if (!cancelledRef.current) {
         setLabels([])
@@ -362,23 +349,6 @@ function ChartPanel({ deviceId, telemetry, has }) {
       </div>
     </section>
   )
-}
-
-function reshapeRows(rows) {
-  const byTime = {}
-  for (const r of rows) {
-    const t = r.timestamp ? new Date(r.timestamp).getTime() : Date.now()
-    if (!byTime[t]) byTime[t] = {}
-    byTime[t][r.sensorType] = parseFloat(r.value)
-  }
-  const sorted = Object.entries(byTime).sort(([a], [b]) => Number(a) - Number(b))
-  return sorted.map(([ts, v]) => ({
-    t: new Date(Number(ts)),
-    temp: v.TEMPERATURE ?? null,
-    hum: v.HUMIDITY ?? null,
-    eco2: v.CO2 ?? null,
-    tvoc: v.VOC ?? null,
-  }))
 }
 
 export default ChartPanel
