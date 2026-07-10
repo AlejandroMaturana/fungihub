@@ -2,9 +2,11 @@ import { WebSocketServer } from 'ws';
 import { Device, Actuator } from '../models/index.js';
 
 const clients = new Map();
+let wssInstance = null;
 
 export function startWebSocketServer(httpServer) {
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  wssInstance = wss;
 
   wss.on('connection', (ws, req) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
@@ -59,6 +61,18 @@ export function sendActuatorUpdate(deviceId, actuators) {
       mode: a.mode,
     })),
   }));
+}
+
+export function stopWebSocketServer() {
+  for (const [deviceId, ws] of clients) {
+    try { ws.close(1001, 'Server shutting down'); } catch { /* ignore */ }
+  }
+  clients.clear();
+  if (wssInstance) {
+    wssInstance.close();
+    wssInstance = null;
+  }
+  console.log('[WS] WebSocket server cerrado');
 }
 
 async function sendCurrentState(deviceId, ws) {

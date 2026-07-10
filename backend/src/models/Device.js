@@ -17,6 +17,11 @@ const Device = sequelize.define('Device', {
   chamberName: { type: DataTypes.STRING(128) },
   chamberLocation: { type: DataTypes.STRING(255) },
   ssrActiveLow: { type: DataTypes.BOOLEAN, defaultValue: true },
+  thingSpeakEnabled: { type: DataTypes.BOOLEAN, defaultValue: false },
+  thingSpeakChannelId: { type: DataTypes.STRING(20), allowNull: true },
+  thingSpeakReadKey: { type: DataTypes.STRING(32), allowNull: true },
+  thingSpeakWriteKey: { type: DataTypes.STRING(32), allowNull: true },
+  thingSpeakSyncInterval: { type: DataTypes.INTEGER, defaultValue: 300000 },
 }, {
   tableName: 'devices',
   timestamps: true,

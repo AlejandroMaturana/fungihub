@@ -8,6 +8,8 @@ const SENSOR_MAP = {
   field4: { type: 'VOC', unit: 'ppb' },
 };
 
+const lastSyncTimes = new Map();
+
 async function fetchChannel(channelId, apiKey) {
   const url = `https://${env.TS.host}/channels/${channelId}/feeds/last.json?api_key=${apiKey}`;
   const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
@@ -22,6 +24,13 @@ export async function syncDeviceFromThingSpeak(deviceId) {
       console.log(`[TS] Device ${deviceId} not found, skipping`);
       return;
     }
+
+    if (!device.thingSpeakEnabled) return;
+
+    const now = Date.now();
+    const lastSync = lastSyncTimes.get(device.id) || 0;
+    const interval = device.thingSpeakSyncInterval || 300000;
+    if (now - lastSync < interval) return;
 
     const channelId = device.thingSpeakChannelId;
     const apiKey = device.thingSpeakReadKey;
@@ -62,6 +71,7 @@ export async function syncDeviceFromThingSpeak(deviceId) {
     }
 
     await device.update({ lastSeen: new Date() });
+    lastSyncTimes.set(device.id, now);
     console.log(`[TS] Synced ${deviceId} from ThingSpeak (entry ${entryId})`);
   } catch (err) {
     if (err.name === 'TimeoutError') {
@@ -74,12 +84,13 @@ export async function syncDeviceFromThingSpeak(deviceId) {
 
 export async function syncAllFromThingSpeak() {
   const devices = await Device.findAll({
-    where: { thingSpeakChannelId: { [Device.sequelize.Op.ne]: null } },
+    where: {
+      thingSpeakEnabled: true,
+      thingSpeakChannelId: { [Device.sequelize.Op.ne]: null },
+    },
   });
 
   for (const device of devices) {
     await syncDeviceFromThingSpeak(device.id);
   }
-
-  console.log(`[TS] Synced ${devices.length} devices from ThingSpeak`);
 }

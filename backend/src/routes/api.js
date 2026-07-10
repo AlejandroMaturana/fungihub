@@ -168,7 +168,7 @@ router.get('/devices/:id', checkDeviceAccess, async (req, res) => {
 router.patch('/devices/:id', checkDeviceAccess, async (req, res) => {
   try {
     const device = req.device;
-    const allowed = ['chamberName', 'chamberLocation', 'chamberId', 'ssrActiveLow', 'firmwareVersion', 'hwRevision'];
+    const allowed = ['chamberName', 'chamberLocation', 'chamberId', 'ssrActiveLow', 'firmwareVersion', 'hwRevision', 'thingSpeakEnabled', 'thingSpeakChannelId', 'thingSpeakReadKey', 'thingSpeakWriteKey', 'thingSpeakSyncInterval'];
     const updates = {};
     for (const field of allowed) {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -358,6 +358,42 @@ router.delete('/devices/:id', checkDeviceAccess, async (req, res) => {
     res.json({ message: 'Dispositivo eliminado' });
   } catch (err) {
     res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+});
+
+router.post('/devices/:id/thingSpeak/validate', checkDeviceAccess, async (req, res) => {
+  try {
+    const { apiKey } = req.body;
+    if (!apiKey) {
+      return res.status(400).json({ error: 'apiKey requerida' });
+    }
+
+    const host = process.env.TS_HOST || 'api.thingspeak.com';
+    const response = await fetch(`https://${host}/channels.json?api_key=${apiKey}`, {
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!response.ok) {
+      return res.status(401).json({ error: 'API key inválida o expirada', valid: false });
+    }
+
+    const channels = await response.json();
+    const channelList = channels.map(ch => ({
+      id: ch.id,
+      name: ch.name,
+      description: ch.description,
+      readKey: ch.api_keys?.find(k => k.read_flag && !k.write_flag)?.api_key || null,
+      writeKey: ch.api_keys?.find(k => k.write_flag && !k.read_flag)?.api_key || null,
+      lastEntryId: ch.last_entry_id,
+      createdAt: ch.created_at,
+    }));
+
+    res.json({ valid: true, channels: channelList });
+  } catch (err) {
+    if (err.name === 'TimeoutError') {
+      return res.status(504).json({ error: 'Timeout al conectar con ThingSpeak' });
+    }
+    res.status(500).json({ error: 'Error validando ThingSpeak', details: err.message });
   }
 });
 
