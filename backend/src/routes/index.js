@@ -8,6 +8,8 @@ import actuatorsRouter from './actuators.js';
 import alarmsRouter from './alarms.js';
 import apiKeysRouter from './apiKeys.js';
 import settingsRouter from './settings.js';
+import diagnosticsRouter from './diagnostics.js';
+import eventsRouter from './events.js';
 import { authenticate, optionalAuth } from '../middlewares/auth.js';
 import { requireMinRole } from '../middlewares/rbac.js';
 import { tenantScope } from '../middlewares/tenant.js';
@@ -26,5 +28,7 @@ router.use('/actuators', optionalAuth, tenantScope, actuatorsRouter);
 router.use('/alarms', authenticate, tenantScope, alarmsRouter);
 router.use('/api-keys', apiKeysRouter);
 router.use('/settings', settingsRouter);
+router.use('/diag', authenticate, diagnosticsRouter);
+router.use('/events', eventsRouter);
 
 export default router;
