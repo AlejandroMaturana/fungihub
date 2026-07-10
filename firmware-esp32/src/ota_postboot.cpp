@@ -43,7 +43,6 @@ void OTAConfirmation::confirm() {
   esp_err_t err = esp_ota_mark_app_valid_cancel_rollback();
   if (err == ESP_OK) {
     Serial.println("[OTA] Firmware marcado como VALID — rollback cancelado");
-    nvsSetFwVer("0.9.0");
   } else {
     Serial.printf("[OTA] Error marcando firmare como valid: %s\n", esp_err_to_name(err));
   }
