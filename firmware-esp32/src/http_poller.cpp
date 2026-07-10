@@ -14,6 +14,11 @@ HTTPPoller::HTTPPoller() : client() {
   memset(hdrBuf, 0, 4);
   _ssrActiveLow = true;
   _ssrActiveLowPrev = true;
+  _hasActiveCycle = false;
+  _hasSetpoints = false;
+  _setpointsChanged = false;
+  _tempMin = 0; _tempMax = 0; _humMin = 0; _humMax = 0; _co2Max = 0;
+  _phase[0] = '\0';
   for (int i = 0; i < ACTUATOR_CHANNELS; i++) {
     desired[i].state = 0;
     desired[i].mode = 0;
@@ -337,6 +342,45 @@ void HTTPPoller::runParse() {
     return;
   }
 
+  // Parse cycle status and setpoints (v0.14.0 protocol)
+  _setpointsChanged = false;
+  if (doc["status"].is<const char*>()) {
+    const char* status = doc["status"];
+    _hasActiveCycle = (strcmp(status, "active") == 0);
+
+    if (doc["phase"].is<const char*>()) {
+      strncpy(_phase, doc["phase"], sizeof(_phase) - 1);
+    } else {
+      _phase[0] = '\0';
+    }
+
+    if (_hasActiveCycle && doc["setpoints"].is<JsonObject>()) {
+      JsonObject sp = doc["setpoints"];
+      float newMin = sp["tempMin"] | _tempMin;
+      float newMax = sp["tempMax"] | _tempMax;
+      float newHMin = sp["humMin"] | _humMin;
+      float newHMax = sp["humMax"] | _humMax;
+      uint16_t newCO2 = sp["co2Max"] | _co2Max;
+
+      if (newMin != _tempMin || newMax != _tempMax ||
+          newHMin != _humMin || newHMax != _humMax ||
+          newCO2 != _co2Max) {
+        _setpointsChanged = true;
+      }
+
+      _tempMin = newMin; _tempMax = newMax;
+      _humMin = newHMin; _humMax = newHMax;
+      _co2Max = newCO2;
+      _hasSetpoints = true;
+    } else {
+      _hasSetpoints = false;
+    }
+  } else {
+    _hasActiveCycle = false;
+    _hasSetpoints = false;
+    _phase[0] = '\0';
+  }
+
   JsonArray actuators;
   if (doc.is<JsonArray>()) {
     actuators = doc.as<JsonArray>();
@@ -386,4 +430,16 @@ bool HTTPPoller::getSsrActiveLow() {
 
 bool HTTPPoller::ssrActiveLowChanged() {
   return _ssrActiveLow != _ssrActiveLowPrev;
+}
+
+void HTTPPoller::getSetpoints(float* tempMin, float* tempMax, float* humMin, float* humMax, uint16_t* co2Max) {
+  *tempMin = _tempMin;
+  *tempMax = _tempMax;
+  *humMin = _humMin;
+  *humMax = _humMax;
+  *co2Max = _co2Max;
+}
+
+bool HTTPPoller::setpointsChanged() {
+  return _setpointsChanged;
 }
