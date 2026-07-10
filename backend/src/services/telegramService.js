@@ -1,6 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { Op } from 'sequelize';
-import { UserPreference, Device, TelegramDeviceConfig, UserChamberAccess, User } from '../models/index.js';
+import { UserPreference, Device, TelegramDeviceConfig, User } from '../models/index.js';
 
 let bot = null;
 let isReady = false;
@@ -15,7 +15,7 @@ export function getBotStatus() {
   return { running: isReady, username: currentUsername, lastError };
 }
 
-export function reconfigureBot(token, botUsername) {
+export async function reconfigureBot(token, botUsername) {
   if (bot) {
     try { bot.stopPolling(); } catch {}
     bot = null;
@@ -25,7 +25,7 @@ export function reconfigureBot(token, botUsername) {
   return initBot(token, botUsername);
 }
 
-export function initBot(token, botUsername) {
+export async function initBot(token, botUsername) {
   if (!token) {
     console.log('[TELEGRAM] No token configured — bot disabled');
     return null;
@@ -33,10 +33,11 @@ export function initBot(token, botUsername) {
 
   try {
     bot = new TelegramBot(token, { polling: true });
+    const me = await bot.getMe();
     isReady = true;
-    currentUsername = botUsername || 'unknown';
+    currentUsername = me.username || botUsername || 'unknown';
     lastError = null;
-    console.log(`[TELEGRAM] Bot @${botUsername} started (polling)`);
+    console.log(`[TELEGRAM] Bot @${currentUsername} verified — starting polling`);
 
     bot.onText(/\/start/, (msg) => {
       const chatId = msg.chat.id;
@@ -106,8 +107,10 @@ export function initBot(token, botUsername) {
     });
 
     bot.on('polling_error', (err) => {
-      lastError = err.message;
-      console.error('[TELEGRAM] Polling error:', err.message);
+      const msg = err?.response?.body?.description || err?.message || String(err);
+      lastError = msg;
+      isReady = false;
+      console.error('[TELEGRAM] Polling error:', msg);
     });
 
     return bot;

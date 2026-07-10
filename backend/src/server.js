@@ -38,7 +38,9 @@ async function start() {
     const botToken = tgToken?.value || env.TELEGRAM_BOT_TOKEN;
     const botUsername = tgUsername?.value || env.TELEGRAM_BOT_USERNAME;
     if (botToken) {
-      initTelegramBot(botToken, botUsername);
+      try { await initTelegramBot(botToken, botUsername); } catch (e) {
+        console.error(`[TELEGRAM] Bot init failed: ${e.message}`);
+      }
     } else {
       console.log('[TELEGRAM] No token configured — bot disabled. Configure via System Settings.');
     }

@@ -128,15 +128,25 @@ router.post('/configure', authenticate, requireMinRole('ADMIN'), async (req, res
     const { token, username } = req.body;
     if (!token) return res.status(400).json({ error: 'Token requerido' });
 
-    const tokenSetting = await SystemSetting.findOne({ where: { key: 'telegram_bot_token' } });
-    const usernameSetting = await SystemSetting.findOne({ where: { key: 'telegram_bot_username' } });
+    const [tokenSetting] = await SystemSetting.findOrCreate({
+      where: { key: 'telegram_bot_token' },
+      defaults: { key: 'telegram_bot_token', value: '', type: 'string', label: 'Telegram Bot Token', category: 'integration' },
+    });
+    const [usernameSetting] = await SystemSetting.findOrCreate({
+      where: { key: 'telegram_bot_username' },
+      defaults: { key: 'telegram_bot_username', value: '', type: 'string', label: 'Telegram Bot Username', category: 'integration' },
+    });
 
-    if (tokenSetting) await tokenSetting.update({ value: token });
-    if (usernameSetting) await usernameSetting.update({ value: username || '' });
+    await tokenSetting.update({ value: token });
+    await usernameSetting.update({ value: username || '' });
 
-    const started = reconfigureBot(token, username || 'Mush2Bot');
+    try {
+      await reconfigureBot(token, username || 'Mush2Bot');
+    } catch (botErr) {
+      return res.status(400).json({ error: `Error al iniciar bot: ${botErr.message}` });
+    }
+
     const status = getBotStatus();
-
     res.json({ data: { configured: true, running: status.running, username: status.username, lastError: status.lastError } });
   } catch (err) {
     console.error('[TELEGRAM] Error configuring bot:', err.message);
