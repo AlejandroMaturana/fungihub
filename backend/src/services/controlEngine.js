@@ -13,7 +13,7 @@ const actuatorState = {};
 
 function getActuatorState(deviceId) {
   if (!actuatorState[deviceId]) {
-    actuatorState[deviceId] = { ventOn: false, heatOn: false, humidOn: false, postVentActive: false, postVentStart: 0, overheat: false };
+    actuatorState[deviceId] = { ventOn: false, heatOn: false, humidOn: false, postVentActive: false, postVentStart: 0, overheat: false, prevVent: false, prevHeat: false, prevHumid: false };
   }
   return actuatorState[deviceId];
 }
@@ -164,58 +164,64 @@ function computeActuatorCommands(deviceId, temp, hum, co2, thresholds) {
   }
   state.ventOn = shouldVent;
 
-  if (state.ventOn) {
+  if (state.ventOn && !state.prevVent) {
     if (co2 > 0) {
       commands.push({ channel: 1, command: 'ON', reason: co2 > thresholds.co2Max ? 'CO2_HIGH' : 'TEMP_HIGH' });
     } else {
       commands.push({ channel: 1, command: 'ON', reason: 'TEMP_HIGH' });
     }
-  } else {
+  } else if (!state.ventOn && state.prevVent) {
     commands.push({ channel: 1, command: 'OFF', reason: 'CLEAR' });
   }
 
   if (state.ventOn) {
     state.heatOn = false;
     state.humidOn = false;
-    commands.push({ channel: 2, command: 'OFF', reason: 'VENT_BLOCK' });
-    commands.push({ channel: 3, command: 'OFF', reason: 'VENT_BLOCK' });
+    if (state.prevHeat) {
+      commands.push({ channel: 2, command: 'OFF', reason: 'VENT_BLOCK' });
+    }
+    if (state.prevHumid) {
+      commands.push({ channel: 3, command: 'OFF', reason: 'VENT_BLOCK' });
+    }
   } else {
     if (state.heatOn) {
       if (temp >= thresholds.tempMax) {
         state.heatOn = false;
-        commands.push({ channel: 2, command: 'OFF', reason: 'TEMP_OK' });
       }
     } else {
       if (temp <= thresholds.tempMin - 1.0) {
         state.heatOn = true;
-        commands.push({ channel: 2, command: 'ON', reason: 'TEMP_LOW' });
-      } else {
-        commands.push({ channel: 2, command: 'OFF', reason: 'TEMP_OK' });
       }
+    }
+    if (state.heatOn !== state.prevHeat) {
+      commands.push({ channel: 2, command: state.heatOn ? 'ON' : 'OFF', reason: state.heatOn ? 'TEMP_LOW' : 'TEMP_OK' });
     }
 
     if (temp >= 27.5) {
       state.humidOn = false;
-      commands.push({ channel: 3, command: 'OFF', reason: 'TEMP_HIGH_BLOCK' });
     } else if (state.humidOn) {
       if (hum >= thresholds.humMax || temp >= 28.0) {
         state.humidOn = false;
-        commands.push({ channel: 3, command: 'OFF', reason: 'HUM_OK' });
       }
     } else {
       const postVentElapsed = state.postVentActive ? (now - state.postVentStart) : 999999;
       if (state.postVentActive && postVentElapsed >= 10000 && postVentElapsed < 40000) {
         state.humidOn = true;
-        commands.push({ channel: 3, command: 'ON', reason: 'POST_VENT' });
       } else if (state.postVentActive && postVentElapsed >= 40000) {
         state.postVentActive = false;
       }
       if (hum <= thresholds.humMin - 7.0 && temp < 27.5) {
         state.humidOn = true;
-        commands.push({ channel: 3, command: 'ON', reason: 'HUM_LOW' });
       }
     }
+    if (state.humidOn !== state.prevHumid) {
+      commands.push({ channel: 3, command: state.humidOn ? 'ON' : 'OFF', reason: state.humidOn ? 'HUM_LOW' : 'HUM_OK' });
+    }
   }
+
+  state.prevVent = state.ventOn;
+  state.prevHeat = state.heatOn;
+  state.prevHumid = state.humidOn;
 
   return commands;
 }
