@@ -8,7 +8,8 @@ import { startMqttBridge, stopMqttBridge, publishActuatorCommand } from './servi
 import { events } from './services/eventBus.js';
 import { installTimestampedConsole } from './services/logger.js';
 import { syncAllFromThingSpeak } from './services/thingSpeakSync.js';
-import { initBot as initTelegramBot, stopBot as stopTelegramBot, notifyDeviceAlarm } from './services/telegramService.js';
+import { initBot as initTelegramBot, stopBot as stopTelegramBot, notifyDeviceAlarm, reconfigureBot } from './services/telegramService.js';
+import SystemSetting from './models/SystemSetting.js';
 
 installTimestampedConsole();
 
@@ -29,7 +30,18 @@ async function start() {
 
     startControlEngine();
     startMqttBridge();
-    initTelegramBot(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_BOT_USERNAME);
+
+    const [tgToken, tgUsername] = await Promise.all([
+      SystemSetting.findOne({ where: { key: 'telegram_bot_token' } }),
+      SystemSetting.findOne({ where: { key: 'telegram_bot_username' } }),
+    ]);
+    const botToken = tgToken?.value || env.TELEGRAM_BOT_TOKEN;
+    const botUsername = tgUsername?.value || env.TELEGRAM_BOT_USERNAME;
+    if (botToken) {
+      initTelegramBot(botToken, botUsername);
+    } else {
+      console.log('[TELEGRAM] No token configured — bot disabled. Configure via System Settings.');
+    }
 
     const httpServer = createServer(app);
     startWebSocketServer(httpServer);

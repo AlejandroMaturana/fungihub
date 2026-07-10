@@ -305,4 +305,14 @@ export async function updateTelegramDeviceConfig(deviceId, payload) {
   return data.data
 }
 
+export async function configureTelegramBot(token, username) {
+  const { data } = await client.post('/telegram/configure', { token, username })
+  return data.data
+}
+
+export async function getTelegramBotStatus() {
+  const { data } = await client.get('/telegram/bot-status')
+  return data.data
+}
+
 export default client

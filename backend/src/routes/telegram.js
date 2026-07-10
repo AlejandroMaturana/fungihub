@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import crypto from 'crypto';
-import { UserPreference, TelegramDeviceConfig, Device, UserChamberAccess } from '../models/index.js';
+import { UserPreference, TelegramDeviceConfig, Device, UserChamberAccess, SystemSetting } from '../models/index.js';
 import { authenticate } from '../middlewares/auth.js';
+import { requireMinRole } from '../middlewares/rbac.js';
+import { reconfigureBot, getBotStatus } from '../services/telegramService.js';
 
 const router = Router();
 
@@ -117,6 +119,46 @@ router.patch('/device/:deviceId', authenticate, async (req, res) => {
     res.json({ data: config });
   } catch (err) {
     console.error('[TELEGRAM] Error updating device config:', err.message);
+    res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+});
+
+router.post('/configure', authenticate, requireMinRole('ADMIN'), async (req, res) => {
+  try {
+    const { token, username } = req.body;
+    if (!token) return res.status(400).json({ error: 'Token requerido' });
+
+    const tokenSetting = await SystemSetting.findOne({ where: { key: 'telegram_bot_token' } });
+    const usernameSetting = await SystemSetting.findOne({ where: { key: 'telegram_bot_username' } });
+
+    if (tokenSetting) await tokenSetting.update({ value: token });
+    if (usernameSetting) await usernameSetting.update({ value: username || '' });
+
+    const started = reconfigureBot(token, username || 'Mush2Bot');
+    const status = getBotStatus();
+
+    res.json({ data: { configured: true, running: status.running, username: status.username, lastError: status.lastError } });
+  } catch (err) {
+    console.error('[TELEGRAM] Error configuring bot:', err.message);
+    res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+});
+
+router.get('/bot-status', authenticate, requireMinRole('ADMIN'), async (req, res) => {
+  try {
+    const status = getBotStatus();
+    const tokenSetting = await SystemSetting.findOne({ where: { key: 'telegram_bot_token' } });
+    const usernameSetting = await SystemSetting.findOne({ where: { key: 'telegram_bot_username' } });
+
+    res.json({
+      data: {
+        ...status,
+        tokenConfigured: !!tokenSetting?.value,
+        configuredUsername: usernameSetting?.value || '',
+      },
+    });
+  } catch (err) {
+    console.error('[TELEGRAM] Error getting bot status:', err.message);
     res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
   }
 });

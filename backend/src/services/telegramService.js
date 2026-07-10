@@ -4,9 +4,25 @@ import { UserPreference, Device, TelegramDeviceConfig, UserChamberAccess, User }
 
 let bot = null;
 let isReady = false;
+let currentUsername = '';
+let lastError = null;
 
 export function isBotReady() {
   return isReady;
+}
+
+export function getBotStatus() {
+  return { running: isReady, username: currentUsername, lastError };
+}
+
+export function reconfigureBot(token, botUsername) {
+  if (bot) {
+    try { bot.stopPolling(); } catch {}
+    bot = null;
+    isReady = false;
+  }
+  lastError = null;
+  return initBot(token, botUsername);
 }
 
 export function initBot(token, botUsername) {
@@ -18,6 +34,8 @@ export function initBot(token, botUsername) {
   try {
     bot = new TelegramBot(token, { polling: true });
     isReady = true;
+    currentUsername = botUsername || 'unknown';
+    lastError = null;
     console.log(`[TELEGRAM] Bot @${botUsername} started (polling)`);
 
     bot.onText(/\/start/, (msg) => {
@@ -88,6 +106,7 @@ export function initBot(token, botUsername) {
     });
 
     bot.on('polling_error', (err) => {
+      lastError = err.message;
       console.error('[TELEGRAM] Polling error:', err.message);
     });
 
@@ -103,6 +122,8 @@ export function stopBot() {
     bot.stopPolling();
     bot = null;
     isReady = false;
+    currentUsername = '';
+    lastError = null;
     console.log('[TELEGRAM] Bot stopped');
   }
 }
