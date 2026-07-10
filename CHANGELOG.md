@@ -2,6 +2,36 @@
 
 ## 2026-07-10
 
+### Backend — v0.13.0
+
+- ## Backend
+- **Nuevo**: `GET /api/diag/mqtt` — Estado detallado de brokers MQTT (primary/fallback), canales SSR y modo de control
+- **Nuevo**: `POST /api/diag/mqtt/publish` — Publicar mensaje de prueba (solo ADMIN)
+- **Nuevo**: `GET /api/events` — Eventos paginados con filtros (`type`, `deviceId`, `from`, `to`)
+- **Nuevo**: `GET /api/events/device/:deviceId` — Eventos específicos por dispositivo
+## Frontend
+- **Nuevo**: Página `/diagnostics`
+- Paneles: MQTT Status, Chamber Control Mode, tabla de canales SSR, Publish Test
+- **UI**:
+- Enlace a "Diag" agregado en Sidebar y BottomNav
+**Resultado**: Módulo completo de diagnóstico para monitoreo en tiempo real de MQTT, estado de actuadores y registro de eventos del sistema.
+
+### Frontend — v1.5.0
+
+- ## Backend
+- **Nuevo**: `GET /api/diag/mqtt` — Estado detallado de brokers MQTT (primary/fallback), canales SSR y modo de control
+- **Nuevo**: `POST /api/diag/mqtt/publish` — Publicar mensaje de prueba (solo ADMIN)
+- **Nuevo**: `GET /api/events` — Eventos paginados con filtros (`type`, `deviceId`, `from`, `to`)
+- **Nuevo**: `GET /api/events/device/:deviceId` — Eventos específicos por dispositivo
+## Frontend
+- **Nuevo**: Página `/diagnostics`
+- Paneles: MQTT Status, Chamber Control Mode, tabla de canales SSR, Publish Test
+- **UI**:
+- Enlace a "Diag" agregado en Sidebar y BottomNav
+**Resultado**: Módulo completo de diagnóstico para monitoreo en tiempo real de MQTT, estado de actuadores y registro de eventos del sistema.
+
+## 2026-07-10
+
 ### Backend — v0.12.0
 
 - ### Backend & Frontend — R4: Preferencias de Usuario + Configuración del Sistema
