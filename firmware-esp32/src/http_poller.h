@@ -30,8 +30,15 @@ public:
   bool registerDevice(const char* fwVersion, const char* macAddress, const char* hwRevision = "");
   void getDesired(int ch, uint8_t* state, uint8_t* mode);
   unsigned int getFailCount() { return failCount; }
+
   bool getSsrActiveLow();
   bool ssrActiveLowChanged();
+
+  bool hasActiveCycle() { return _hasActiveCycle; }
+  const char* getPhase() { return _phase; }
+  bool hasSetpoints() { return _hasSetpoints; }
+  void getSetpoints(float* tempMin, float* tempMax, float* humMin, float* humMax, uint16_t* co2Max);
+  bool setpointsChanged();
 
 private:
   WiFiClient client;
@@ -53,6 +60,13 @@ private:
 
   bool _ssrActiveLow;
   bool _ssrActiveLowPrev;
+
+  bool _hasActiveCycle;
+  char _phase[16];
+  bool _hasSetpoints;
+  float _tempMin, _tempMax, _humMin, _humMax;
+  uint16_t _co2Max;
+  bool _setpointsChanged;
 
   void beginRequest();
   void runConnect();
