@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: '/cycles', icon: 'cyclone', label: 'Cycles' },
   { to: '/alarms', icon: 'warning', label: 'Alarms' },
   { to: '/logs', icon: 'history', label: 'Logs' },
+  { to: '/diagnostics', icon: 'diagnosis', label: 'Diag' },
   { to: '/settings', icon: 'settings', label: 'System' },
 ]
 

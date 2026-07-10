@@ -255,4 +255,24 @@ export async function getAuditLogs(params = {}) {
   return data
 }
 
+export async function getMqttDiagnostics() {
+  const { data } = await client.get('/diag/mqtt')
+  return data.data
+}
+
+export async function publishMqttTest(deviceId) {
+  const { data } = await client.post('/diag/mqtt/publish', { deviceId })
+  return data
+}
+
+export async function getEvents(params = {}) {
+  const { data } = await client.get('/events', { params })
+  return data
+}
+
+export async function getDeviceEvents(deviceId, params = {}) {
+  const { data } = await client.get(`/events/device/${deviceId}`, { params })
+  return data
+}
+
 export default client
