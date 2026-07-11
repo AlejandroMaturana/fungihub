@@ -1,5 +1,15 @@
 # Changelog — Mush2
 
+## 2026-07-11
+
+### Backend — v0.16.0
+
+- **Nuevo:**
+- Usuarios: manager (ADMIN), tecno (OPERATOR), invitado (VIEWER) con contraseñas por defecto.
+- Cámaras: Configuración de 4 cámaras (Este, Oeste, Norte, Sur) con sus respectivos hongos.
+- Accesos: Matriz de permisos desde SUPER_ADMIN hasta VIEWER.
+**Resultado**: Inserción de 3 registros de ejemplo (login, device_register, recipe_create).
+
 ## 10-07-2026 - OS v1.6.0
 
 ### Backend — v0.15.0
