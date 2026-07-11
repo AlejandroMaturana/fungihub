@@ -1,6 +1,6 @@
 import sequelize from './config/database.js';
 import bcrypt from 'bcryptjs';
-import { Recipe, User } from './models/index.js';
+import { Recipe, User, Chamber, UserChamberAccess, AuditLog, Device } from './models/index.js';
 
 const RECIPES = [
   {
@@ -110,38 +110,135 @@ const RECIPES = [
   },
 ];
 
+const TEST_USERS = [
+  { username: 'admin', email: 'admin@mush2.local', role: 'SUPER_ADMIN', password: 'admin123' },
+  { username: 'manager', email: 'manager@mush2.local', role: 'ADMIN', password: 'manager123' },
+  { username: 'tecno', email: 'tecno@mush2.local', role: 'OPERATOR', password: 'tecno123' },
+  { username: 'invitado', email: 'invitado@mush2.local', role: 'VIEWER', password: 'invitado123' },
+];
+
+const TEST_CHAMBERS = [
+  { name: 'Cámara Este — Ostra', volume: 2.5, location: 'Edificio A, Piso 1' },
+  { name: 'Cámara Oeste — Shiitake', volume: 4.0, location: 'Edificio A, Piso 1' },
+  { name: 'Cámara Norte — Reishi', volume: 3.0, location: 'Edificio A, Piso 2' },
+  { name: 'Cámara Sur — Cordyceps', volume: 1.8, location: 'Edificio A, Piso 2' },
+];
+
 async function seed() {
   try {
     await sequelize.authenticate();
     console.log('[Seed] DB conectada');
 
+    // ── RECETAS ──
     for (const data of RECIPES) {
       const [recipe, created] = await Recipe.findOrCreate({
         where: { name: data.name },
         defaults: data,
       });
-      console.log(`[Seed] ${created ? 'Creada' : 'Ya existe'}: ${recipe.name}`);
+      console.log(`[Seed] ${created ? 'Creada' : 'Ya existe'}: receta ${recipe.name}`);
     }
 
-    const passwordHash = await bcrypt.hash('admin123', 10);
-    const [user, userCreated] = await User.findOrCreate({
-      where: { username: 'admin' },
-      defaults: {
-        username: 'admin',
-        email: 'admin@mush2.local',
-        passwordHash,
-        role: 'SUPER_ADMIN',
-      },
-    });
+    // ── USUARIOS DE PRUEBA ──
+    const createdUsers = {};
+    for (const u of TEST_USERS) {
+      const passwordHash = await bcrypt.hash(u.password, 10);
+      const [user, userCreated] = await User.findOrCreate({
+        where: { username: u.username },
+        defaults: { username: u.username, email: u.email, passwordHash, role: u.role },
+      });
+      createdUsers[u.role] = user;
+      if (userCreated) {
+        console.log(`[Seed] Creado usuario ${u.username} (${u.role}, pass: ${u.password})`);
+      } else {
+        console.log(`[Seed] Usuario ${u.username} ya existe`);
+      }
+    }
 
-    if (userCreated) {
-      console.log('[Seed] Usuario admin creado (password: admin123)');
-    } else {
-      console.log('[Seed] Usuario admin ya existe');
+    // ── CÁMARAS DE PRUEBA ──
+    const adminUser = createdUsers['SUPER_ADMIN'];
+    const createdChambers = [];
+    for (const c of TEST_CHAMBERS) {
+      const [chamber, created] = await Chamber.findOrCreate({
+        where: { name: c.name },
+        defaults: { ...c, createdBy: adminUser.id, updatedBy: adminUser.id },
+      });
+      createdChambers.push(chamber);
+      console.log(`[Seed] ${created ? 'Creada' : 'Ya existe'}: cámara ${chamber.name}`);
+    }
+
+    // ── REGLAS DE ACCESO ──
+    const accessRules = [
+      { user: createdUsers['SUPER_ADMIN'], chambers: createdChambers, role: 'OWNER' },
+      { user: createdUsers['ADMIN'], chambers: createdChambers.slice(0, 2), role: 'OWNER' },
+      { user: createdUsers['OPERATOR'], chambers: createdChambers.slice(0, 1), role: 'EDITOR' },
+      { user: createdUsers['VIEWER'], chambers: createdChambers.slice(0, 1), role: 'VIEWER' },
+    ];
+
+    for (const rule of accessRules) {
+      for (const chamber of rule.chambers) {
+        const devices = await Device.findAll({ where: { chamberId: chamber.id } });
+        for (const device of devices) {
+          await UserChamberAccess.findOrCreate({
+            where: { userId: rule.user.id, deviceId: device.id },
+            defaults: {
+              userId: rule.user.id,
+              deviceId: device.id,
+              chamberId: chamber.id,
+              role: rule.role,
+              invitedBy: adminUser.id,
+              acceptedAt: new Date(),
+            },
+          });
+        }
+      }
+    }
+    console.log('[Seed] Reglas de acceso creadas');
+
+    // ── AUDITORÍA DE EJEMPLO ──
+    const auditEntries = [
+      {
+        userId: adminUser.id, action: 'LOGIN_SUCCESS', resource: 'user',
+        resourceId: adminUser.id, details: { method: 'local' }, ip: '127.0.0.1',
+      },
+      {
+        userId: adminUser.id, action: 'DEVICE_REGISTER', resource: 'device',
+        details: { deviceId: 'mush2_test_001' }, ip: '127.0.0.1',
+      },
+      {
+        userId: adminUser.id, action: 'RECIPE_CREATE', resource: 'recipe',
+        details: { recipeName: RECIPES[0].name }, ip: '127.0.0.1',
+      },
+    ];
+
+    for (const entry of auditEntries) {
+      await AuditLog.findOrCreate({
+        where: { action: entry.action, resourceId: entry.resourceId || null },
+        defaults: entry,
+      });
+    }
+    console.log('[Seed] Auditoría de ejemplo creada');
+
+    // ── THINGSPEAK TEST DATA ──
+    const thingSpeakDevices = await Device.findAll({
+      where: { thingSpeakEnabled: false },
+      limit: 2,
+    });
+    for (const device of thingSpeakDevices) {
+      await device.update({
+        thingSpeakEnabled: true,
+        thingSpeakChannelId: '123456',
+        thingSpeakReadKey: 'ABCDEFGHIJKLMNOP',
+        thingSpeakWriteKey: 'ZYXWVUTSRQPONMLK',
+        thingSpeakSyncInterval: 300000,
+      });
+      console.log(`[Seed] ThingSpeak habilitado en dispositivo ${device.deviceId}`);
+    }
+    if (thingSpeakDevices.length === 0) {
+      console.log('[Seed] No hay dispositivos para asignar ThingSpeak de prueba');
     }
 
     await sequelize.close();
-    console.log('[Seed] OK — 7 recetas pobladas');
+    console.log('[Seed] OK — R11 completado');
   } catch (err) {
     console.error('[Seed] Error:', err);
     process.exit(1);
