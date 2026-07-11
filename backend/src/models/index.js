@@ -1,3 +1,4 @@
+import Chamber from './Chamber.js';
 import Device from './Device.js';
 import Sensor from './Sensor.js';
 import Telemetry from './Telemetry.js';
@@ -14,6 +15,7 @@ import ApiKey from './ApiKey.js';
 import UserPreference from './UserPreference.js';
 import SystemSetting from './SystemSetting.js';
 import TelegramDeviceConfig from './TelegramDeviceConfig.js';
+import IntegrationCredentials from './IntegrationCredentials.js';
 
 Device.hasMany(Sensor, { foreignKey: 'deviceId' });
 Sensor.belongsTo(Device, { foreignKey: 'deviceId' });
@@ -57,9 +59,21 @@ AuditLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasOne(UserPreference, { foreignKey: 'userId' });
 UserPreference.belongsTo(User, { foreignKey: 'userId' });
 
+Chamber.hasMany(Device, { foreignKey: 'chamberId' });
+Device.belongsTo(Chamber, { foreignKey: 'chamberId' });
+
+Chamber.hasMany(CultivationCycle, { foreignKey: 'chamberId' });
+CultivationCycle.belongsTo(Chamber, { foreignKey: 'chamberId' });
+
+Chamber.hasMany(UserChamberAccess, { foreignKey: 'chamberId' });
+UserChamberAccess.belongsTo(Chamber, { foreignKey: 'chamberId' });
+
 Device.hasOne(TelegramDeviceConfig, { foreignKey: 'deviceId' });
 TelegramDeviceConfig.belongsTo(Device, { foreignKey: 'deviceId' });
 
 UserChamberAccess.belongsTo(User, { foreignKey: 'userId' });
 
-export { Device, Sensor, Telemetry, Event, Actuator, Recipe, CultivationCycle, CycleState, User, AuditLog, UserChamberAccess, Alarm, ApiKey, UserPreference, SystemSetting, TelegramDeviceConfig };
+Device.hasMany(IntegrationCredentials, { foreignKey: 'deviceId' });
+IntegrationCredentials.belongsTo(Device, { foreignKey: 'deviceId' });
+
+export { Chamber, Device, Sensor, Telemetry, Event, Actuator, Recipe, CultivationCycle, CycleState, User, AuditLog, UserChamberAccess, Alarm, ApiKey, UserPreference, SystemSetting, TelegramDeviceConfig, IntegrationCredentials };
