@@ -1,58 +1,44 @@
 # Changelog — Mush2
 
-## 2026-07-11
+## 2026-07-12
 
-### Firmware (ESP32-S3) — Refactor de Resiliencia y Arquitectura v0.14.0
+### Firmware (ESP32-S3) — v0.15.0 - Robustez del firmware
 
-**Nuevo**
-- EventBus: Sistema pub/sub thread-safe basado en FreeRTOS queue (10 tipos de eventos)
-- Logger: Multi-sink (Serial, SPIFFS con rotación, MQTT) + macros `LOG_*` convenientes
-- HealthMonitor: 7ª tarea FreeRTOS dedicada a chequeos periódicos (heap, stack, I2C, sensores)
-- TelemetryBuffer: Buffer en RAM (200 entradas) + persistencia offline en SPIFFS con replay automático al reconectar
+- HealthMonitor: heartbeat por tarea con enum `HeartbeatTaskId` (7 tareas)
+- I2C bus recovery: pulso de 9 clocks en SCL + reinicio automático de Wire
+- `loadRebootCount()`: solo incrementa en boots anormales (ST_ERROR, ST_RECOVERY, ST_OTA_UPDATING)
+- OTA confirmation: `esp_ota_mark_app_valid_cancel_rollback()` en boot normal
+- Separación de namespace NVS: SSR ahora usa `mush2_ssr`
+- `millis()` → `esp_timer_get_time()` (64-bit) para `lastActuatorPersist`
+- Actualizada `docs/roadmap.md` con Fase 7d completada
 
-**Refactor**
-- Tasks Module: Extracción completa de todas las tareas FreeRTOS a `tasks.{h,cpp}`
-  - `main.ino` reducido de 944 → 223 líneas (mucho más limpio)
-- State Machine: Mejoras en transiciones y persistencia de estado en NVS (`fsmState`)
-- Setpoints: Persistencia automática en NVS
-- OTA: 
-  - Implementada verificación **SHA-256** con mbedtls
-  - Refactor de acoplamiento (eliminados `externs`)
-  - Mejora en self-test post-boot
+## 2026-07-12
 
-**Correcciones**
-- Corrección de bugs detectados durante el refactor (printf, includes, nombres de instancias)
+### Firmware (ESP32-S3) — v0.14.0 — Resiliencia y Arquitectura
+
+**Nuevos Módulos**
+- `EventBus`: Sistema pub/sub thread-safe con FreeRTOS queue (10 tipos de evento)
+- `Logger`: Multi-sink (Serial, SPIFFS con rotación, MQTT) + macros `LOG_*`
+- `HealthMonitor`: 7ª tarea FreeRTOS con chequeos periódicos de heap, stack, I2C y sensores
+- `TelemetryBuffer`: Buffer en RAM (200 entradas) + spill a SPIFFS con replay automático al reconectar
+
+**Refactor y Mejoras**
+- Extracción completa de tareas a módulo `tasks.{h,cpp}` (`main.ino` reducido drásticamente)
+- Mejoras en State Machine: transiciones PROVISIONING→WIFI y OTA_UPDATING→NORMAL
+- Persistencia de estado y setpoints en NVS
+- OTA: Implementada verificación **SHA-256** con mbedtls + refactor de acoplamiento
 
 **Documentación**
-- ADR-012-FreeRTOS: Actualizado con implementación real de 8 tareas y taskMonitor
-- ADR-014-OTA-v3: Actualizado con verificación SHA-256 y flujo mejorado
+- ADR-012-FreeRTOS: Actualizado con 8 tareas y taskMonitor
+- ADR-014-OTA-v3: Actualizado con SHA-256 y nuevo flujo
 - ADR-016: Nuevo — Capability-based Subscription
 - ADR-017: Nuevo — Event-Bus Architecture
-- firmware.md: Sección completa actualizada con estructura actual y 7 tareas
+- `firmware.md`: Nueva sección con estructura actual y 7 tareas
 
-**Resultado**: Firmware mucho más robusto, mantenible y observable, con mejor separación de responsabilidades, logging avanzado, monitoreo de salud y resiliencia offline.
+**Correcciones**
+- Bugs detectados durante refactor (printf, includes, nombres de instancias)
 
-## 2026-07-11
-
-### Backend - Suscripciones y Rate Limiting - v0.16.0
-
-**Nuevo Modelo y Lógica**
-- Modelo `Subscription` con planes **FREE**, **BASIC** y **PREMIUM**
-- Métodos: `createForUser()`, `usagePercentage()` e `isExceeded()`
-- Registro automático de plan **FREE** al crear un nuevo usuario
-
-**Rate Limiting**
-- Nuevo middleware `subscriptionRateLimit` con conteo atómico y reset por período
-- Aplicado a rutas protegidas
-
-**Rutas y Jobs**
-- Nuevas rutas en `/api/subscriptions`:
-  - `/mine` (plan actual)
-  - `/mine/usage`
-  - `upgrade`, `cancel`
-  - Rutas de administración
-- Nuevo job `dataRetentionJob` (ejecutado cada 60 minutos) para purga automática de `AuditLog`, `Telemetry` y `Alarm`
-- Montaje del `subscriptionsRouter` y gestión del job en `server.js`
+**Resultado**: Firmware más modular, observable y resiliente con mejor logging, monitoreo de salud y soporte offline.
 
 ### Frontend - Suscripciones y Rate Limiting - v1.7.0
 
@@ -79,7 +65,7 @@
 
 ### Backend — v0.16.0
 
-**Nuevo**
+- **Nuevo:**
 - Usuarios: manager (ADMIN), tecno (OPERATOR), invitado (VIEWER) con contraseñas por defecto.
 - Cámaras: Configuración de 4 cámaras (Este, Oeste, Norte, Sur) con sus respectivos hongos.
 - Accesos: Matriz de permisos desde SUPER_ADMIN hasta VIEWER.
