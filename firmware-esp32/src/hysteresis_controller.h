@@ -24,6 +24,8 @@ public:
   void init(Setpoints defaultSetpoints);
   void setSetpoints(Setpoints sp);
   Setpoints getSetpoints();
+  void saveSetpointsNVS();
+  bool loadSetpointsNVS();
   void setMode(CtrlMode mode);
   CtrlMode getMode();
   void evaluate(float temperature, float humidity, uint16_t co2, uint8_t* ssrOutputs);

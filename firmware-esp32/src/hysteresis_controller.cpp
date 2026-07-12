@@ -1,5 +1,11 @@
 #include "hysteresis_controller.h"
 #include "config.h"
+#include <Preferences.h>
+
+#define HYST_NVS_NS "hysteresis"
+#define HYST_NVS_KEY "setpoints"
+#define HYST_NVS_SCHEMA "schema"
+#define HYST_NVS_SCHEMA_VER 1
 
 HysteresisController::HysteresisController()
   : mode(CTRL_LOCAL), heatingOn(false), ventilationOn(false), humidOn(false), lightOn(false),
@@ -21,10 +27,32 @@ void HysteresisController::init(Setpoints defaultSetpoints) {
 
 void HysteresisController::setSetpoints(Setpoints newSp) {
   sp = newSp;
+  saveSetpointsNVS();
 }
 
 Setpoints HysteresisController::getSetpoints() {
   return sp;
+}
+
+void HysteresisController::saveSetpointsNVS() {
+  Preferences prefs;
+  prefs.begin(HYST_NVS_NS, false);
+  prefs.putUChar(HYST_NVS_SCHEMA, HYST_NVS_SCHEMA_VER);
+  prefs.putBytes(HYST_NVS_KEY, &sp, sizeof(Setpoints));
+  prefs.end();
+}
+
+bool HysteresisController::loadSetpointsNVS() {
+  Preferences prefs;
+  prefs.begin(HYST_NVS_NS, true);
+  uint8_t schema = prefs.getUChar(HYST_NVS_SCHEMA, 0);
+  if (schema < HYST_NVS_SCHEMA_VER) {
+    prefs.end();
+    return false;
+  }
+  size_t readLen = prefs.getBytes(HYST_NVS_KEY, &sp, sizeof(Setpoints));
+  prefs.end();
+  return readLen == sizeof(Setpoints);
 }
 
 void HysteresisController::setMode(CtrlMode newMode) {
