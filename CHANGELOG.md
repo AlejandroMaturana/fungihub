@@ -2,6 +2,37 @@
 
 ## 2026-07-12
 
+### Firmware (ESP32-S3) — Botón Multifunción (SMFB) — v0.16.0
+
+**Nuevo**
+- **ButtonDriver**: Controlador con ISR + debounce de 20ms
+- **ButtonFsm**: Máquina de estados (5 estados) para detectar:
+  - Click simple
+  - Double-click
+  - Hold largo (3s)
+  - Hold muy largo (10s)
+- **ButtonHandler**: Lógica de despacho según estado del dispositivo + feedback LED + factory reset
+
+**Mejora**
+- **EventBus**: Extendido con `EVT_BUTTON` y payload `ButtonEventPayload`
+- **Configuración**: 11 nuevas constantes en `config.example.h` (GPIO, timings, etc.)
+- **Integración**:
+  - Nueva tarea `taskButton()` (prioridad 2, stack 12KB)
+  - Registro en Health Monitor
+  - Inicialización en `main.ino`
+
+**Tests y Documentación**
+- **Test**: Nuevo sketch `S3_test-button` con 7 pruebas de hardware (gestos, debounce, feedback LED)
+- **Docs**: Actualizado `docs/user/manual.md`
+  - Nueva sección completa: **Botón Multifunción (SMFB)**
+  - Patrones LED, tabla de gestos, matriz de comportamiento por estado
+  - Procedimientos de Factory Reset (hold 10s) y Provisioning (hold 3s)
+  - Sección de troubleshooting
+
+**Resultado**: Implementación completa del botón multifunción con detección avanzada de gestos y mejor experiencia de usuario.
+
+## 2026-07-12
+
 ### Chore & Refactor — Renombre firmware-esp32→firmware
 
 **Renombrado del directorio**: `firmware-esp32/` → `firmware/`
