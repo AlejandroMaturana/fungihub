@@ -3,6 +3,9 @@
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
 #include <esp_task_wdt.h>
+#include <time.h>
+#include <esp_sntp.h>
+#include <esp_timer.h>
 #include "config.h"
 #include "wifi_manager.h"
 #include "state_machine.h"
@@ -70,7 +73,8 @@ volatile float lastValidTemp = 0;
 volatile float lastValidHum = 0;
 volatile bool fallbackActive = false;
 volatile unsigned long sensorFailCount = 0;
-char systemState[16] = "NORMAL";
+volatile bool sensorFailed = false;
+volatile bool ntpSynced = false;
 char sharedMac[18] = "";
 char sharedFwVer[20] = "";
 char sharedHwRev[10] = "";
@@ -81,7 +85,7 @@ volatile uint8_t actuatorMode[4] = {0, 0, 0, 0};
 
 // NVS persistence
 volatile bool provisionalMode = false;
-volatile unsigned long lastActuatorPersist = 0;
+volatile int64_t lastActuatorPersist = 0;
 uint32_t holdWindow[4] = {ACTUATOR_HOLD_WINDOW_MS, ACTUATOR_HOLD_WINDOW_MS, ACTUATOR_HOLD_WINDOW_MS, ACTUATOR_HOLD_WINDOW_MS};
 
 // Task handles
@@ -98,6 +102,15 @@ volatile bool otaCommandPending = false;
 char otaCommandUrl[256] = "";
 char otaCommandVersion[32] = "";
 char otaCommandHash[65] = "";
+
+// ============================================================
+//  NTP sync callback
+// ============================================================
+
+static void ntpSyncCallback(struct timeval* tv) {
+  ntpSynced = true;
+  Serial.printf("[NTP] Sincronizado: %ld\n", tv->tv_sec);
+}
 
 // ============================================================
 //  Setup
@@ -165,6 +178,10 @@ void setup() {
     sm.fsmTransition(ST_WIFI, "setup");
     wifi.init();
     wifi.connect();
+
+    // NTP background sync (non-blocking)
+    sntp_set_time_sync_notification_cb(ntpSyncCallback);
+    configTime(0, 0, NTP_SERVER);
 
     if (!aht.init()) {
       Serial.println("[ERROR] AHT21 no disponible");
@@ -240,14 +257,20 @@ void setup() {
       vTaskDelay(pdMS_TO_TICKS(2000));
     }
 
-    if (otaConfirmacion.selfTest()) {
-      otaConfirmacion.confirm();
-      String ver = nvsGetFwVer();
-      Serial.printf("[OTA] Firmware v%s confirmado post-OTA\n", ver.c_str());
-      char successPayload[128];
-      snprintf(successPayload, sizeof(successPayload),
-        "{\"estado\":\"OTA_SUCCESS\",\"version\":\"%s\"}", ver.c_str());
-      mqtt.publish("ota/status", successPayload, true);
+    if (otaConfirmacion.isPendingVerification()) {
+      if (otaConfirmacion.selfTest()) {
+        otaConfirmacion.confirm();
+        String ver = nvsGetFwVer();
+        Serial.printf("[OTA] Firmware v%s confirmado post-OTA\n", ver.c_str());
+        char successPayload[128];
+        snprintf(successPayload, sizeof(successPayload),
+          "{\"estado\":\"OTA_SUCCESS\",\"version\":\"%s\"}", ver.c_str());
+        mqtt.publish("ota/status", successPayload, true);
+      } else {
+        Serial.println("[OTA] Self-test falló — rollback pendiente");
+      }
+    } else {
+      esp_ota_mark_app_valid_cancel_rollback();
     }
 
     xTaskCreatePinnedToCore(taskSensors, "Sensors", STACK_SENSORS, NULL, PRIORITY_SENSORS, &taskSensorsHandle, CORE_CONTROL);

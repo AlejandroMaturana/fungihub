@@ -1,26 +1,44 @@
 # Changelog — Mush2
 
-## 2026-07-11
+## 2026-07-12
 
-### Backend - Suscripciones y Rate Limiting - v0.16.0
+### Firmware (ESP32-S3) — v0.15.0 - Robustez del firmware
 
-**Nuevo Modelo y Lógica**
-- Modelo `Subscription` con planes **FREE**, **BASIC** y **PREMIUM**
-- Métodos: `createForUser()`, `usagePercentage()` e `isExceeded()`
-- Registro automático de plan **FREE** al crear un nuevo usuario
+- HealthMonitor: heartbeat por tarea con enum `HeartbeatTaskId` (7 tareas)
+- I2C bus recovery: pulso de 9 clocks en SCL + reinicio automático de Wire
+- `loadRebootCount()`: solo incrementa en boots anormales (ST_ERROR, ST_RECOVERY, ST_OTA_UPDATING)
+- OTA confirmation: `esp_ota_mark_app_valid_cancel_rollback()` en boot normal
+- Separación de namespace NVS: SSR ahora usa `mush2_ssr`
+- `millis()` → `esp_timer_get_time()` (64-bit) para `lastActuatorPersist`
+- Actualizada `docs/roadmap.md` con Fase 7d completada
 
-**Rate Limiting**
-- Nuevo middleware `subscriptionRateLimit` con conteo atómico y reset por período
-- Aplicado a rutas protegidas
+## 2026-07-12
 
-**Rutas y Jobs**
-- Nuevas rutas en `/api/subscriptions`:
-  - `/mine` (plan actual)
-  - `/mine/usage`
-  - `upgrade`, `cancel`
-  - Rutas de administración
-- Nuevo job `dataRetentionJob` (ejecutado cada 60 minutos) para purga automática de `AuditLog`, `Telemetry` y `Alarm`
-- Montaje del `subscriptionsRouter` y gestión del job en `server.js`
+### Firmware (ESP32-S3) — v0.14.0 — Resiliencia y Arquitectura
+
+**Nuevos Módulos**
+- `EventBus`: Sistema pub/sub thread-safe con FreeRTOS queue (10 tipos de evento)
+- `Logger`: Multi-sink (Serial, SPIFFS con rotación, MQTT) + macros `LOG_*`
+- `HealthMonitor`: 7ª tarea FreeRTOS con chequeos periódicos de heap, stack, I2C y sensores
+- `TelemetryBuffer`: Buffer en RAM (200 entradas) + spill a SPIFFS con replay automático al reconectar
+
+**Refactor y Mejoras**
+- Extracción completa de tareas a módulo `tasks.{h,cpp}` (`main.ino` reducido drásticamente)
+- Mejoras en State Machine: transiciones PROVISIONING→WIFI y OTA_UPDATING→NORMAL
+- Persistencia de estado y setpoints en NVS
+- OTA: Implementada verificación **SHA-256** con mbedtls + refactor de acoplamiento
+
+**Documentación**
+- ADR-012-FreeRTOS: Actualizado con 8 tareas y taskMonitor
+- ADR-014-OTA-v3: Actualizado con SHA-256 y nuevo flujo
+- ADR-016: Nuevo — Capability-based Subscription
+- ADR-017: Nuevo — Event-Bus Architecture
+- `firmware.md`: Nueva sección con estructura actual y 7 tareas
+
+**Correcciones**
+- Bugs detectados durante refactor (printf, includes, nombres de instancias)
+
+**Resultado**: Firmware más modular, observable y resiliente con mejor logging, monitoreo de salud y soporte offline.
 
 ### Frontend - Suscripciones y Rate Limiting - v1.7.0
 
@@ -47,7 +65,7 @@
 
 ### Backend — v0.16.0
 
-**Nuevo**
+- **Nuevo:**
 - Usuarios: manager (ADMIN), tecno (OPERATOR), invitado (VIEWER) con contraseñas por defecto.
 - Cámaras: Configuración de 4 cámaras (Este, Oeste, Norte, Sur) con sus respectivos hongos.
 - Accesos: Matriz de permisos desde SUPER_ADMIN hasta VIEWER.

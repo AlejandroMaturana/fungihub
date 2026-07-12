@@ -44,6 +44,11 @@
 #define MQTT_PORT_FALLBACK 1883
 #endif
 
+// ---- NTP ----
+#ifndef NTP_SERVER
+#define NTP_SERVER "pool.ntp.org"
+#endif
+
 // ---- Device ----
 #ifndef DEVICE_ID
 #define DEVICE_ID "mush2_s3_001"

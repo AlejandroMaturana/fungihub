@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 #include <esp_task_wdt.h>
+#include <esp_timer.h>
 #include "config.h"
 
 // Module includes used by tasks
@@ -27,6 +28,7 @@
 #include "telemetry_buffer.h"
 #include "actuator_nvs.h"
 #include "ble_provisioning.h"
+#include "health_monitor.h"
 
 // ============================================================
 //  Global objects (defined in main.ino)
@@ -69,7 +71,8 @@ extern volatile float lastValidTemp;
 extern volatile float lastValidHum;
 extern volatile bool fallbackActive;
 extern volatile unsigned long sensorFailCount;
-extern char systemState[16];
+extern volatile bool sensorFailed;
+extern volatile bool ntpSynced;
 extern char sharedMac[18];
 extern char sharedFwVer[20];
 extern char sharedHwRev[10];
@@ -80,7 +83,7 @@ extern volatile uint8_t actuatorMode[4];
 
 // NVS persistence
 extern volatile bool provisionalMode;
-extern volatile unsigned long lastActuatorPersist;
+extern volatile int64_t lastActuatorPersist;
 extern uint32_t holdWindow[4];
 
 // OTA command state (set by serial or MQTT)
@@ -117,6 +120,7 @@ void taskProvisioningIdle(void* pvParameters);
 // ============================================================
 void setLEDColor(uint8_t r, uint8_t g, uint8_t b);
 void processPhotoperiod();
+time_t getTimestamp();
 void otaMqttCallback(const char* url, const char* version, const char* hash);
 void mqttActuatorCallback(const MqttActuatorMessage* msg);
 

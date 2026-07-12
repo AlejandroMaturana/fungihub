@@ -31,6 +31,17 @@ void processPhotoperiod() {
 }
 
 // ============================================================
+//  NTP timestamp helper
+// ============================================================
+
+time_t getTimestamp() {
+  if (ntpSynced) {
+    return time(NULL);
+  }
+  return (time_t)((millis()) / 1000);
+}
+
+// ============================================================
 //  OTA / MQTT callbacks
 // ============================================================
 
@@ -76,7 +87,7 @@ void mqttActuatorCallback(const MqttActuatorMessage* msg) {
   memcpy(data.desired, (const uint8_t*)actuatorDesired, 4);
   memcpy(data.mode, (const uint8_t*)actuatorMode, 4);
   actuatorNVSSave(&data);
-  lastActuatorPersist = millis();
+  lastActuatorPersist = esp_timer_get_time();
 }
 
 // ============================================================
@@ -93,6 +104,7 @@ void taskSensors(void* pvParameters) {
 
   while (true) {
     esp_task_wdt_reset();
+    healthMonitor.feed(HB_SENSORS);
 
     SensorReading reading = aht.read();
     float temp = reading.temperature;
@@ -104,12 +116,16 @@ void taskSensors(void* pvParameters) {
 
       if (sensorFailCount >= 3) {
         ssr.setAll(0);
-        strcpy(systemState, "SAFE_SENSOR");
+        sensorFailed = true;
+        sm.setError("SENSOR_FAIL_AHT21");
         Serial.println("[ALARM] SENSOR_FAIL_AHT21");
         if (fallbackActive && (millis() - fallbackStart > 300000)) {
           fallbackActive = false;
+          lastSensorValid = 0;
+          Serial.println("[SENSOR] Fallback expirado — sin datos válidos");
         }
-        if (!fallbackActive && lastSensorValid > 0) {
+        if (!fallbackActive && lastSensorValid > 0 &&
+            (millis() - lastSensorValid < 600000)) {
           fallbackActive = true;
           fallbackStart = millis();
           fallbackTemp = lastValidTemp;
@@ -126,7 +142,10 @@ void taskSensors(void* pvParameters) {
       if (sensorFailCount > 0) {
         sensorFailCount = 0;
         Serial.println("[SENSOR] Sensor recuperado");
-        if (strcmp(systemState, "SAFE_SENSOR") == 0) strcpy(systemState, "NORMAL");
+        if (sensorFailed) {
+          sensorFailed = false;
+          sm.fsmTransition(ST_NORMAL, "sensor recovered");
+        }
       }
       lastSensorValid = millis();
       lastValidTemp = temp;
@@ -173,7 +192,7 @@ void taskSensors(void* pvParameters) {
       }
     } else if (!fallbackActive) {
       sharedSensorsValid = false;
-      strcpy(systemState, "DEGRADED");
+      sm.fsmTransition(ST_DEGRADED, "sensor fail no fallback");
       Serial.println("[SENSOR] Lectura inválida — sin fallback disponible");
     }
 
@@ -195,6 +214,7 @@ void taskSSR(void* pvParameters) {
   while (true) {
     sm.feedWatchdog();
     sm.handleWatchdog();
+    healthMonitor.feed(HB_SSR);
 
     float temp = sharedTemp;
     float hum = sharedHum;
@@ -225,7 +245,7 @@ void taskSSR(void* pvParameters) {
         finalState[1] = 0;
       }
 
-      if (strcmp(systemState, "SAFE_SENSOR") == 0) {
+      if (sensorFailed) {
         finalState[0] = 0;
         finalState[1] = 0;
         finalState[2] = 0;
@@ -255,7 +275,7 @@ void taskSSR(void* pvParameters) {
     }
 
     DeviceState current = sm.getState();
-    bool faultActive = sharedOverheatActive || strcmp(systemState, "SAFE_SENSOR") == 0;
+    bool faultActive = sharedOverheatActive || sensorFailed;
 
     if ((current == ST_NORMAL || current == ST_DEGRADED) && faultActive) {
       sm.fsmTransition(ST_ERROR, "fault detected");
@@ -273,7 +293,7 @@ void taskSSR(void* pvParameters) {
       if (reason) Serial.printf("[ALARM] %s\n", reason);
     }
 
-    if (sharedOverheatActive || strcmp(systemState, "SAFE_SENSOR") == 0) {
+    if (sharedOverheatActive || sensorFailed) {
       setLEDColor(255, 0, 0);
     } else if (!sharedSensorsValid) {
       setLEDColor(255, 255, 0);
@@ -332,6 +352,7 @@ void taskWiFi(void* pvParameters) {
 
   while (true) {
     esp_task_wdt_reset();
+    healthMonitor.feed(HB_WIFI);
 
     wifi.loop();
     bool wifiOk = wifi.isConnected();
@@ -370,6 +391,7 @@ void taskPoller(void* pvParameters) {
 
   while (true) {
     esp_task_wdt_reset();
+    healthMonitor.feed(HB_POLLER);
 
     if (wifi.isConnected()) {
       if (!mqtt.isConnected()) {
@@ -408,13 +430,14 @@ void taskPoller(void* pvParameters) {
           memcpy(data.desired, (const uint8_t*)actuatorDesired, 4);
           memcpy(data.mode, (const uint8_t*)actuatorMode, 4);
           actuatorNVSSave(&data);
-          lastActuatorPersist = millis();
+          lastActuatorPersist = esp_timer_get_time();
         }
       }
     }
 
     if (provisionalMode && lastActuatorPersist > 0) {
-      unsigned long age = millis() - lastActuatorPersist;
+      int64_t ageUs = esp_timer_get_time() - lastActuatorPersist;
+      unsigned long age = (unsigned long)(ageUs / 1000);
       bool expired = true;
       for (int ch = 0; ch < 4; ch++) {
         if (age < holdWindow[ch]) {
@@ -448,6 +471,7 @@ void taskMQTT(void* pvParameters) {
 
   while (true) {
     esp_task_wdt_reset();
+    healthMonitor.feed(HB_MQTT);
 
     if (wifi.isConnected()) {
       mqtt.loop();
@@ -466,6 +490,7 @@ void taskOTA(void* pvParameters) {
 
   while (true) {
     esp_task_wdt_reset();
+    healthMonitor.feed(HB_OTA);
 
     if (wifi.isConnected()) {
       ota.loop();
@@ -562,6 +587,7 @@ void taskTelemetry(void* pvParameters) {
 
   while (true) {
     esp_task_wdt_reset();
+    healthMonitor.feed(HB_TELEMETRY);
 
     unsigned long now = millis();
     bool wifiOk = wifi.isConnected();
