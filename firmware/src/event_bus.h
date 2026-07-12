@@ -19,6 +19,7 @@ enum EventType {
   EVT_TELEMETRY_READY,
   EVT_HEALTH_UPDATE,
   EVT_LOG,
+  EVT_BUTTON,
   EVT_COUNT
 };
 
@@ -65,6 +66,7 @@ struct HealthUpdatePayload {
   uint16_t taskStackMQTT;
   uint16_t taskStackOTA;
   uint16_t taskStackTelemetry;
+  uint16_t taskStackButton;
   bool i2cHealthy;
   uint8_t rebootCount;
 };
@@ -73,6 +75,11 @@ struct LogPayload {
   uint8_t level;
   char tag[16];
   char message[128];
+};
+
+struct ButtonEventPayload {
+  uint8_t gesture;
+  uint32_t holdDuration;
 };
 
 struct Event {
@@ -86,6 +93,7 @@ struct Event {
     TelemetryReadyPayload telemetryReady;
     HealthUpdatePayload healthUpdate;
     LogPayload log;
+    ButtonEventPayload button;
     bool wifiStatus;
     bool mqttStatus;
     uint32_t sensorFailCount;
