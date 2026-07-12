@@ -4,9 +4,12 @@
 #include <Arduino.h>
 #include <esp_ota_ops.h>
 
+class StateMachine;
+
 class OTAConfirmation {
 public:
   OTAConfirmation();
+  void init(StateMachine* sm);
   bool selfTest();
   void confirm();
   void rollback();
@@ -14,6 +17,7 @@ public:
 
 private:
   bool _otaPending;
+  StateMachine* _sm;
 };
 
 #endif

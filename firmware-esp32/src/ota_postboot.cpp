@@ -1,12 +1,15 @@
 #include "ota_postboot.h"
+#include "state_machine.h"
 #include "config.h"
 #include "ota_nvs.h"
-#include "state_machine.h"
 #include <WiFi.h>
+#include <Wire.h>
 
-extern StateMachine sm;
+OTAConfirmation::OTAConfirmation() : _otaPending(false), _sm(nullptr) {}
 
-OTAConfirmation::OTAConfirmation() : _otaPending(false) {}
+void OTAConfirmation::init(StateMachine* sm) {
+  _sm = sm;
+}
 
 bool OTAConfirmation::isPendingVerification() {
   const esp_partition_t* running = esp_ota_get_running_partition();
@@ -26,14 +29,23 @@ bool OTAConfirmation::selfTest() {
 
   bool sensorsOk = true;
   bool wifiOk = WiFi.status() == WL_CONNECTED;
-  bool stateOk = sm.getState() == ST_NORMAL;
+  bool stateOk = _sm && _sm->getState() == ST_NORMAL;
 
-  Serial.printf("[OTA] Self-test: WiFi=%s, State=%s, Sensors=%s\n",
+  bool i2cOk = false;
+  Wire.beginTransmission(0x38);
+  i2cOk = (Wire.endTransmission() == 0);
+
+  uint32_t freeHeap = ESP.getFreeHeap();
+  bool heapOk = (freeHeap > 30000);
+
+  Serial.printf("[OTA] Self-test: WiFi=%s, State=%s, I2C=%s, Heap=%lu (%s)\n",
     wifiOk ? "OK" : "FAIL",
-    sm.getStateName(),
-    sensorsOk ? "OK" : "FAIL");
+    _sm ? _sm->getStateName() : "?",
+    i2cOk ? "OK" : "FAIL",
+    freeHeap,
+    heapOk ? "OK" : "LOW");
 
-  return wifiOk && stateOk && sensorsOk;
+  return wifiOk && stateOk && i2cOk && heapOk;
 }
 
 void OTAConfirmation::confirm() {

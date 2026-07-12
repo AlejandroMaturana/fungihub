@@ -19,7 +19,7 @@ void MQTTClient::init(const char* deviceId) {
   _instance = this;
 }
 
-void MQTTClient::setOtaCallback(void (*cb)(const char* url, const char* version)) {
+void MQTTClient::setOtaCallback(void (*cb)(const char* url, const char* version, const char* hash)) {
   _otaCb = cb;
 }
 
@@ -156,16 +156,18 @@ void MQTTClient::_onMessage(char* topic, uint8_t* payload, unsigned int len) {
 
     const char* url = doc["url"];
     const char* version = doc["version"];
+    const char* hash = doc["hash"] | nullptr;
 
     if (!url || !version) {
       Serial.println("[MQTT] ota/command: faltan url o version");
       return;
     }
 
-    Serial.printf("[MQTT] Comando OTA: url=%s, version=%s\n", url, version);
+    Serial.printf("[MQTT] Comando OTA: url=%s, version=%s, hash=%s\n",
+      url, version, hash ? hash : "none");
 
     if (_otaCb) {
-      _otaCb(url, version);
+      _otaCb(url, version, hash);
     }
     return;
   }

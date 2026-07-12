@@ -2,20 +2,6 @@
 
 ## 2026-07-11
 
-### Backend — v0.17.1
-
-**Nuevo**
-- defaultValue en currentPeriodStart y currentPeriodEnd en el modelo Sequelize
-**Fixture**
-- Solucionado error 23502 (NOT NULL violation) durante ALTER TABLE
-- sync({ alter: true }) ahora crea correctamente la tabla con id INTEGER y defaults
-**Eliminado**
-- Tabla subscriptions antigua (schema legacy con UUID + columnas obsoletas)
-**Resultado**
-- Backend estable sin crash loop
-
-## 2026-07-11
-
 ### Backend - Suscripciones y Rate Limiting - v0.16.0
 
 **Nuevo Modelo y Lógica**

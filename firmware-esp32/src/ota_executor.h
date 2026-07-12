@@ -8,8 +8,11 @@
 class OTAExecutor {
 public:
   OTAExecutor();
-  bool begin(const String& url);
+  bool begin(const String& url, const String& expectedHash = "");
   void setCaCert(const char* cert);
+  bool verifyLastHash();
+private:
+  bool _lastHashValid;
 };
 
 #endif

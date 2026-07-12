@@ -2,6 +2,7 @@
 #include <Preferences.h>
 
 #define REBOOT_COUNT_KEY "rebootCnt"
+#define STATE_KEY "fsmState"
 #define WATCHDOG_SW_TIMEOUT 30000
 #define MAX_REBOOTS_BEFORE_SAFE 5
 
@@ -15,8 +16,8 @@ static const bool TRANSITION_MATRIX[10][10] = {
   /*ERR*/  {0,    0,    0,    1,    1,    0,    1,    0,    0,    0},
   /*RECV*/ {0,    0,    0,    1,    1,    0,    0,    0,    0,    0},
   /*SAFE*/ {0,    1,    0,    0,    0,    0,    0,    0,    0,    0},
-  /*OTA_U*/{0,    0,    0,    0,    0,    1,    0,    0,    0,    0},
-  /*PROV*/ {0,    0,    0,    0,    0,    0,    0,    0,    0,    0},
+  /*OTA_U*/{0,    0,    0,    1,    0,    1,    0,    0,    0,    0},
+  /*PROV*/ {0,    0,    1,    0,    0,    0,    0,    0,    0,    0},
 };
 
 StateMachine::StateMachine()
@@ -26,7 +27,20 @@ StateMachine::StateMachine()
 
 void StateMachine::init() {
   loadRebootCount();
-  setState(ST_INIT);
+
+  Preferences prefs;
+  prefs.begin(prefsNamespace, true);
+  uint8_t savedState = prefs.getUChar(STATE_KEY, ST_INIT);
+  prefs.end();
+
+  if (savedState >= _STATE_COUNT) savedState = ST_INIT;
+  if (savedState == ST_BOOT || savedState == ST_OTA_UPDATING || savedState == ST_SAFE) {
+    savedState = ST_INIT;
+  }
+
+  state = (DeviceState)savedState;
+  stateEntered = millis();
+  Serial.printf("[STATE] Estado restaurado: %s (boot #%d)\n", getStateName(), rebootCount);
 }
 
 bool StateMachine::_isTransitionValid(DeviceState from, DeviceState to) {
@@ -51,6 +65,11 @@ bool StateMachine::fsmTransition(DeviceState next, const char* reason) {
   DeviceState oldState = state;
   state = next;
   stateEntered = millis();
+
+  Preferences prefs;
+  prefs.begin(prefsNamespace, false);
+  prefs.putUChar(STATE_KEY, (uint8_t)state);
+  prefs.end();
 
   if (reason) {
     Serial.printf("[STATE] %s → %s (%s)\n", getStateName(oldState), getStateName(), reason);
