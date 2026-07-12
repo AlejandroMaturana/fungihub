@@ -16,6 +16,7 @@
 7. [Ciclos de Cultivo](#7-ciclos-de-cultivo)
 8. [Solución de Problemas](#8-solución-de-problemas)
 9. [Provisioning BLE](#9-provisioning-ble)
+10. [Botón Multifunción (SMFB)](#10-botón-multifunción-smfb)
 
 ---
 
@@ -26,6 +27,7 @@ Mush2 es un sistema IoT para monitorear y controlar el ambiente de cámaras de c
 - **Controlador físico** (ESP32-S3-DevKitC-1) con componentes satelitales para abarcar funciones
 - **Backend** en Node.js con base de datos PostgreSQL
 - **Frontend** web accesible desde cualquier navegador
+- **Botón multifunción** (SMFB) — interacción física local sin necesidad de app ni WiFi
 
 ### Sensores compatibles
 - **AHT21**: Temperatura y humedad (I2C 0x38)
@@ -35,7 +37,11 @@ Mush2 es un sistema IoT para monitorear y controlar el ambiente de cámaras de c
 - **SSR1** (D5): Calefacción — control por histéresis de temperatura
 - **SSR2** (D7): Ventilación — control por histéresis de temperatura + CO₂
 - **SSR3** (D6): Humidificación — control por histéresis de humedad
-- **SSR4** (D0): Iluminación — control por fotoperiodo 
+- **SSR4** (D0): Iluminación — control por fotoperiodo
+
+### Interacción física
+- **Botón SMFB** (GPIO 6): Botón multifunción con 4 gestos (click, doble-click, hold 3s, hold 10s)
+- **LED RGB** (GPIO 48): NeoPixel WS2812B para feedback visual de estado y gestos
 
 ---
 
@@ -50,8 +56,8 @@ Mush2 es un sistema IoT para monitorear y controlar el ambiente de cámaras de c
                                  ▼
 ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
 │ SENSORES │───▶│ ESP32-S3 │───▶│  HTTP    │───▶│ BACKEND  │───▶│ Frontend │
-│ AHT21    │    │          │    │ polling  │    │ Node.js  │    │   Web    │
-│ ENS160   │    │          │    │ + MQTT   │    │ Postgres │    │          │
+│ AHT21    │    │   + BOTON│    │ polling  │    │ Node.js  │    │   Web    │
+│ ENS160   │    │   SMFB   │    │ + MQTT   │    │ Postgres │    │          │
 └──────────┘    └────┬─────┘    └──────────┘    └──────────┘    └──────────┘
                      │                                │
                 ┌────▼─────┐                    ┌─────▼──────┐
@@ -97,8 +103,8 @@ Cuando el ESP32-S3 arranca sin credenciales Wi-Fi guardadas, entra en **modo pro
 
 Si el dispositivo ya tiene credenciales guardadas pero quieres cambiarlas:
 
-1. Mantén presionado el botón de reset del ESP32-S3 durante la conexión, o
-2. Desde el Dashboard, ve al detalle del dispositivo y usa la opción de **Factory Reset**
+1. **Mantén presionado el botón multifunción durante 3 segundos** — el LED parpadea en azul y el dispositivo entra en modo provisioning BLE
+2. O desde el Dashboard, ve al detalle del dispositivo y usa la opción de **Factory Reset**
 3. El dispositivo reiniciará en modo provisioning (LED azul pulsante)
 4. Repite los pasos de provisioning
 
@@ -220,9 +226,17 @@ Un ciclo ejecuta una receta de principio a fin.
 - El error ocurre si el dispositivo se reinicia antes de que el navegador reciba la confirmación. Reintenta la operación
 - Si persiste, verifica que la señal Wi-Fi sea buena (SSID correcto)
 
+### El botón no responde
+- Verifica que el LED muestre estado (si está apagado, el dispositivo está operando normalmente)
+- Si el LED está en rojo fijo (safe mode), el botón no funcionará hasta que pase el período de 60 segundos
+- Si el LED está púrpura, el dispositivo está arrancando — espera a que complete la inicialización
+- Durante una actualización OTA, el botón está completamente bloqueado por seguridad
+- Si el dispositivo no tiene botón físico instalado, puede configurar `BUTTON_PIN` a `-1` en `config.h` para deshabilitar la función
+
 ### Cómo reiniciar el controlador
-- Desconecta y vuelve a conectar la alimentación USB
-- O usa el botón RST en el ESP32-S3
+- **Mantén presionado el botón multifunción durante 10 segundos** — el LED parpadea en rojo y el dispositivo se reinicia con configuración de fábrica (borra todas las credenciales WiFi y configuración)
+- O desconecta y vuelve a conectar la alimentación USB
+- O usa el botón RST en el ESP32-S3 (reinicio sin borrar configuración)
 
 ### Cómo actualizar el firmware por WiFi (OTA)
 1. Envía comando HTTP a `POST /api/v1/devices/{id}/ota` con `{"action":"activate"}`
@@ -252,6 +266,11 @@ Un ciclo ejecuta una receta de principio a fin.
 | Alarma | Rojo fijo | Sobretemperatura o fallo de sensor |
 | Degradado | Amarillo fijo | Sin datos de sensor válidos |
 | Safe Mode | Rojo fijo (60s) | 5+ reinicios consecutivos |
+| Click | Blanco flash (50ms) | Acknowledge — sin cambio de estado |
+| Doble-click | Cyan flash (2x) | Refresh forzado de sensores |
+| Hold 3s confirm | Azul flash (2x) | Entrando a provisioning |
+| Hold progreso | Rampa azul→roja | Progreso visual del hold |
+| Factory reset | Rojo parpadeo (5x) | Reset ejecutándose |
 
 ### GATT Profile
 
@@ -282,4 +301,71 @@ El servicio BLE expone 5 características para el provisioning:
 
 ---
 
-*Documentación actualizada el 2026-07-06 para Mush2 v0.9.1*
+## 10. Botón Multifunción (SMFB)
+
+El dispositivo incluye un botón físico que permite interactuar con el controlador sin necesidad de aplicación móvil ni conexión WiFi. El botón está ubicado en GPIO 6 y usa un pull-up interno (activo LOW).
+
+### Gestos disponibles
+
+| Gesto | Cómo hacerlo | Acción |
+|---|---|---|
+| **Click** | Presionar y soltar rápidamente (< 0.3s) | Muestra estado del dispositivo (flash LED blanco) |
+| **Doble-click** | Dos clicks rápidos seguidos | Forzar lectura de sensores (flash LED cyan) |
+| **Hold 3 segundos** | Mantener presionado 3 segundos | Entrar/salir de modo provisioning BLE (LED azul) |
+| **Hold 10 segundos** | Mantener presionado 10 segundos | **Factory reset** — borra toda la configuración (LED rojo) |
+
+### Feedback LED por gesto
+
+| Gesto | Patrón LED |
+|---|---|
+| Click | Flash blanco breve (50ms) |
+| Doble-click | 2 flashes cyan rápidos |
+| Hold progreso (0-3s) | Rampa azul creciente (mientras mantienes presionado) |
+| Hold confirm (3s) | Doble flash azul |
+| Hold progreso (3-10s) | Rampa roja creciente (mientras mantienes presionado) |
+| Factory reset | 5 parpadeos rojos rápidos |
+
+### Comportamiento por estado del dispositivo
+
+| Estado del dispositivo | Click | Doble-click | Hold 3s | Hold 10s |
+|---|---|---|---|---|
+| **Normal** | Flash blanco | Refresh sensores | Entrar provisioning | Factory reset |
+| **Degradado** | Flash blanco | Refresh sensores | Entrar provisioning | Factory reset |
+| **Error** | Flash blanco | Ignorado | Ignorado | Factory reset |
+| **Provisioning BLE** | Cancelar provisioning | Ignorado | Cancelar provisioning | Factory reset |
+| **Actualización OTA** | **Todo bloqueado** | **Todo bloqueado** | **Todo bloqueado** | **Todo bloqueado** |
+| **Arrancando (BOOT/INIT)** | Ignorado | Ignorado | Ignorado | Factory reset |
+
+### Cancelación durante hold
+
+Mientras mantienes presionado el botón, puedes arrepentirte:
+
+- Si sueltas **antes de 3 segundos**: no ocurre nada (se cancela el gesto)
+- Si sueltas **después de 3 segundos pero antes de 10**: se ejecuta el hold-3s (provisioning)
+- Solo si mantienes **10 segundos completos** se ejecuta el factory reset
+
+### Indicadores LED durante interacción
+
+| Modo | LED | Descripción |
+|---|---|---|
+| Provisioning | Azul pulsante (0.75s) | Esperando credenciales Wi-Fi vía BLE |
+| Normal | Verde fijo | Funcionando en la red Wi-Fi |
+| Alarma | Rojo fijo | Sobretemperatura o fallo de sensor |
+| Degradado | Amarillo fijo | Sin datos de sensor válidos |
+| Safe Mode | Rojo fijo (60s) | 5+ reinicios consecutivos |
+| **Click** | Blanco flash (50ms) | Acknowledge — sin cambio de estado |
+| **Doble-click** | Cyan flash (2x) | Refresh forzado de sensores |
+| **Hold 3s confirm** | Azul flash (2x) | Entrando a provisioning |
+| **Hold progreso** | Rampa azul→roja | Progreso visual del hold |
+| **Factory reset** | Rojo parpadeo (5x) | Reset ejecutándose |
+
+### Notas importantes
+
+- El botón **no modifica parámetros** — solo acciona modos y funciones predefinidas
+- Durante una **actualización OTA**, el botón está completamente deshabilitado por seguridad
+- El botón funciona **sin WiFi y sin aplicación** — es la interfaz de recuperación del dispositivo
+- Si el dispositivo no tiene botón físico, puede deshabilitar la función configurando `BUTTON_PIN = -1`
+
+---
+
+*Documentación actualizada el 2026-07-12 para Mush2 v0.9.1*

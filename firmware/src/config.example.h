@@ -115,6 +115,19 @@
 #define DELAY_TELEMETRY 5000
 #define DELAY_POLLER    500
 
+// ---- Multi-Function Button (SMFB) ----
+// Active LOW: pull-up interno, boton corta a GND al presionar.
+// Si BUTTON_PIN es -1, el task no se crea (dispositivo sin boton fisico).
+#define BUTTON_PIN             GPIO_NUM_6
+#define BUTTON_DEBOUNCE_MS     20
+#define BUTTON_CLICK_MAX_MS    300
+#define BUTTON_DOUBLE_GAP_MS   300
+#define BUTTON_HOLD_3S_MS      3000
+#define BUTTON_HOLD_10S_MS     10000
+#define BUTTON_TASK_STACK      3072
+#define BUTTON_TASK_PRIORITY   2
+#define BUTTON_TASK_DELAY_MS   10
+
 // ---- Intervals (ms) ----
 #define SENSOR_INTERVAL 10000
 #define TS_INTERVAL 20000
