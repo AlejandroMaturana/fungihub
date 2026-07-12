@@ -3,6 +3,8 @@
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
 #include <esp_task_wdt.h>
+#include <time.h>
+#include <esp_sntp.h>
 #include "config.h"
 #include "wifi_manager.h"
 #include "state_machine.h"
@@ -70,7 +72,8 @@ volatile float lastValidTemp = 0;
 volatile float lastValidHum = 0;
 volatile bool fallbackActive = false;
 volatile unsigned long sensorFailCount = 0;
-char systemState[16] = "NORMAL";
+volatile bool sensorFailed = false;
+volatile bool ntpSynced = false;
 char sharedMac[18] = "";
 char sharedFwVer[20] = "";
 char sharedHwRev[10] = "";
@@ -98,6 +101,15 @@ volatile bool otaCommandPending = false;
 char otaCommandUrl[256] = "";
 char otaCommandVersion[32] = "";
 char otaCommandHash[65] = "";
+
+// ============================================================
+//  NTP sync callback
+// ============================================================
+
+static void ntpSyncCallback(struct timeval* tv) {
+  ntpSynced = true;
+  Serial.printf("[NTP] Sincronizado: %ld\n", tv->tv_sec);
+}
 
 // ============================================================
 //  Setup
@@ -165,6 +177,10 @@ void setup() {
     sm.fsmTransition(ST_WIFI, "setup");
     wifi.init();
     wifi.connect();
+
+    // NTP background sync (non-blocking)
+    sntp_set_time_sync_notification_cb(ntpSyncCallback);
+    configTime(0, 0, NTP_SERVER);
 
     if (!aht.init()) {
       Serial.println("[ERROR] AHT21 no disponible");
