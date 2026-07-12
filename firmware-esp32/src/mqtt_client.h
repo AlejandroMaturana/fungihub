@@ -33,7 +33,7 @@ public:
   bool publishStatus(const char* state, const char* mode, int rssi, const char* mac = "", const char* fwVer = "", const char* hwRev = "");
   bool publishAlarm(const char* reason);
 
-  void setOtaCallback(void (*cb)(const char* url, const char* version));
+  void setOtaCallback(void (*cb)(const char* url, const char* version, const char* hash));
   void setActuatorCallback(void (*cb)(const MqttActuatorMessage* msg));
 
   bool isFallbackActive() { return _usingFallback; }
@@ -47,7 +47,7 @@ private:
   unsigned long _fallbackRetry;
   bool _usingFallback;
 
-  void (*_otaCb)(const char* url, const char* version);
+  void (*_otaCb)(const char* url, const char* version, const char* hash);
   void (*_actuatorCb)(const MqttActuatorMessage* msg);
 
   void _connect();

@@ -6,6 +6,7 @@
 struct OtaCandidate {
   String url;
   String version;
+  String hash;
   int rssi;
   bool valid;
 };

@@ -1,14 +1,15 @@
 #include "ota_shutdown.h"
-#include "config.h"
 #include "ssr_controller.h"
 
-extern SSRController ssr;
+OTAShutdown::OTAShutdown() : _ssr(nullptr) {}
 
-OTAShutdown::OTAShutdown() {}
+void OTAShutdown::init(SSRController* ssr) {
+  _ssr = ssr;
+}
 
 bool OTAShutdown::begin() {
   Serial.println("[OTA] Safe shutdown: apagando actuadores...");
-  ssr.setAll(0);
+  if (_ssr) _ssr->setAll(0);
   return true;
 }
 
