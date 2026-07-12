@@ -2,6 +2,7 @@
 #define LOGGER_H
 
 #include <Arduino.h>
+#include <SPIFFS.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 

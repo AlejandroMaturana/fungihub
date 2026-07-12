@@ -23,7 +23,7 @@ bool EventBus::init() {
   }
 
   _initialized = true;
-  Serial.println("[EVENTBUS] Inicializado (queue=%d, max_subscribers/type=%d)",
+  Serial.printf("[EVENTBUS] Inicializado (queue=%d, max_subscribers/type=%d)\n",
     EVENT_QUEUE_SIZE, MAX_SUBSCRIBERS_PER_TYPE);
   return true;
 }

@@ -1,6 +1,7 @@
 #include "health_monitor.h"
 #include "logger.h"
 #include <Wire.h>
+#include <esp_task_wdt.h>
 
 HealthMonitor healthMonitor;
 
