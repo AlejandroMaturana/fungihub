@@ -1,0 +1,82 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# docs.yml — Publica la documentación en GitHub Pages con VitePress
+#
+# Trigger: push a la rama `gitpages`
+# Alcance: solo instala y compila el módulo `docs/` (aislado del monorepo)
+# Deploy:  mecanismo oficial de GitHub Pages (actions/deploy-pages)
+# URL:     https://alejandromaturana.github.io/mush2/
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: Deploy Docs to GitHub Pages
+
+on:
+  push:
+    branches:
+      - gitpages
+  # Permite ejecutar el workflow manualmente desde la UI de GitHub Actions
+  workflow_dispatch:
+
+# Permisos requeridos por el mecanismo oficial de GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Evitar despliegues simultáneos; el último push gana
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build VitePress site
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Necesario para que lastUpdated funcione correctamente
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: docs/pnpm-lock.yaml
+
+      - name: Install dependencies (docs only)
+        working-directory: ./docs
+        run: pnpm install --frozen-lockfile
+
+      - name: Build VitePress site
+        working-directory: ./docs
+        run: pnpm run build
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # VitePress compila a .vitepress/dist/ dentro de docs/
+          path: docs/.vitepress/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
