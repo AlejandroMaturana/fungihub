@@ -14,6 +14,7 @@ import analyticsRouter from './analytics.js';
 import telegramRouter from './telegram.js';
 import subscriptionsRouter from './subscriptions.js';
 import speciesRouter from './species.js';
+import cyclesRouter from './cycles.js';
 import { authenticate, optionalAuth } from '../middlewares/auth.js';
 import { requireMinRole } from '../middlewares/rbac.js';
 import { tenantScope } from '../middlewares/tenant.js';
@@ -39,5 +40,6 @@ router.use('/chambers', analyticsRouter);
 router.use('/subscriptions', subscriptionsRouter);
 router.use('/telegram', authenticate, checkApiRateLimit, telegramRouter);
 router.use('/species', optionalAuth, checkApiRateLimit, tenantScope, speciesRouter);
+router.use('/cycles', optionalAuth, checkApiRateLimit, tenantScope, cyclesRouter);
 
 export default router;
