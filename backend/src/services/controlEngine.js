@@ -1,6 +1,7 @@
 import { Op } from 'sequelize';
 import { Device, Telemetry, Recipe, CultivationCycle, CycleState, Actuator, Alarm } from '../models/index.js';
 import { events } from './eventBus.js';
+import { evaluatePhaseTransition, executePhaseTransition } from './phaseEvaluator.js';
 
 const PHASE_SEQUENCE = ['INCUBATION', 'FRUITING', 'MAINTENANCE', 'COMPLETED'];
 const EVAL_INTERVAL = 60000;
@@ -366,7 +367,7 @@ async function evaluateCycle(cycle) {
         const currentIdx = PHASE_SEQUENCE.indexOf(cycle.currentPhase);
         if (currentIdx >= 0 && currentIdx < PHASE_SEQUENCE.length - 1) {
           const nextPhase = PHASE_SEQUENCE[currentIdx + 1];
-          await cycle.update({ currentPhase: nextPhase });
+          await cycle.update({ currentPhase: nextPhase, phaseStartedAt: new Date() });
           console.log(`[CONTROL] Cycle ${cycle.id} avanzó a fase ${nextPhase}`);
 
           const configCmd = {
@@ -401,6 +402,11 @@ async function evaluateCycle(cycle) {
           }
         }
       }
+    }
+
+    const transitionResult = await evaluatePhaseTransition(cycle, readings, recipe);
+    if (transitionResult.shouldTransition) {
+      await executePhaseTransition(cycle, transitionResult);
     }
   } catch (err) {
     console.error(`[CONTROL] Error evaluating cycle ${cycle.id}:`, err.message);
