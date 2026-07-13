@@ -2,7 +2,7 @@
 
 ## 2026-07-13
 
-### Firmware (ESP32-S3) — BLE Provisioning Bug Fixes — v0.16.2
+### Firmware (ESP32-S3) — BLE Provisioning Bug Fixes — v0.17.0
 
 **Bug Fixes**
 - `button_handler.cpp`: Fixed factory reset not clearing WiFi credentials — now clears both `mush2` and `mush2_prov` NVS namespaces
