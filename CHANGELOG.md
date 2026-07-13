@@ -2,6 +2,46 @@
 
 ## 2026-07-13
 
+### Backend — v0.19.0
+
+- Rutas completas: GET/POST/PUT/DELETE /api/v1/species con filtros
+Seed con 7 perfiles de especies + auto-linking de recetas existentes
+Montaje del router de species
+- Nuevo modelo SpeciesProfile (name, scientificName, difficultyLevel, compounds, etc.)
+Añadido campo speciesId en Recipe (nullable)
+Configuradas asociaciones bidireccionales
+
+### Frontend — v1.8.0
+
+- Nueva página SpeciesLibrary con catálogo, filtros y modal de detalle
+RecipeComparator: comparación lado a lado con resaltado de diferencias
+Métodos API agregados en client.js (getSpecies, createSpecies, etc.)"
+- Añadidos enlaces a Species en Sidebar, TopBar y BottomNav
+Nuevas rutas en App.jsx (/species y /recipes/compare)
+Botón COMPARE agregado en página Recipes"
+
+## 2026-07-13
+
+### Phase 12 — Species Library & Recipes
+
+**Backend**
+- New model `SpeciesProfile` with fields: name, scientificName, adapterClass, originClimate, difficultyLevel, compounds (JSONB), description, iconUrl
+- Added `speciesId` foreign key to Recipe model (SpeciesProfile.hasMany → Recipe.belongsTo)
+- New routes `/api/v1/species` — CRUD with filters (adapterClass, originClimate, difficultyLevel)
+- Seed with 7 species: Melena de León, Reishi, Shiitake, Cola de Pavo, Cordyceps, Pleurotus, Chaga
+- Migration logic: existing recipes automatically linked to species profiles by scientific name
+
+**Frontend**
+- New page `SpeciesLibrary.jsx` — browsable catalog with detail modal
+  - Filter by adapterClass (ADAPTOGEN/EDIBLE/MEDICINAL) and difficultyLevel
+  - Visual badges for compounds, origin climate, difficulty
+  - Modal with full detail + associated recipes
+- New page `RecipeComparator.jsx` — side-by-side comparison of 2-3 recipes
+  - Comparison table: temp/humidity ranges, CO₂, FAE, ventilation, light
+  - Difference highlighting across selected recipes
+- Navigation: Added Species link to Sidebar, TopBar, BottomNav
+- Recipes page: Added COMPARE button linking to `/recipes/compare`
+
 ### Backend — v0.18.0
 
 - - Añadida función publishHealth() en mqtt_client con 17 métricas (heap, stacks, sensores, etc.)

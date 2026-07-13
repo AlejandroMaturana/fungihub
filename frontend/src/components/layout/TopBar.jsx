@@ -4,6 +4,7 @@ import AlarmBadge from '../alarm/AlarmBadge.jsx'
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/recipes', label: 'Recipes' },
+  { to: '/species', label: 'Species' },
   { to: '/cycles', label: 'Cycles' },
   { to: '/settings', label: 'Settings' },
 ]
