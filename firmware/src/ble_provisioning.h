@@ -32,9 +32,6 @@ public:
   const char* getStoredSSID();
   void getStoredCredentials(String& ssid, String& password);
   void clearCredentials();
-  void setBackendConfig(const char* host, uint16_t port);
-  const char* getBackendHost();
-  uint16_t getBackendPort();
 
   // Exposed for ProvCmdCallback friend
   BLECharacteristic* charWifiSsid() { return _charWifiSsid; }
@@ -50,6 +47,7 @@ private:
   bool _provisioned;
   bool _restartPending;
   unsigned long _restartAt;
+  unsigned long _advStartTime;
   BLEServer* _server;
   BLEService* _service;
   BLECharacteristic* _charDeviceInfo;
@@ -64,13 +62,10 @@ private:
   String _fwVer;
   String _storedSsid;
   String _storedPassword;
-  String _backendHost;
-  uint16_t _backendPort;
 
   void _createServer();
   void _loadCredentials();
   void _saveCredentials(const String& ssid, const String& password);
-  void _setProvisioned(bool provisioned);
   void _clearNVS();
   void _publishStatus(const char* status, const char* msg);
 };

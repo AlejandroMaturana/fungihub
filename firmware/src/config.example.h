@@ -168,6 +168,11 @@
 #define BLE_DEVICE_NAME_PREFIX "Mush2"
 #endif
 
+// ---- WiFi Re-provisioning ----
+#ifndef WIFI_FAIL_REPROVISION_THRESHOLD
+#define WIFI_FAIL_REPROVISION_THRESHOLD 5
+#endif
+
 // ---- Debug ----
 #ifndef POLL_DEBUG
 #define POLL_DEBUG 0

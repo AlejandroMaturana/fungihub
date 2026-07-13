@@ -42,6 +42,29 @@ time_t getTimestamp() {
 }
 
 // ============================================================
+//  Re-provisioning: WiFi failure recovery
+// ============================================================
+
+void reProvision() {
+  Serial.println("[REPROV] WiFi falló repetidamente — entrando en modo provisioning");
+
+  // Clear provisioning NVS (WiFi credentials)
+  Preferences prefs;
+  prefs.begin("mush2_prov", false);
+  prefs.clear();
+  prefs.end();
+
+  // Clear main NVS (SSR mode, reboot count, FSM state)
+  prefs.begin("mush2", false);
+  prefs.clear();
+  prefs.end();
+
+  Serial.println("[REPROV] NVS limpiado — reiniciando a modo provisioning");
+  delay(500);
+  ESP.restart();
+}
+
+// ============================================================
 //  OTA / MQTT callbacks
 // ============================================================
 
@@ -367,6 +390,7 @@ void taskWiFi(void* pvParameters) {
     if (wifiOk && sm.getState() == ST_DEGRADED) {
       sm.fsmTransition(ST_NORMAL, "wifi recovered");
       wifiRetryDelay = 5000;
+      wifiFailCount = 0;  // Reset failure count on recovery
     }
 
     if (!wifiOk && sm.getState() == ST_DEGRADED) {
@@ -376,6 +400,16 @@ void taskWiFi(void* pvParameters) {
         lastWifiRetry = now;
         wifi.connect();
         wifiRetryDelay = min(wifiRetryDelay * 2, 60000u);
+
+        // Track complete retry cycles (when delay reaches max)
+        if (wifiRetryDelay >= 60000u) {
+          wifiFailCount++;
+          Serial.printf("[WiFi] Failure cycle #%lu\n", wifiFailCount);
+
+          if (wifiFailCount >= WIFI_FAIL_REPROVISION_THRESHOLD) {
+            reProvision();  // Never returns — device restarts
+          }
+        }
       }
     }
 

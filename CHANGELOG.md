@@ -2,6 +2,25 @@
 
 ## 2026-07-13
 
+### Firmware (ESP32-S3) — BLE Provisioning Bug Fixes — v0.17.0
+
+**Bug Fixes**
+- `button_handler.cpp`: Fixed factory reset not clearing WiFi credentials — now clears both `mush2` and `mush2_prov` NVS namespaces
+- `ble_provisioning.cpp`: Implemented advertising timeout — device now restarts after `BLE_PROV_TIMEOUT_MS` (5 min) if not provisioned
+- `ble_provisioning.cpp`: Removed dead code (`_setProvisioned`, `setBackendConfig`, `getBackendHost`, `getBackendPort`)
+
+**New Feature: WiFi Failure Recovery**
+- `state_machine.cpp`: Added transitions `ST_WIFI → ST_PROVISIONING` and `ST_DEGRADED → ST_PROVISIONING`
+- `tasks.cpp`: Added `reProvision()` function that clears NVS and restarts to provisioning mode
+- `tasks.cpp`: `taskWiFi` now tracks WiFi failure cycles and triggers re-provisioning after `WIFI_FAIL_REPROVISION_THRESHOLD` (5) consecutive failures
+- `config.example.h`: Added `WIFI_FAIL_REPROVISION_THRESHOLD` constant
+- `tasks.h`: Added `wifiFailCount` extern and `reProvision()` declaration
+
+**Frontend**
+- `Provisioning.jsx`: Added `console.warn` for device registration errors (was silently swallowed)
+
+**Behavior**: If WiFi fails repeatedly (5 complete retry cycles with exponential backoff), the device automatically clears credentials and restarts into BLE provisioning mode, allowing the user to reconfigure WiFi.
+
 ### Firmware (ESP32-S3) — Correcciones y Botón Multifunción — v0.16.1
 
 **Correcciones y Limpieza**
