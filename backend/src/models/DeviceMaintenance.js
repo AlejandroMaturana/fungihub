@@ -16,7 +16,7 @@ const DeviceMaintenance = sequelize.define('DeviceMaintenance', {
     allowNull: false,
   },
   health: {
-    type: DataTypes.TINYINT,
+    type: DataTypes.SMALLINT,
     allowNull: false,
     defaultValue: 100,
   },
