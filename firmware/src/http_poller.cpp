@@ -298,7 +298,7 @@ void HTTPPoller::runParse() {
 
   // De-chunk transfer-encoding chunked si es necesario
   String body = httpResponse;
-  if (body[0] >= '0' && body[0] <= '9' || body[0] >= 'a' && body[0] <= 'f') {
+  if ((body[0] >= '0' && body[0] <= '9') || (body[0] >= 'a' && body[0] <= 'f')) {
     int cr = body.indexOf('\r');
     int nl = body.indexOf('\n');
     int hdrEnd;

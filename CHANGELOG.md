@@ -1,5 +1,15 @@
 # Changelog — Mush2
 
+## 2026-07-13
+
+### Firmware (ESP32-S3) — Correcciones y Botón Multifunción — v0.16.1
+
+**Correcciones y Limpieza**
+- `http_poller.cpp`: Añadidos paréntesis en condición OR/AND para mayor claridad
+- `logger.cpp`: Agregados casts `(unsigned long)` para formateo correcto con `%lu` y `uint32_t`
+- `ota_postboot.cpp`: Eliminada variable `sensorsOk` no usada + cast en `freeHeap`
+- `platformio.ini`: Eliminado `-DCONFIG_ESP_TASK_WDT_TIMEOUT_S` (conflicto con SDK)
+
 ## 2026-07-12
 
 ### Firmware (ESP32-S3) — Botón Multifunción (SMFB) — v0.16.0
