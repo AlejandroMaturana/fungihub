@@ -71,6 +71,39 @@ function syncVersionFile(dir, version) {
   console.log(`  ${dir}/VERSION → ${version}`);
 }
 
+function syncPlatformIO(version) {
+  const pioPath = path.join(PROJECT_ROOT, 'firmware', 'platformio.ini');
+  try {
+    let content = fs.readFileSync(pioPath, 'utf8');
+    const regex = /-DFIRMWARE_VERSION=.*/g;
+    const replacement = `-DFIRMWARE_VERSION="\\"${version}\\""`;
+    if (regex.test(content)) {
+      content = content.replace(regex, replacement);
+      fs.writeFileSync(pioPath, content, 'utf8');
+      console.log(`  firmware/platformio.ini FIRMWARE_VERSION → ${version}`);
+    }
+  } catch (e) {
+    console.warn(`  [WARN] No se pudo sincronizar platformio.ini: ${e.message}`);
+  }
+}
+
+function bumpRootPatch() {
+  const rootPkgPath = path.join(PROJECT_ROOT, 'package.json');
+  const rootVersionPath = path.join(PROJECT_ROOT, 'VERSION');
+  try {
+    const raw = fs.readFileSync(rootPkgPath, 'utf8');
+    const pkg = JSON.parse(raw);
+    const parts = pkg.version.split('.').map(Number);
+    parts[2] = (parts[2] || 0) + 1;
+    pkg.version = parts.join('.');
+    fs.writeFileSync(rootPkgPath, JSON.stringify(pkg, null, 2) + '\n');
+    fs.writeFileSync(rootVersionPath, pkg.version + '\n', 'utf8');
+    console.log(`Root OS version → ${pkg.version}`);
+  } catch (e) {
+    console.warn(`  [WARN] No se pudo bumpar versión root: ${e.message}`);
+  }
+}
+
 function main() {
   // Find per-package CHANGELOG.md files
   const entries = [];
@@ -94,6 +127,9 @@ function main() {
     try {
       const pkg = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, dir, 'package.json'), 'utf8'));
       syncVersionFile(dir, pkg.version);
+      if (dir === 'firmware') {
+        syncPlatformIO(pkg.version);
+      }
     } catch {}
   }
 
@@ -101,6 +137,9 @@ function main() {
     console.log('No package changelogs found. Nothing to aggregate.');
     return;
   }
+
+  // Bump root OS version (patch) for every sub-package change
+  bumpRootPatch();
 
   const now = new Date().toISOString().split('T')[0];
   const newSectionLines = [`## ${now}\n`];
