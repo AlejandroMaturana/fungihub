@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { getRecipes, createRecipe } from '../api/client.js'
 import LoadingState from '../components/ui/LoadingState.jsx'
 import RecipesEmptyState from '../components/ui/RecipesEmptyState.jsx'
@@ -286,10 +287,18 @@ function Recipes() {
           <h1 className="text-headline-lg text-on-surface">Recipes</h1>
           <p className="text-body-md text-on-surface-variant">{recipes.length} recipe{recipes.length !== 1 ? 's' : ''}</p>
         </div>
-        <button onClick={() => { resetForm(); setShowForm(true) }} className="btn btn-primary">
-          <span className="material-symbols-outlined text-16px">add</span>
-          NEW RECIPE
-        </button>
+        <div className="flex gap-2">
+          {recipes.length >= 2 && (
+            <Link to="/recipes/compare" className="btn btn-secondary">
+              <span className="material-symbols-outlined text-16px">compare</span>
+              COMPARE
+            </Link>
+          )}
+          <button onClick={() => { resetForm(); setShowForm(true) }} className="btn btn-primary">
+            <span className="material-symbols-outlined text-16px">add</span>
+            NEW RECIPE
+          </button>
+        </div>
       </div>
 
       {error && (

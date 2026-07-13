@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 const NAV_ITEMS = [
   { to: '/dashboard', icon: 'dashboard', label: 'Dash' },
   { to: '/recipes', icon: 'potted_plant', label: 'Recipes' },
+  { to: '/species', icon: 'potted_plant', label: 'Species' },
   { to: '/cycles', icon: 'cyclone', label: 'Cycles' },
   { to: '/analytics', icon: 'analytics', label: 'Analytics' },
   { to: '/alarms', icon: 'warning', label: 'Alarms' },
