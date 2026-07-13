@@ -19,6 +19,8 @@ const CultivationCycle = sequelize.define('CultivationCycle', {
   },
   startDate: { type: DataTypes.DATEONLY },
   endDate: { type: DataTypes.DATEONLY },
+  phaseStartedAt: { type: DataTypes.DATE },
+  adaptationConfig: { type: DataTypes.JSONB, defaultValue: {} },
   notes: { type: DataTypes.TEXT },
 }, {
   tableName: 'cultivation_cycles',
