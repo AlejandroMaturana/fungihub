@@ -250,26 +250,4 @@ export default defineConfig({
   markdown: {
     lineNumbers: true,
   },
-
-  // Configuración personalizada de Vite
-  vite: {
-    plugins: [
-      {
-        name: 'redirect-to-base',
-        configureServer(server) {
-          server.middlewares.use((req, res, next) => {
-            if (req.url) {
-              const pathname = req.url.split('?')[0]
-              if (pathname === '/' || pathname === '/index.html') {
-                res.writeHead(302, { Location: '/mush2/' })
-                res.end()
-                return
-              }
-            }
-            next()
-          })
-        }
-      }
-    ]
-  }
 })
