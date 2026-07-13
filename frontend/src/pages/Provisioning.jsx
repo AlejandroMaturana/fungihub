@@ -278,8 +278,9 @@ function Provisioning() {
         deviceId: deviceInfo.deviceId,
         macAddress: deviceInfo.deviceId,
         chamberName: `Mush2-${deviceInfo.deviceId.slice(-4)}`,
-      }).catch(() => {
+      }).catch((err) => {
         // Non-critical — device already self-registered via firmware
+        console.warn('[Provisioning] Device registration failed (non-critical):', err)
       })
     }
   }, [step, deviceInfo])

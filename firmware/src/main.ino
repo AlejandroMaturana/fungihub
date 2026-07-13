@@ -78,6 +78,7 @@ volatile bool fallbackActive = false;
 volatile unsigned long sensorFailCount = 0;
 volatile bool sensorFailed = false;
 volatile bool ntpSynced = false;
+volatile uint32_t wifiFailCount = 0;
 char sharedMac[18] = "";
 char sharedFwVer[20] = "";
 char sharedHwRev[10] = "";

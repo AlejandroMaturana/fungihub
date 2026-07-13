@@ -95,9 +95,9 @@ class ProvCmdCallback : public BLECharacteristicCallbacks {
 
 BLEProvisioning::BLEProvisioning()
   : _active(false), _provisioned(false), _restartPending(false), _restartAt(0),
-    _server(nullptr), _service(nullptr),
+    _advStartTime(0), _server(nullptr), _service(nullptr),
     _charDeviceInfo(nullptr), _charWifiSsid(nullptr), _charWifiPass(nullptr),
-    _charCmd(nullptr), _charStatus(nullptr), _charSsrMode(nullptr), _backendPort(0) {
+    _charCmd(nullptr), _charStatus(nullptr), _charSsrMode(nullptr) {
   _instance = this;
 }
 
@@ -178,8 +178,10 @@ void BLEProvisioning::start() {
   BLEDevice::startAdvertising();
 
   _active = true;
+  _advStartTime = millis();
   _publishStatus("ready", "Esperando configuración...");
-  Serial.printf("[BLE] Advertising como '%s'\n", _bleName.c_str());
+  Serial.printf("[BLE] Advertising como '%s' (timeout: %lus)\n",
+    _bleName.c_str(), BLE_PROV_TIMEOUT_MS / 1000);
 }
 
 void BLEProvisioning::stop() {
@@ -217,19 +219,6 @@ void BLEProvisioning::clearCredentials() {
   _storedPassword = "";
 }
 
-void BLEProvisioning::setBackendConfig(const char* host, uint16_t port) {
-  _backendHost = String(host);
-  _backendPort = port;
-}
-
-const char* BLEProvisioning::getBackendHost() {
-  return _backendHost.c_str();
-}
-
-uint16_t BLEProvisioning::getBackendPort() {
-  return _backendPort;
-}
-
 void BLEProvisioning::_createServer() {
   _server = BLEDevice::createServer();
   _server->setCallbacks(new ProvServerCallbacks());
@@ -261,14 +250,6 @@ void BLEProvisioning::_saveCredentials(const String& ssid, const String& passwor
   Serial.printf("[PROV] Credenciales guardadas en NVS: SSID=%s\n", ssid.c_str());
 }
 
-void BLEProvisioning::_setProvisioned(bool provisioned) {
-  Preferences prefs;
-  prefs.begin(NVS_NS, false);
-  prefs.putBool(KEY_PROV, provisioned);
-  prefs.end();
-  _provisioned = provisioned;
-}
-
 void BLEProvisioning::_clearNVS() {
   Preferences prefs;
   prefs.begin(NVS_NS, false);
@@ -288,8 +269,17 @@ void BLEProvisioning::scheduleRestart(unsigned long delayMs) {
 }
 
 void BLEProvisioning::loop() {
+  // Handle deferred restart
   if (_restartPending && millis() >= _restartAt) {
     Serial.println("[BLE] Reinicio programado — ejecutando ESP.restart()");
+    ESP.restart();
+  }
+
+  // Advertising timeout: stop BLE and restart if not provisioned within timeout
+  if (_active && !_provisioned && (millis() - _advStartTime >= BLE_PROV_TIMEOUT_MS)) {
+    Serial.printf("[BLE] Advertising timeout (%lus) — reiniciando\n", BLE_PROV_TIMEOUT_MS / 1000);
+    _publishStatus("timeout", "Tiempo de configuración expirado");
+    vTaskDelay(pdMS_TO_TICKS(500));  // Let notification send
     ESP.restart();
   }
 }

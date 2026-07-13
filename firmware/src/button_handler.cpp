@@ -117,10 +117,18 @@ void ButtonHandler::ledHoldProgress(uint32_t duration) {
 
 void ButtonHandler::_factoryReset() {
   Preferences prefs;
+
+  // Clear main namespace (SSR mode, reboot count, FSM state, etc.)
   prefs.begin("mush2", false);
   prefs.clear();
   prefs.end();
-  Serial.println("[BUTTON] NVS wiped — restarting");
+
+  // Clear provisioning namespace (WiFi credentials, provisioned flag)
+  prefs.begin("mush2_prov", false);
+  prefs.clear();
+  prefs.end();
+
+  Serial.println("[BUTTON] NVS wiped (mush2 + mush2_prov) — restarting");
   delay(500);
   ESP.restart();
 }
