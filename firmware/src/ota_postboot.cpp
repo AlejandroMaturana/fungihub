@@ -27,7 +27,6 @@ bool OTAConfirmation::selfTest() {
   _otaPending = true;
   Serial.println("[OTA] Post-boot: particion en PENDING_VERIFY, ejecutando self-test...");
 
-  bool sensorsOk = true;
   bool wifiOk = WiFi.status() == WL_CONNECTED;
   bool stateOk = _sm && _sm->getState() == ST_NORMAL;
 
@@ -42,7 +41,7 @@ bool OTAConfirmation::selfTest() {
     wifiOk ? "OK" : "FAIL",
     _sm ? _sm->getStateName() : "?",
     i2cOk ? "OK" : "FAIL",
-    freeHeap,
+    (unsigned long)freeHeap,
     heapOk ? "OK" : "LOW");
 
   return wifiOk && stateOk && i2cOk && heapOk;

@@ -122,7 +122,7 @@ void Logger::dumpRecent(int count) {
       case LOG_DEBUG: levelStr = "D"; break;
       case LOG_VERBOSE: levelStr = "V"; break;
     }
-    Serial.printf("[%lu] %s/%s: %s\n", e.timestamp, levelStr, e.tag, e.message);
+    Serial.printf("[%lu] %s/%s: %s\n", (unsigned long)e.timestamp, levelStr, e.tag, e.message);
   }
   Serial.println("===================");
 
@@ -143,7 +143,7 @@ static const char* levelPrefix(LogLevel level) {
 }
 
 void SerialSink::write(const LogEntry& entry) {
-  Serial.printf("[%lu] %s/%s: %s\n", entry.timestamp, levelPrefix(entry.level), entry.tag, entry.message);
+  Serial.printf("[%lu] %s/%s: %s\n", (unsigned long)entry.timestamp, levelPrefix(entry.level), entry.tag, entry.message);
 }
 
 // === SpiffsSink ===
@@ -183,7 +183,7 @@ void SpiffsSink::begin() {
 void SpiffsSink::write(const LogEntry& entry) {
   if (!_available || !_logFile) return;
 
-  _logFile.printf("[%lu] %s/%s: %s\n", entry.timestamp, levelPrefix(entry.level), entry.tag, entry.message);
+  _logFile.printf("[%lu] %s/%s: %s\n", (unsigned long)entry.timestamp, levelPrefix(entry.level), entry.tag, entry.message);
 
   if (_logFile.size() > MAX_LOG_SIZE) {
     _logFile.close();
@@ -218,7 +218,7 @@ void MqttSink::write(const LogEntry& entry) {
   char payload[200];
   snprintf(payload, sizeof(payload),
     "{\"ts\":%lu,\"lvl\":\"%s\",\"tag\":\"%s\",\"msg\":\"%s\"}",
-    entry.timestamp, levelPrefix(entry.level), entry.tag, entry.message);
+    (unsigned long)entry.timestamp, levelPrefix(entry.level), entry.tag, entry.message);
 
   _publishFunc("log", payload, false);
 }
