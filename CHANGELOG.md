@@ -2,6 +2,22 @@
 
 ## 2026-07-13
 
+### Firmware (ESP32-S3) — v0.19.0
+
+- Nueva clase ring buffer con TTL (32 comandos, 5 minutos)
+Funciones: push, pop, markProcessed, clearExpired
+Permite sobrevivir desconexiones MQTT
+- Seguimiento de i2cFailureCount, recovery attempts y rolling window
+i2cPredictiveAlert cuando hay >= 5 fallos en 5 minutos
+Métricas adicionales para resiliencia I2C
+- Nuevas constantes: SENSOR*FREQ*_, I2C*RECOVERY*_, MQTT*CMD*\*
+Preparación de parámetros configurables para taskSensors y recovery
+- Intervalo dinámico entre 5s y 30s según sensorStabilityScore
+Lógica de incremento/decremento lineal de frecuencia
+Integración de phase awareness desde MQTT"
+
+## 2026-07-13
+
 ### Backend — v0.20.0
 
 - Nuevo modelo PhaseTransition con historial completo (triggerType, status, triggerData, etc.)
@@ -35,6 +51,24 @@ Soporte para modos MANUAL, SEMI_AUTO y AUTO
   - GET /cycles/:id/transitions (transition history)
   - POST /cycles/:id/abort
   - GET /cycles/:id/states (CycleState history)
+
+### Phase 13B — Firmware Resilience
+
+**Firmware**
+- Adaptive sensor frequency: `taskSensors` now adjusts interval (5s-30s) based on sensor stability score
+  - Stable readings → slower polling (30s), unstable → faster polling (5s)
+  - Stability tracked via consecutive valid reads counter
+- MQTT command buffer: new `MqttCmdBuffer` class with RAM ring buffer (32 entries)
+  - Commands persist across MQTT disconnections
+  - TTL-based expiration (5min default)
+  - Mark processed / clear expired functionality
+- I2C recovery trending: `HealthMonitor` now tracks:
+  - Total failure count, recovery attempts, success rate
+  - Rolling window of recent failures (16 entries, 5min window)
+  - Predictive alert when failures exceed threshold
+- Phase awareness: firmware now receives and stores current cultivation phase via MQTT
+  - Phase field in `MqttActuatorMessage` now applied to `currentPhase` global
+  - Phase change logged with timestamp
 
 ### Backend — v0.19.0
 
