@@ -25,7 +25,7 @@ Realizar una reestructuración profunda de la documentación del proyecto bajo l
    - `docs/rfc/` para Request for Comments (RFCs) antes de tomar decisiones sobre propuestas.
    - `docs/design/` para lineamientos visuales y de experiencia de usuario.
    - `docs/operations/` para guías operacionales, despliegues y monitoreo.
-   - `docs/roadmap/` unificado como fuente única de verdad para el futuro del proyecto, archivando los roadmaps locales anteriores.
+   - `docs/roadmap.md` como fuente única de verdad para planificación del proyecto.
    - `docs/diagrams/exports/` para guardar los diagramas renderizados (PNG/SVG) legibles por plataformas web.
 2. **Crear un índice maestro** (`docs/README.md`) para orientar a desarrolladores humanos y agentes de IA.
 3. **Eliminar los archivos duplicados o desactualizados** (`docs/firmware.md`, `docs/roadmap.md`, `docs/context/` y la carpeta `docs/issues/` de tareas obsoletas).
@@ -47,5 +47,5 @@ Realizar una reestructuración profunda de la documentación del proyecto bajo l
 
 ## Referencias
 
-- Implementación de la reestructuración: `docs/README.md`, `docs/roadmap/roadmap.md`, `docs/architecture/firmware.md`
+- Implementación de la reestructuración: `docs/README.md`, `docs/roadmap.md`, `docs/architecture/firmware.md`
 - Propuesta aprobada: `doc_audit_proposal.md` en el directorio de la conversación.

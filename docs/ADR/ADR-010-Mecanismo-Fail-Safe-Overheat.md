@@ -85,7 +85,4 @@ La manta térmica tiene inercia: cuando el sensor marca 24°C, la superficie de 
 
 ## Referencias
 
-- `docs/roadmap/consideraciones.md` — Sección 6: Consideraciones Finales
-- `docs/roadmap/otras-consideraciones.md` — Sección 5: Gestión Térmica del SSR
-- `docs/roadmap/otras-consideraciones.md` — Sección 6: Secuencia de Arranque
-- `docs/roadmap/otras-consideraciones.md` — Sección 8: Detección de Fallos
+- `docs/roadmap.md` — Fase 11 (Observabilidad): Fail-Safe Overheat
