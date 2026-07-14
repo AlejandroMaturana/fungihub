@@ -21,6 +21,7 @@ import DeviceHealth from './DeviceHealth.js';
 import SpeciesProfile from './SpeciesProfile.js';
 import PhaseTransition from './PhaseTransition.js';
 import DeviceMaintenance from './DeviceMaintenance.js';
+import BioactiveProfile from './BioactiveProfile.js';
 
 Device.hasMany(Sensor, { foreignKey: 'deviceId' });
 Sensor.belongsTo(Device, { foreignKey: 'deviceId' });
@@ -96,4 +97,7 @@ PhaseTransition.belongsTo(CultivationCycle, { foreignKey: 'cycleId' });
 Device.hasMany(DeviceMaintenance, { foreignKey: 'deviceId' });
 DeviceMaintenance.belongsTo(Device, { foreignKey: 'deviceId' });
 
-export { Chamber, Device, Sensor, Telemetry, Event, Actuator, Recipe, CultivationCycle, CycleState, User, AuditLog, UserChamberAccess, Alarm, ApiKey, UserPreference, SystemSetting, TelegramDeviceConfig, IntegrationCredentials, Subscription, DeviceHealth, SpeciesProfile, PhaseTransition, DeviceMaintenance };
+CultivationCycle.hasMany(BioactiveProfile, { foreignKey: 'cycleId' });
+BioactiveProfile.belongsTo(CultivationCycle, { foreignKey: 'cycleId' });
+
+export { Chamber, Device, Sensor, Telemetry, Event, Actuator, Recipe, CultivationCycle, CycleState, User, AuditLog, UserChamberAccess, Alarm, ApiKey, UserPreference, SystemSetting, TelegramDeviceConfig, IntegrationCredentials, Subscription, DeviceHealth, SpeciesProfile, PhaseTransition, DeviceMaintenance, BioactiveProfile };
