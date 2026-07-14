@@ -328,7 +328,14 @@ async function evaluateCycle(cycle) {
 
     const commands = (temp != null) ? computeActuatorCommands(device.deviceId, temp, hum, co2, thresholds) : [];
 
-    for (const cmd of commands) {
+    const currentActuators = await Actuator.findAll({ where: { deviceId: device.id } });
+    const overrideMap = {};
+    for (const a of currentActuators) {
+      overrideMap[a.channel] = a.overrideUntil && new Date(a.overrideUntil) > new Date();
+    }
+    const filteredCommands = commands.filter(cmd => !overrideMap[cmd.channel]);
+
+    for (const cmd of filteredCommands) {
       try {
         const [actuator] = await Actuator.findOrCreate({
           where: { deviceId: device.id, channel: cmd.channel },
@@ -345,8 +352,8 @@ async function evaluateCycle(cycle) {
       }
     }
 
-    if (commands.length > 0) {
-      console.log(`[CONTROL] ${device.deviceId} → ${commands.map(c => `CH${c.channel}=${c.command}(${c.reason})`).join(' | ')}`);
+    if (filteredCommands.length > 0) {
+      console.log(`[CONTROL] ${device.deviceId} → ${filteredCommands.map(c => `CH${c.channel}=${c.command}(${c.reason})`).join(' | ')}`);
     }
 
     const evalEvent = {
@@ -356,7 +363,7 @@ async function evaluateCycle(cycle) {
       thresholds: { tempMin: thresholds.tempMin, tempMax: thresholds.tempMax, humMin: thresholds.humMin, humMax: thresholds.humMax, co2Max: thresholds.co2Max },
       readings: { temp, hum, co2, vpd: vpd ? parseFloat(vpd.toFixed(3)) : null },
       deviations,
-      actuatorCommands: commands.map(c => ({ channel: c.channel, command: c.command, reason: c.reason })),
+      actuatorCommands: filteredCommands.map(c => ({ channel: c.channel, command: c.command, reason: c.reason })),
     };
     events.emit('control_eval', evalEvent);
 

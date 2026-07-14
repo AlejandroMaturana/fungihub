@@ -12,6 +12,7 @@ const Actuator = sequelize.define('Actuator', {
   lastCommand: { type: DataTypes.STRING(50) },
   lastAck: { type: DataTypes.STRING(20) },
   lastSeen: { type: DataTypes.DATE },
+  overrideUntil: { type: DataTypes.DATE, allowNull: true },
 }, {
   tableName: 'actuators',
   timestamps: true,

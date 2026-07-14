@@ -119,30 +119,6 @@ export function startMqttBridge() {
     fallbackClient = createClient(BROKERS[1], true);
   }
 
-  events.on('control_eval', (data) => {
-    if (!data.deviceId) return;
-    const payload = JSON.stringify({
-      type: 'actuator_state',
-      deviceId: data.deviceId,
-      timestamp: Date.now(),
-      actuators: (data.actuatorCommands || []).map(c => ({
-        channel: c.channel,
-        state: c.command,
-        mode: 'REMOTE',
-      })),
-    });
-    const opts = { qos: 1, retain: false };
-
-    const topic = `${TOPIC_PREFIX}/${data.deviceId}/actuators`;
-
-    // Publish to primary; if disconnected, try fallback
-    if (primaryClient && primaryClient.connected) {
-      primaryClient.publish(topic, payload, opts);
-    } else if (fallbackClient && fallbackClient.connected) {
-      fallbackClient.publish(topic, payload, opts);
-    }
-  });
-
   const brokerList = BROKERS.map(b => b.label).join(', ');
   console.log(`[MQTT] Bridge iniciado — brokers: ${brokerList}`);
   return primaryClient;
