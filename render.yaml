@@ -1,7 +1,7 @@
 services:
   - type: web
     name: mush2
-    runtime: node
+    runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
@@ -37,8 +37,8 @@ services:
           name: mush2-db
           property: port
 
-  - type: pg
-    name: mush2-db
+databases:
+  - name: mush2-db
     plan: free
     databaseName: mush2
     ipAllowList: []
