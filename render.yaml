@@ -37,7 +37,7 @@ services:
           name: mush2-db
           property: port
 
-  - type: pgsql
+  - type: pg
     name: mush2-db
     plan: free
     databaseName: mush2
