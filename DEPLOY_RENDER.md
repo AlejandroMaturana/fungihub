@@ -49,50 +49,64 @@
 2. Sign in con GitHub
 
 ### 2. Método A: Blueprint (recomendado)
-1. **New +** > **Blueprint**
-2. Conectar repo `AlejandroMaturana/mush2`
-3. Render detecta `render.yaml` y crea:
-   - Web Service `mush2` (Dockerfile)
-   - PostgreSQL `mush2-db` (free tier)
-4. Configurar `CORS_ORIGIN` en Environment del servicio web:
+
+Usa `render.yaml` para crear todo de una vez.
+
+1. En el Dashboard, clic **New +** > **Blueprint**
+2. Conecta tu repo de GitHub (`AlejandroMaturana/mush2`)
+3. Render detecta `render.yaml` y muestra lo que va a crear:
+   - **mush2** (Web Service — Docker)
+   - **mush2-db** (PostgreSQL — Free)
+4. Clic **Deploy**
+5. Una vez desplegado, ir a **mush2** > **Environment** y agregar:
    ```
    CORS_ORIGIN=https://mush2.onrender.com
    ```
-5. Deploy automático
+   (Reemplaza con la URL real que Render asignó)
+6. **Manual Deploy** > **Deploy latest commit**
 
-### 3. Método B: Manual
+### 3. Método B: Manual (paso a paso)
+
+#### Paso 1 — PostgreSQL
+1. **New +** > **Postgres**
+2. **Name**: `mush2-db`
+3. **Database Name**: `mush2`
+4. **Plan**: Free
+5. Clic **Create Database**
+6. Esperar que esté activo. Copiar estos valores (los necesitarás después):
+   - **Internal Database URL**
+   - **User**
+   - **Password**
+   - **Host**
+   - **Port**
+
+#### Paso 2 — Web Service
 1. **New +** > **Web Service**
-2. Conectar repo GitHub
-3. Configurar:
+2. Conecta tu repo GitHub
+3. Configura:
    - **Name**: `mush2`
-   - **Runtime**: Docker
+   - **Runtime**: seleccionar **Docker** (en el dropdown de Language)
    - **Dockerfile Path**: `./Dockerfile`
    - **Plan**: Free
-4. Agregar variables de entorno (ver tabla abajo)
-5. **Create Web Service**
+4. En **Environment Variables**, agregar manualmente:
 
-#### Agregar PostgreSQL:
-1. **New +** > **PostgreSQL**
-2. **Name**: `mush2-db`
-3. **Plan**: Free
-4. Copiar `Internal Database URL` y agregar como `DATABASE_URL` al servicio web
+   | Key | Value |
+   |---|---|
+   | `NODE_ENV` | `production` |
+   | `JWT_SECRET` | (genera uno: `openssl rand -hex 32`) |
+   | `CORS_ORIGIN` | `https://mush2.onrender.com` |
+   | `DATABASE_URL` | (copiar Internal Database URL de PostgreSQL) |
+   | `DB_USER` | (copiar User de PostgreSQL) |
+   | `DB_HOST` | (copiar Host de PostgreSQL) |
+   | `DB_NAME` | `mush2` |
+   | `DB_PASSWORD` | (copiar Password de PostgreSQL) |
+   | `DB_PORT` | (copiar Port de PostgreSQL) |
 
-### 4. Variables de Entorno
+5. Clic **Create Web Service**
 
-| Variable | Origen | Descripción |
-|---|---|---|
-| `NODE_ENV` | `production` | Modo producción |
-| `PORT` | Auto (Render) | Puerto asignado |
-| `DATABASE_URL` | PostgreSQL addon | URL de conexión |
-| `JWT_SECRET` | Auto (render.yaml) | Secreto JWT (generado) |
-| `CORS_ORIGIN` | Manual | URL del servicio web |
-| `DB_USER` | PostgreSQL addon | Usuario de DB |
-| `DB_HOST` | PostgreSQL addon | Host de DB |
-| `DB_NAME` | PostgreSQL addon | Nombre de DB |
-| `DB_PASSWORD` | PostgreSQL addon | Password de DB |
-| `DB_PORT` | PostgreSQL addon | Puerto de DB |
+### 4. Variables Opcionales
 
-### 5. Variables Opcionales
+Agregar en Environment del Web Service si las necesitas:
 
 | Variable | Descripción |
 |---|---|
@@ -101,10 +115,10 @@
 | `TELEGRAM_BOT_TOKEN` | Token del bot de Telegram |
 | `TELEGRAM_BOT_USERNAME` | Username del bot de Telegram |
 
-### 6. Verificar
-1. Abrir la URL asignada por Render
+### 5. Verificar
+1. En el dashboard, abrir la URL asignada por Render
 2. Landing page de Mush2 debería cargar
-3. `GET /health` → `{"status":"ok","uptime":...}`
+3. Navegar a `GET /health` → `{"status":"ok","uptime":...}`
 4. Registrar usuario
 5. Verificar dashboard
 
@@ -119,7 +133,7 @@
 | Sleep | After 15 min sin tráfico |
 | Cold start | ~30-60s al despertar |
 | Horas/mes | 750 (suficiente para uso personal) |
-| PostgreSQL | Free tier dura 90 días, luego se elimina |
+| PostgreSQL | Free tier expira a los **30 días** (luego se elimina) |
 
 ### Mantener el servicio vivo (anti-sleep)
 
@@ -167,9 +181,10 @@ Para evitar que el servicio se duerma, configurar un ping cada 14 minutos.
 - `DATABASE_URL` se inyecta vía `fromDatabase` en render.yaml
 - El backend usa `env.DB.url` que lee `DATABASE_URL`
 
-### PostgreSQL free tier expira (90 días)
+### PostgreSQL free tier expira (30 días)
 - Render envía email antes de eliminar
-- Opciones: upgrade a plan pago o migrar a otra DB
+- Tienes 14 días de gracia para upgrade a plan pago
+- Opciones: upgrade a Starter ($7/mes) o migrar a Neon/Supabase
 
 ---
 
@@ -185,5 +200,5 @@ Para evitar que el servicio se duerma, configurar un ping cada 14 minutos.
 
 - [ ] Configurar cron-job.org/UptimeRobot para keep-alive
 - [ ] Evaluar upgrade a Starter plan ($7/mes) para evitar cold start
-- [ ] Monitorear expiración de PostgreSQL free tier (90 días)
+- [ ] Monitorear expiración de PostgreSQL free tier (30 días)
 - [ ] Considerar migrar DB a Neon/Supabase si se necesita permanencia
