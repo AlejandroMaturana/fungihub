@@ -2,7 +2,7 @@
 # docs.yml — Publica la documentación en GitHub Pages con VitePress
 #
 # Trigger: push a la rama `gitpages`
-# Alcance: solo instala y compila el módulo `docs/` (aislado del monorepo)
+# Build:   via workspace monorepo (root pnpm-lock.yaml)
 # Deploy:  mecanismo oficial de GitHub Pages (actions/deploy-pages)
 # URL:     https://alejandromaturana.github.io/mush2/
 # ──────────────────────────────────────────────────────────────────────────────
@@ -13,16 +13,13 @@ on:
   push:
     branches:
       - gitpages
-  # Permite ejecutar el workflow manualmente desde la UI de GitHub Actions
   workflow_dispatch:
 
-# Permisos requeridos por el mecanismo oficial de GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Evitar despliegues simultáneos; el último push gana
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -36,7 +33,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Necesario para que lastUpdated funcione correctamente
           fetch-depth: 0
 
       - name: Install pnpm
@@ -49,15 +45,13 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
-          cache-dependency-path: docs/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
-      - name: Install dependencies (docs only)
-        working-directory: ./docs
+      - name: Install dependencies (workspace root)
         run: pnpm install --frozen-lockfile
 
       - name: Build VitePress site
-        working-directory: ./docs
-        run: pnpm run build
+        run: pnpm --filter @mush2/docs build
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
@@ -65,7 +59,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # VitePress compila a .vitepress/dist/ dentro de docs/
           path: docs/.vitepress/dist
 
   deploy:
