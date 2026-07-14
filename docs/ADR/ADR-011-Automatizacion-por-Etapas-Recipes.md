@@ -107,7 +107,4 @@ Ante un cambio de fase en el ciclo:
 
 ## Referencias
 
-- `docs/roadmap/consideraciones.md` — Sección 5: Pseudocódigo de flujo de control
-- `docs/roadmap/otras-consideraciones.md` — Sección 1: VPD (Ley No Negociable)
-- `docs/roadmap/otras-consideraciones.md` — Sección 7: Fotoperiodo con Transición Suave
-- `docs/roadmap/milestone.md` — M4: Automatización (Fase 4)
+- `docs/roadmap.md` — Fase 4: Automatización, Fase 13: Automatización Adaptativa

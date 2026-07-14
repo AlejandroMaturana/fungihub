@@ -80,6 +80,4 @@ Los umbrales de histéresis se ajustan según la fase del ciclo:
 
 ## Referencias
 
-- `docs/roadmap/consideraciones.md` — Sección 2: Lógica de Control Reimplementada
-- `docs/roadmap/otras-consideraciones.md` — Sección 2: Zona Muerta Adaptativa
-- `docs/roadmap/consideraciones.md` — Sección 3D: Post-humidificación
+- `docs/roadmap.md` — Fase 13 (Automatización Adaptativa): Histéresis
