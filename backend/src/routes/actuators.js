@@ -123,6 +123,7 @@ router.patch('/:channel', async (req, res) => {
       mode: 'REMOTE',
       lastCommand: `cmd_${Date.now()}`,
       lastSeen: new Date(),
+      overrideUntil: new Date(Date.now() + 5 * 60 * 1000),
     });
 
     sendActuatorUpdate(deviceId, [{
