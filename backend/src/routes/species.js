@@ -4,7 +4,7 @@ import { Op } from 'sequelize';
 
 const router = express.Router();
 
-router.get('/species', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const where = {};
     if (req.query.adapterClass) where.adapterClass = req.query.adapterClass;
@@ -18,7 +18,7 @@ router.get('/species', async (req, res) => {
   }
 });
 
-router.get('/species/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const species = await SpeciesProfile.findByPk(req.params.id, {
       include: [{ model: Recipe }],
@@ -30,7 +30,7 @@ router.get('/species/:id', async (req, res) => {
   }
 });
 
-router.post('/species', async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ error: 'Autenticación requerida' });
 
@@ -41,7 +41,7 @@ router.post('/species', async (req, res) => {
   }
 });
 
-router.put('/species/:id', async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const species = await SpeciesProfile.findByPk(req.params.id);
     if (!species) return res.status(404).json({ error: 'NOT_FOUND', message: 'Especie no encontrada' });
@@ -53,7 +53,7 @@ router.put('/species/:id', async (req, res) => {
   }
 });
 
-router.delete('/species/:id', async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const species = await SpeciesProfile.findByPk(req.params.id);
     if (!species) return res.status(404).json({ error: 'NOT_FOUND', message: 'Especie no encontrada' });
