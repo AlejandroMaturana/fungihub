@@ -115,7 +115,7 @@ if (env.NODE_ENV === 'production') {
   const publicDir = resolve(__dirname, '../public');
   if (existsSync(publicDir)) {
     app.use(express.static(publicDir, { maxAge: '1d', index: 'index.html' }));
-    app.get('*', (req, res, next) => {
+    app.get('/{*splat}', (req, res, next) => {
       if (req.path.startsWith('/api/') || req.path === '/events' || req.path === '/health') {
         return next();
       }
