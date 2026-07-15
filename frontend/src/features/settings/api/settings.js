@@ -2,106 +2,106 @@ import client from '../../../shared/api/axiosInstance'
 
 // Profile
 export async function getProfile() {
-  const { data } = await client.get('/api/settings/profile')
+  const { data } = await client.get('/settings/profile')
   return data
 }
 
 export async function updateProfileSettings(payload) {
-  const { data } = await client.put('/api/settings/profile', payload)
+  const { data } = await client.put('/settings/profile', payload)
   return data
 }
 
 export async function changePassword(payload) {
-  const { data } = await client.put('/api/settings/password', payload)
+  const { data } = await client.put('/settings/password', payload)
   return data
 }
 
 // Telegram
 export async function linkTelegram(payload) {
-  const { data } = await client.post('/api/settings/telegram/link', payload)
+  const { data } = await client.post('/settings/telegram/link', payload)
   return data
 }
 
 export async function getTelegramStatus() {
-  const { data } = await client.get('/api/settings/telegram/status')
+  const { data } = await client.get('/settings/telegram/status')
   return data
 }
 
 export async function unlinkTelegram() {
-  const { data } = await client.delete('/api/settings/telegram')
+  const { data } = await client.delete('/settings/telegram')
   return data
 }
 
 // API Keys
 export async function getApiKeys() {
-  const { data } = await client.get('/api/settings/api-keys')
+  const { data } = await client.get('/settings/api-keys')
   return data
 }
 
 export async function createApiKey(payload) {
-  const { data } = await client.post('/api/settings/api-keys', payload)
+  const { data } = await client.post('/settings/api-keys', payload)
   return data
 }
 
 export async function rotateApiKey(id) {
-  const { data } = await client.post(`/api/settings/api-keys/${id}/rotate`)
+  const { data } = await client.post(`/settings/api-keys/${id}/rotate`)
   return data
 }
 
 export async function deleteApiKey(id) {
-  const { data } = await client.delete(`/api/settings/api-keys/${id}`)
+  const { data } = await client.delete(`/settings/api-keys/${id}`)
   return data
 }
 
 // System
 export async function getSystemSettings() {
-  const { data } = await client.get('/api/settings/system')
+  const { data } = await client.get('/settings/system')
   return data
 }
 
 export async function updateSystemSettings(payload) {
-  const { data } = await client.put('/api/settings/system', payload)
+  const { data } = await client.put('/settings/system', payload)
   return data
 }
 
 export async function seedSystemSettings() {
-  const { data } = await client.post('/api/settings/system/seed')
+  const { data } = await client.post('/settings/system/seed')
   return data
 }
 
 export async function configureTelegramBot(payload) {
-  const { data } = await client.post('/api/settings/telegram-bot', payload)
+  const { data } = await client.post('/settings/telegram-bot', payload)
   return data
 }
 
 export async function getTelegramBotStatus() {
-  const { data } = await client.get('/api/settings/telegram-bot/status')
+  const { data } = await client.get('/settings/telegram-bot/status')
   return data
 }
 
 // ThingSpeak
 export async function validateThingSpeak(payload) {
-  const { data } = await client.post('/api/settings/thingspeak/validate', payload)
+  const { data } = await client.post('/settings/thingspeak/validate', payload)
   return data
 }
 
 // Subscription
 export async function getSubscription() {
-  const { data } = await client.get('/api/settings/subscription')
+  const { data } = await client.get('/settings/subscription')
   return data
 }
 
 export async function getSubscriptionUsage() {
-  const { data } = await client.get('/api/settings/subscription/usage')
+  const { data } = await client.get('/settings/subscription/usage')
   return data
 }
 
 export async function upgradePlan(payload) {
-  const { data } = await client.post('/api/settings/subscription/upgrade', payload)
+  const { data } = await client.post('/settings/subscription/upgrade', payload)
   return data
 }
 
 export async function cancelSubscription() {
-  const { data } = await client.delete('/api/settings/subscription')
+  const { data } = await client.delete('/settings/subscription')
   return data
 }

@@ -8,7 +8,7 @@ function DeviceHealthPanel({ deviceId }) {
   useEffect(() => {
     async function fetchHealth() {
       try {
-        const { data } = await client.get(`/api/devices/${deviceId}/health`)
+        const { data } = await client.get(`/devices/${deviceId}/health`)
         setHealth(data)
       } catch {}
       setLoading(false)

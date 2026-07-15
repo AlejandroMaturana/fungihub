@@ -10,7 +10,7 @@ function DeviceMaintenancePanel({ deviceId }) {
   useEffect(() => {
     async function fetchMaintenance() {
       try {
-        const { data } = await client.get(`/api/devices/${deviceId}/maintenance`)
+        const { data } = await client.get(`/devices/${deviceId}/maintenance`)
         setMaintenance(data)
       } catch {}
       setLoading(false)
@@ -21,7 +21,7 @@ function DeviceMaintenancePanel({ deviceId }) {
   async function handleSubmit(e) {
     e.preventDefault()
     try {
-      const { data } = await client.post(`/api/devices/${deviceId}/maintenance`, form)
+      const { data } = await client.post(`/devices/${deviceId}/maintenance`, form)
       setMaintenance(prev => [data, ...prev])
       setForm({ type: 'CLEANING', notes: '' })
       setShowForm(false)
