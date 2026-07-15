@@ -1,11 +1,26 @@
 import { useState, useEffect } from 'react'
 import { getAuditLogs } from '../api/client.js'
 import LoadingState from '../components/ui/LoadingState.jsx'
-import ErrorState from '../components/ui/ErrorState.jsx'
-import EmptyState from '../components/ui/EmptyState.jsx'
 
 const RESOURCE_OPTIONS = ['', 'user', 'device', 'sensor', 'actuator', 'recipe', 'cycle', 'alarm', 'api_key', 'system']
 const ACTION_OPTIONS = ['', 'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'USER_ROLE_CHANGE', 'USER_TOGGLE_ACTIVE', 'API_KEY_CREATE', 'API_KEY_REVOKE', 'API_KEY_ROTATE', 'PASSWORD_CHANGE']
+
+const ACTION_STYLES = {
+  CREATE: { bg: 'rgba(var(--spore-green-rgb), 0.15)', color: 'var(--spore-green)', border: 'rgba(var(--spore-green-rgb), 0.3)' },
+  LOGIN: { bg: 'rgba(var(--spore-green-rgb), 0.15)', color: 'var(--spore-green)', border: 'rgba(var(--spore-green-rgb), 0.3)' },
+  UPDATE: { bg: 'rgba(96, 165, 250, 0.15)', color: 'var(--accent-blue, #60a5fa)', border: 'rgba(96, 165, 250, 0.3)' },
+  DELETE: { bg: 'rgba(239, 68, 68, 0.15)', color: 'var(--error-red)', border: 'rgba(239, 68, 68, 0.3)' },
+  REVOKE: { bg: 'rgba(239, 68, 68, 0.15)', color: 'var(--error-red)', border: 'rgba(239, 68, 68, 0.3)' },
+  LOGOUT: { bg: 'rgba(245, 158, 11, 0.15)', color: 'var(--amber)', border: 'rgba(245, 158, 11, 0.3)' },
+}
+
+function getActionStyle(action) {
+  if (!action) return { bg: 'rgba(153, 153, 153, 0.1)', color: 'var(--outline)', border: 'rgba(153, 153, 153, 0.3)' }
+  if (ACTION_STYLES[action]) return ACTION_STYLES[action]
+  if (action.includes('DELETE') || action.includes('REVOKE')) return ACTION_STYLES.DELETE
+  if (action.includes('CREATE') || action.includes('LOGIN')) return ACTION_STYLES.CREATE
+  return { bg: 'rgba(167, 139, 250, 0.15)', color: 'var(--accent-purple, #a78bfa)', border: 'rgba(167, 139, 250, 0.3)' }
+}
 
 function formatJSON(val) {
   if (!val) return '—'
@@ -15,13 +30,6 @@ function formatJSON(val) {
   } catch {
     return String(val)
   }
-}
-
-function expandDetails(details) {
-  const el = document.createElement('pre')
-  el.className = 'text-10px text-on-surface bg-surface-dim p-2 rounded mt-1 overflow-x-auto max-h-40 whitespace-pre-wrap font-mono'
-  el.textContent = formatJSON(details)
-  return el
 }
 
 function Logs() {
@@ -109,133 +117,188 @@ function Logs() {
   const hasFilters = Object.values(filters).some(v => v)
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 className="text-headline-lg text-on-surface mb-1">Audit Logs</h1>
-          <p className="text-on-surface-variant text-body-md">Track all actions and changes in the system.</p>
+          <h1 className="gradient-title" style={{ fontSize: '28px', marginBottom: '4px' }}>Audit Logs</h1>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--outline)' }}>
+            {pagination?.total || logs.length} events · track all system actions
+          </p>
         </div>
-        <button className="btn btn-outline" onClick={exportCSV} disabled={logs.length === 0}>
-          <span className="material-symbols-outlined text-16px">download</span>
+        <button className="btn btn-secondary" onClick={exportCSV} disabled={logs.length === 0} style={{ fontSize: '10px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>download</span>
           EXPORT CSV
         </button>
       </div>
 
-      <form onSubmit={handleSearch} className="glass-card p-4 rounded-xl border border-outline-variant mb-6">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      {/* Error */}
+      {error && (
+        <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--error-red)' }}>warning</span>
+          <span style={{ fontSize: '12px', color: 'var(--error-red)', fontWeight: 600 }}>{error}</span>
+        </div>
+      )}
+
+      {/* Filters */}
+      <form onSubmit={handleSearch} className="glass-card" style={{ padding: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
           <div>
-            <label className="font-label-caps text-9px text-on-surface-variant block mb-1">RESOURCE</label>
-            <select className="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-2 text-body-sm text-on-surface cursor-pointer" value={filters.resource} onChange={e => handleFilterChange('resource', e.target.value)}>
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Resource</label>
+            <select className="form-select" style={{ fontSize: '11px' }} value={filters.resource} onChange={e => handleFilterChange('resource', e.target.value)}>
               {RESOURCE_OPTIONS.map(o => <option key={o} value={o}>{o || 'All'}</option>)}
             </select>
           </div>
           <div>
-            <label className="font-label-caps text-9px text-on-surface-variant block mb-1">ACTION</label>
-            <select className="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-2 text-body-sm text-on-surface cursor-pointer" value={filters.action} onChange={e => handleFilterChange('action', e.target.value)}>
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Action</label>
+            <select className="form-select" style={{ fontSize: '11px' }} value={filters.action} onChange={e => handleFilterChange('action', e.target.value)}>
               {ACTION_OPTIONS.map(o => <option key={o} value={o}>{o || 'All'}</option>)}
             </select>
           </div>
           <div>
-            <label className="font-label-caps text-9px text-on-surface-variant block mb-1">FROM</label>
-            <input type="date" className="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-2 text-body-sm text-on-surface" value={filters.from} onChange={e => handleFilterChange('from', e.target.value)} />
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>From</label>
+            <input type="date" className="form-input" style={{ fontSize: '11px' }} value={filters.from} onChange={e => handleFilterChange('from', e.target.value)} />
           </div>
           <div>
-            <label className="font-label-caps text-9px text-on-surface-variant block mb-1">TO</label>
-            <input type="date" className="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-2 text-body-sm text-on-surface" value={filters.to} onChange={e => handleFilterChange('to', e.target.value)} />
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>To</label>
+            <input type="date" className="form-input" style={{ fontSize: '11px' }} value={filters.to} onChange={e => handleFilterChange('to', e.target.value)} />
           </div>
-          <div>
-            <label className="font-label-caps text-9px text-on-surface-variant block mb-1">SEARCH</label>
-            <input className="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-2 text-body-sm text-on-surface" value={filters.search} onChange={e => handleFilterChange('search', e.target.value)} placeholder="Search in details..." />
+          <div style={{ gridColumn: 'span 1' }}>
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Search</label>
+            <input className="form-input" style={{ fontSize: '11px' }} value={filters.search} onChange={e => handleFilterChange('search', e.target.value)} placeholder="Search in details..." />
           </div>
         </div>
-        <div className="flex gap-2 mt-3">
-          <button type="submit" className="btn btn-primary btn-sm">APPLY FILTERS</button>
-          {hasFilters && <button type="button" className="btn btn-outline btn-sm" onClick={handleClearFilters}>CLEAR</button>}
+        <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+          <button type="submit" className="btn btn-glow" style={{ fontSize: '10px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>search</span>
+            APPLY FILTERS
+          </button>
+          {hasFilters && (
+            <button type="button" className="btn btn-secondary" style={{ fontSize: '10px' }} onClick={handleClearFilters}>
+              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>clear_all</span>
+              CLEAR
+            </button>
+          )}
         </div>
       </form>
 
+      {/* Table */}
       {loading ? (
         <LoadingState message="Loading audit logs..." icon="history" />
-      ) : error && logs.length === 0 ? (
-        <ErrorState message={error} onRetry={() => fetchLogs(page)} />
       ) : logs.length === 0 ? (
-        <EmptyState icon="history" title="No audit logs" message={hasFilters ? 'No logs match your filters.' : 'No audit events recorded yet.'} />
+        <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--outline)', marginBottom: '16px', display: 'block' }}>history</span>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '8px' }}>No Audit Logs</h3>
+          <p style={{ fontSize: '13px', color: 'var(--outline)' }}>
+            {hasFilters ? 'No logs match your filters.' : 'No audit events recorded yet.'}
+          </p>
+        </div>
       ) : (
-        <>
-          <div className="bg-surface-container border border-outline-variant rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr className="border-b border-outline-variant text-label-caps text-9px text-on-surface-variant">
-                    <th className="p-3 w-8"></th>
-                    <th className="p-3 font-weight-normal">Date</th>
-                    <th className="p-3 font-weight-normal">User</th>
-                    <th className="p-3 font-weight-normal">Action</th>
-                    <th className="p-3 font-weight-normal">Resource</th>
-                    <th className="p-3 font-weight-normal">Resource ID</th>
-                    <th className="p-3 font-weight-normal">IP</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logs.map(log => (
-                    <tr key={log.id} className="border-b border-outline-variant hover:bg-surface-container-high transition-colors">
-                      <td className="p-3">
-                        <button className="text-on-surface-variant hover:text-on-surface" onClick={() => toggleRow(log.id)}>
-                          <span className="material-symbols-outlined text-16px">{expandedRows.has(log.id) ? 'expand_less' : 'expand_more'}</span>
-                        </button>
-                      </td>
-                      <td className="p-3 text-body-xs text-on-surface-variant whitespace-nowrap">
-                        {new Date(log.createdAt).toLocaleString()}
-                      </td>
-                      <td className="p-3 text-body-sm text-on-surface">
-                        {log.user?.username || <span className="text-on-surface-variant">{log.userId || '—'}</span>}
-                      </td>
-                      <td className="p-3">
-                        <span className={`font-label-caps text-10px px-2 py-0.5 rounded ${log.action?.includes('DELETE') || log.action?.includes('REVOKE') ? 'bg-error/20 text-error' : log.action?.includes('CREATE') || log.action?.includes('LOGIN') ? 'bg-primary/20 text-primary' : 'bg-tertiary/20 text-tertiary'}`}>
-                          {log.action}
+        <div className="glass-card" style={{ overflow: 'hidden' }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th style={{ width: '32px' }}></th>
+                <th>Date</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Resource</th>
+                <th>Resource ID</th>
+                <th>IP</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.map(log => {
+                const actionStyle = getActionStyle(log.action)
+                const isExpanded = expandedRows.has(log.id)
+                return (
+                  <tr key={log.id}>
+                    <td className="p-3">
+                      <button onClick={() => toggleRow(log.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--outline)' }}>
+                          {isExpanded ? 'expand_less' : 'expand_more'}
                         </span>
-                      </td>
-                      <td className="p-3 text-data-sm text-on-surface font-mono">{log.resource}</td>
-                      <td className="p-3 text-data-sm text-on-surface-variant font-mono">{log.resourceId || '—'}</td>
-                      <td className="p-3 text-body-xs text-on-surface-variant font-mono">{log.ip || '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </button>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--outline)', whiteSpace: 'nowrap' }}>
+                        {new Date(log.createdAt).toLocaleString()}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '13px', color: 'var(--on-surface)' }}>
+                        {log.user?.username || <span style={{ color: 'var(--outline)' }}>{log.userId || '—'}</span>}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{
+                        padding: '2px 8px', borderRadius: '4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
+                        background: actionStyle.bg, color: actionStyle.color, border: `1px solid ${actionStyle.border}`
+                      }}>
+                        {log.action}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--on-surface)' }}>{log.resource}</span>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--on-surface-variant)' }}>{log.resourceId || '—'}</span>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--outline)' }}>{log.ip || '—'}</span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
 
-            {expandedRows.size > 0 && (
-              <div className="border-t border-outline-variant divide-y divide-outline-variant/50">
-                {logs.filter(l => expandedRows.has(l.id)).map(log => (
-                  <div key={`detail-${log.id}`} className="p-4 bg-surface-dim">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="font-label-caps text-9px text-on-surface-variant mb-1">DETAILS</p>
-                        <pre className="text-10px text-on-surface bg-surface-container-low p-3 rounded overflow-x-auto max-h-48 whitespace-pre-wrap font-mono">
-                          {formatJSON(log.details)}
-                        </pre>
-                      </div>
-                      <div>
-                        <p className="font-label-caps text-9px text-on-surface-variant mb-1">USER AGENT</p>
-                        <p className="text-10px text-on-surface-variant break-all">{log.userAgent || '—'}</p>
-                      </div>
+          {/* Expanded details */}
+          {logs.filter(l => expandedRows.has(l.id)).length > 0 && (
+            <div style={{ borderTop: '1px solid var(--outline-variant)' }}>
+              {logs.filter(l => expandedRows.has(l.id)).map(log => (
+                <div key={`detail-${log.id}`} style={{ padding: '16px', background: 'rgba(var(--surface-container-rgb, 28, 27, 31), 0.5)', borderBottom: '1px solid var(--outline-variant)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '6px' }}>Details</span>
+                      <pre style={{
+                        fontSize: '10px', color: 'var(--on-surface)', background: 'var(--surface-container-low, rgba(28, 27, 31, 0.5))',
+                        padding: '12px', borderRadius: '8px', border: '1px solid var(--outline-variant)',
+                        overflowX: 'auto', maxHeight: '192px', whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)',
+                        margin: 0,
+                      }}>
+                        {formatJSON(log.details)}
+                      </pre>
+                    </div>
+                    <div>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '6px' }}>User Agent</span>
+                      <p style={{ fontSize: '10px', color: 'var(--on-surface-variant)', wordBreak: 'break-all' }}>
+                        {log.userAgent || '—'}
+                      </p>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {pagination && pagination.pages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-6">
-              <button className="btn btn-sm btn-outline" disabled={page <= 1} onClick={() => handlePage(page - 1)}>PREV</button>
-              <span className="text-body-sm text-on-surface-variant px-3">
-                Page {pagination.page} of {pagination.pages} ({pagination.total} total)
-              </span>
-              <button className="btn btn-sm btn-outline" disabled={page >= pagination.pages} onClick={() => handlePage(page + 1)}>NEXT</button>
+                </div>
+              ))}
             </div>
           )}
-        </>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pagination && pagination.pages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
+          <button className="btn btn-secondary" style={{ fontSize: '10px' }} disabled={page <= 1} onClick={() => handlePage(page - 1)}>
+            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>chevron_left</span>
+            PREV
+          </button>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--outline)' }}>
+            Page {pagination.page} of {pagination.pages} ({pagination.total} total)
+          </span>
+          <button className="btn btn-secondary" style={{ fontSize: '10px' }} disabled={page >= pagination.pages} onClick={() => handlePage(page + 1)}>
+            NEXT
+            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>chevron_right</span>
+          </button>
+        </div>
       )}
     </div>
   )

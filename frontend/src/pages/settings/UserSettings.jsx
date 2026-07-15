@@ -3,7 +3,6 @@ import { useAuth } from '../../api/AuthContext.jsx'
 import { getProfile, updateProfileSettings, changePassword, linkTelegram, getTelegramStatus, unlinkTelegram } from '../../api/client.js'
 import { useTheme } from '../../contexts/ThemeContext.jsx'
 import LoadingState from '../../components/ui/LoadingState.jsx'
-import ErrorState from '../../components/ui/ErrorState.jsx'
 
 function UserSettings() {
   const { user } = useAuth()
@@ -51,270 +50,180 @@ function UserSettings() {
     } catch { }
   }
 
-  useEffect(() => {
-    if (!loading) loadTelegramStatus()
-  }, [loading])
+  useEffect(() => { if (!loading) loadTelegramStatus() }, [loading])
 
   async function handleLinkTelegram() {
-    setTelegramLoading(true)
-    setTelegramMsg(null)
+    setTelegramLoading(true); setTelegramMsg(null)
     try {
       const result = await linkTelegram()
-      if (result.linked) {
-        setTelegramStatus(result)
-        setTelegramMsg({ type: 'ok', text: 'Already linked' })
-      } else {
-        setTelegramCode(result.code)
-        setTelegramStatus({ linked: false })
-        setTelegramMsg({ type: 'ok', text: `Send /link ${result.code} to @Mush2Bot on Telegram` })
-      }
-    } catch (err) {
-      setTelegramMsg({ type: 'err', text: err.response?.data?.error || err.message })
-    } finally {
-      setTelegramLoading(false)
-    }
+      if (result.linked) { setTelegramStatus(result); setTelegramMsg({ type: 'ok', text: 'Already linked' }) }
+      else { setTelegramCode(result.code); setTelegramStatus({ linked: false }); setTelegramMsg({ type: 'ok', text: `Send /link ${result.code} to @Mush2Bot on Telegram` }) }
+    } catch (err) { setTelegramMsg({ type: 'err', text: err.response?.data?.error || err.message }) }
+    finally { setTelegramLoading(false) }
   }
 
   async function handleUnlinkTelegram() {
     setTelegramLoading(true)
-    try {
-      await unlinkTelegram()
-      setTelegramStatus({ linked: false })
-      setTelegramCode(null)
-      setTelegramMsg({ type: 'ok', text: 'Telegram unlinked' })
-    } catch (err) {
-      setTelegramMsg({ type: 'err', text: err.response?.data?.error || err.message })
-    } finally {
-      setTelegramLoading(false)
-    }
+    try { await unlinkTelegram(); setTelegramStatus({ linked: false }); setTelegramCode(null); setTelegramMsg({ type: 'ok', text: 'Telegram unlinked' }) }
+    catch (err) { setTelegramMsg({ type: 'err', text: err.response?.data?.error || err.message }) }
+    finally { setTelegramLoading(false) }
   }
 
   async function handleSaveProfile(e) {
-    e.preventDefault()
-    setSaving(true)
-    setMsg(null)
-    try {
-      const data = await updateProfileSettings({ username, email })
-      setMsg({ type: 'ok', text: 'Profile updated' })
-      sessionStorage.setItem('mush2_user', JSON.stringify(data.user))
-    } catch (err) {
-      setMsg({ type: 'err', text: err.response?.data?.error || err.message || 'Failed to update' })
-    } finally {
-      setSaving(false)
-    }
+    e.preventDefault(); setSaving(true); setMsg(null)
+    try { await updateProfileSettings({ username, email }); setMsg({ type: 'ok', text: 'Profile updated' }); sessionStorage.setItem('mush2_user', JSON.stringify({ user: { username, email } })) }
+    catch (err) { setMsg({ type: 'err', text: err.response?.data?.error || err.message || 'Failed' }) }
+    finally { setSaving(false) }
   }
 
-  function handlePrefChange(key, value) {
-    setPrefs(prev => ({ ...prev, [key]: value }))
-  }
+  function handlePrefChange(key, value) { setPrefs(prev => ({ ...prev, [key]: value })) }
 
   async function handleSavePreferences() {
-    setSaving(true)
-    setMsg(null)
-    try {
-      await updateProfileSettings({ preferences: prefs })
-      setMsg({ type: 'ok', text: 'Preferences saved' })
-      if (prefs.theme) setThemeMode(prefs.theme)
-    } catch (err) {
-      setMsg({ type: 'err', text: err.response?.data?.error || err.message || 'Failed to save preferences' })
-    } finally {
-      setSaving(false)
-    }
+    setSaving(true); setMsg(null)
+    try { await updateProfileSettings({ preferences: prefs }); setMsg({ type: 'ok', text: 'Preferences saved' }); if (prefs.theme) setThemeMode(prefs.theme) }
+    catch (err) { setMsg({ type: 'err', text: err.response?.data?.error || err.message || 'Failed' }) }
+    finally { setSaving(false) }
   }
 
   async function handleChangePassword(e) {
     e.preventDefault()
-    if (newPassword !== confirmPassword) {
-      setPwMsg({ type: 'err', text: 'Passwords do not match' })
-      return
-    }
-    if (newPassword.length < 6) {
-      setPwMsg({ type: 'err', text: 'Password must be at least 6 characters' })
-      return
-    }
-    setPwSaving(true)
-    setPwMsg(null)
-    try {
-      await changePassword(currentPassword, newPassword)
-      setPwMsg({ type: 'ok', text: 'Password changed successfully' })
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
-    } catch (err) {
-      setPwMsg({ type: 'err', text: err.response?.data?.error || err.message || 'Failed to change password' })
-    } finally {
-      setPwSaving(false)
-    }
+    if (newPassword !== confirmPassword) { setPwMsg({ type: 'err', text: 'Passwords do not match' }); return }
+    if (newPassword.length < 6) { setPwMsg({ type: 'err', text: 'Password must be at least 6 characters' }); return }
+    setPwSaving(true); setPwMsg(null)
+    try { await changePassword(currentPassword, newPassword); setPwMsg({ type: 'ok', text: 'Password changed successfully' }); setCurrentPassword(''); setNewPassword(''); setConfirmPassword('') }
+    catch (err) { setPwMsg({ type: 'err', text: err.response?.data?.error || err.message || 'Failed' }) }
+    finally { setPwSaving(false) }
   }
 
   if (loading) return <LoadingState message="Loading profile..." icon="fingerprint" />
-  if (error) return <ErrorState message={error} onRetry={loadProfile} />
+
+  const SectionHeader = ({ icon, title }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+      <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--spore-green)' }}>{icon}</span>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>{title}</span>
+    </div>
+  )
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="mb-2">
-        <h1 className="text-headline-lg text-on-surface mb-1">User Settings</h1>
-        <p className="text-on-surface-variant text-body-md">Profile, security, and preferences.</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '720px' }}>
+      {/* Profile */}
+      <div className="glass-card" style={{ padding: '24px' }}>
+        <SectionHeader icon="badge" title="Profile" />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px' }}>
+          <div style={{ width: '72px', height: '72px', borderRadius: '12px', border: '2px solid rgba(var(--spore-green-rgb), 0.3)', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '36px', color: 'var(--spore-green)' }}>person</span>
+          </div>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--spore-green)' }}>{user?.role || '—'}</span>
+        </div>
+        <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '400px' }}>
+          <div>
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Username</label>
+            <input className="form-input" value={username} onChange={e => setUsername(e.target.value)} />
+          </div>
+          <div>
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Email</label>
+            <input className="form-input" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+          </div>
+          {msg && <p style={{ fontSize: '12px', color: msg.type === 'ok' ? 'var(--spore-green)' : 'var(--error-red)', fontWeight: 600 }}>{msg.text}</p>}
+          <button type="submit" disabled={saving} className="btn btn-glow" style={{ fontSize: '10px', alignSelf: 'flex-start' }}>{saving ? 'SAVING...' : 'SAVE PROFILE'}</button>
+        </form>
       </div>
 
-      <form onSubmit={handleSaveProfile} className="glass-card p-6 rounded-xl border border-outline-variant">
-        <div className="flex items-center gap-3 mb-6">
-          <span className="material-symbols-outlined text-secondary">badge</span>
-          <h3 className="font-label-caps text-label-caps text-secondary">PROFILE</h3>
-        </div>
-        <div className="flex flex-col items-center mb-6">
-          <div className="w-20 h-20 rounded-lg border-2 border-primary/30 p-1 mb-3 bg-surface-container-low flex items-center justify-center">
-            <span className="material-symbols-outlined text-40px text-primary">person</span>
-          </div>
-          <p className="text-data-sm text-secondary">{user?.role || '—'}</p>
-        </div>
-        <div className="space-y-4 max-w-lg">
-          <div>
-            <label className="font-label-caps text-9px text-on-surface-variant block mb-1">USERNAME</label>
-            <input className="w-full bg-surface-container-lowest border border-outline-variant rounded p-3 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none" value={username} onChange={e => setUsername(e.target.value)} />
-          </div>
-          <div>
-            <label className="font-label-caps text-9px text-on-surface-variant block mb-1">EMAIL</label>
-            <input className="w-full bg-surface-container-lowest border border-outline-variant rounded p-3 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none" value={email} onChange={e => setEmail(e.target.value)} />
-          </div>
-          {msg && <p className={`text-body-md ${msg.type === 'ok' ? 'text-primary' : 'text-error'}`}>{msg.text}</p>}
-          <button type="submit" disabled={saving} className="px-6 py-2.5 bg-primary text-on-primary font-label-caps text-label-caps rounded hover:opacity-90 disabled:opacity-40 transition-all">{saving ? 'SAVING...' : 'SAVE PROFILE'}</button>
-        </div>
-      </form>
-
+      {/* Preferences */}
       {prefs && (
-        <div className="glass-card p-6 rounded-xl border border-outline-variant">
-          <div className="flex items-center gap-3 mb-6">
-            <span className="material-symbols-outlined text-secondary">tune</span>
-            <h3 className="font-label-caps text-label-caps text-secondary">PREFERENCES</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
-            <div>
-              <label className="font-label-caps text-9px text-on-surface-variant block mb-1">THEME</label>
-              <select className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2.5 text-body-md text-on-surface cursor-pointer" value={prefs.theme} onChange={e => { handlePrefChange('theme', e.target.value); setThemeMode(e.target.value) }}>
-                <option value="dark">Dark</option>
-                <option value="light">Light</option>
-              </select>
-            </div>
-            <div>
-              <label className="font-label-caps text-9px text-on-surface-variant block mb-1">LANGUAGE</label>
-              <select className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2.5 text-body-md text-on-surface cursor-pointer" value={prefs.language} onChange={e => handlePrefChange('language', e.target.value)}>
-                <option value="es">Español</option>
-                <option value="en">English</option>
-              </select>
-            </div>
-            <div>
-              <label className="font-label-caps text-9px text-on-surface-variant block mb-1">DATE FORMAT</label>
-              <select className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2.5 text-body-md text-on-surface cursor-pointer" value={prefs.dateFormat} onChange={e => handlePrefChange('dateFormat', e.target.value)}>
-                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-              </select>
-            </div>
-            <div>
-              <label className="font-label-caps text-9px text-on-surface-variant block mb-1">DEFAULT DASHBOARD</label>
-              <select className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2.5 text-body-md text-on-surface cursor-pointer" value={prefs.defaultDashboard} onChange={e => handlePrefChange('defaultDashboard', e.target.value)}>
-                <option value="overview">Overview</option>
-                <option value="devices">Devices</option>
-                <option value="cycles">Cycles</option>
-                <option value="alarms">Alarms</option>
-              </select>
-            </div>
-            <div>
-              <label className="font-label-caps text-9px text-on-surface-variant block mb-1">REFRESH FREQUENCY (ms)</label>
-              <input type="number" className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2.5 text-body-md text-on-surface focus:border-primary outline-none" value={prefs.refreshFrequency} onChange={e => handlePrefChange('refreshFrequency', Number(e.target.value))} step="1000" min="1000" />
-            </div>
-            <div>
-              <label className="font-label-caps text-9px text-on-surface-variant block mb-1">MIN ALERT SEVERITY</label>
-              <select className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2.5 text-body-md text-on-surface cursor-pointer" value={prefs.minAlertSeverity} onChange={e => handlePrefChange('minAlertSeverity', e.target.value)}>
-                <option value="info">Info</option>
-                <option value="warning">Warning</option>
-                <option value="critical">Critical only</option>
-              </select>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-container-low rounded">
-              <span className="font-label-caps text-9px text-on-surface-variant">PUSH NOTIFICATIONS</span>
-              <input type="checkbox" className="toggle-checkbox" checked={prefs.pushNotifications} onChange={e => handlePrefChange('pushNotifications', e.target.checked)} />
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-container-low rounded">
-              <span className="font-label-caps text-9px text-on-surface-variant">ALERT SOUNDS</span>
-              <input type="checkbox" className="toggle-checkbox" checked={prefs.alertSounds} onChange={e => handlePrefChange('alertSounds', e.target.checked)} />
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-container-low rounded">
-              <span className="font-label-caps text-9px text-on-surface-variant">EMAIL ALERTS</span>
-              <input type="checkbox" className="toggle-checkbox" checked={prefs.emailAlerts} onChange={e => handlePrefChange('emailAlerts', e.target.checked)} />
-            </div>
-            <div className="md:col-span-2">
-              <label className="font-label-caps text-9px text-on-surface-variant block mb-1">WEBHOOK URL (for notifications)</label>
-              <input className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2.5 text-body-md text-on-surface font-mono focus:border-primary outline-none" value={prefs.webhookUrl || ''} onChange={e => handlePrefChange('webhookUrl', e.target.value)} placeholder="https://..." />
+        <div className="glass-card" style={{ padding: '24px' }}>
+          <SectionHeader icon="tune" title="Preferences" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', maxWidth: '560px' }}>
+            {[
+              { label: 'Theme', key: 'theme', type: 'select', options: [{ v: 'dark', l: 'Dark' }, { v: 'light', l: 'Light' }] },
+              { label: 'Language', key: 'language', type: 'select', options: [{ v: 'es', l: 'Español' }, { v: 'en', l: 'English' }] },
+              { label: 'Date Format', key: 'dateFormat', type: 'select', options: [{ v: 'DD/MM/YYYY', l: 'DD/MM/YYYY' }, { v: 'MM/DD/YYYY', l: 'MM/DD/YYYY' }, { v: 'YYYY-MM-DD', l: 'YYYY-MM-DD' }] },
+              { label: 'Default Dashboard', key: 'defaultDashboard', type: 'select', options: [{ v: 'overview', l: 'Overview' }, { v: 'devices', l: 'Devices' }, { v: 'cycles', l: 'Cycles' }, { v: 'alarms', l: 'Alarms' }] },
+              { label: 'Refresh Frequency (ms)', key: 'refreshFrequency', type: 'number' },
+              { label: 'Min Alert Severity', key: 'minAlertSeverity', type: 'select', options: [{ v: 'info', l: 'Info' }, { v: 'warning', l: 'Warning' }, { v: 'critical', l: 'Critical only' }] },
+            ].map(field => (
+              <div key={field.key}>
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>{field.label}</label>
+                {field.type === 'select' ? (
+                  <select className="form-select" style={{ fontSize: '11px' }} value={prefs[field.key]} onChange={e => { handlePrefChange(field.key, e.target.value); if (field.key === 'theme') setThemeMode(e.target.value) }}>
+                    {field.options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+                  </select>
+                ) : (
+                  <input type="number" className="form-input" style={{ fontSize: '11px' }} value={prefs[field.key]} onChange={e => handlePrefChange(field.key, Number(e.target.value))} step="1000" min="1000" />
+                )}
+              </div>
+            ))}
+            {[
+              { label: 'Push Notifications', key: 'pushNotifications' },
+              { label: 'Alert Sounds', key: 'alertSounds' },
+              { label: 'Email Alerts', key: 'emailAlerts' },
+            ].map(toggle => (
+              <div key={toggle.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{toggle.label}</span>
+                <input type="checkbox" className="toggle-checkbox" checked={prefs[toggle.key]} onChange={e => handlePrefChange(toggle.key, e.target.checked)} />
+              </div>
+            ))}
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Webhook URL</label>
+              <input className="form-input" style={{ fontSize: '11px', fontFamily: 'var(--font-mono)' }} value={prefs.webhookUrl || ''} onChange={e => handlePrefChange('webhookUrl', e.target.value)} placeholder="https://..." />
             </div>
           </div>
-          <div className="mt-6">
-            <button onClick={handleSavePreferences} disabled={saving} className="px-6 py-2.5 bg-primary text-on-primary font-label-caps text-label-caps rounded hover:opacity-90 disabled:opacity-40 transition-all">{saving ? 'SAVING...' : 'SAVE PREFERENCES'}</button>
+          <div style={{ marginTop: '16px' }}>
+            <button onClick={handleSavePreferences} disabled={saving} className="btn btn-glow" style={{ fontSize: '10px' }}>{saving ? 'SAVING...' : 'SAVE PREFERENCES'}</button>
           </div>
         </div>
       )}
 
-      <div className="glass-card p-6 rounded-xl border border-outline-variant">
-        <div className="flex items-center gap-3 mb-6">
-          <span className="material-symbols-outlined text-secondary">send</span>
-          <h3 className="font-label-caps text-label-caps text-secondary">TELEGRAM</h3>
-        </div>
-        <div className="max-w-lg">
+      {/* Telegram */}
+      <div className="glass-card" style={{ padding: '24px' }}>
+        <SectionHeader icon="send" title="Telegram" />
+        <div style={{ maxWidth: '400px' }}>
           {telegramStatus?.linked ? (
             <div>
-              <div className="flex items-center gap-3 p-3 bg-surface-container-low rounded mb-4">
-                <span className="text-primary text-body-md">✅</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '8px', background: 'rgba(var(--spore-green-rgb), 0.08)', border: '1px solid rgba(var(--spore-green-rgb), 0.2)', marginBottom: '16px' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--spore-green)' }}>check_circle</span>
                 <div>
-                  <p className="text-body-md text-on-surface">Linked to Telegram</p>
-                  <p className="text-body-sm text-on-surface-variant">Chat ID: {telegramStatus.chatId}</p>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--on-surface)' }}>Linked to Telegram</span>
+                  <span style={{ fontSize: '11px', color: 'var(--outline)', display: 'block' }}>Chat ID: {telegramStatus.chatId}</span>
                 </div>
               </div>
-              <button onClick={handleUnlinkTelegram} disabled={telegramLoading} className="px-6 py-2.5 bg-error text-on-error font-label-caps text-label-caps rounded hover:opacity-90 disabled:opacity-40 transition-all">
-                {telegramLoading ? 'PROCESSING...' : 'UNLINK TELEGRAM'}
-              </button>
+              <button onClick={handleUnlinkTelegram} disabled={telegramLoading} className="btn btn-danger" style={{ fontSize: '10px' }}>{telegramLoading ? 'PROCESSING...' : 'UNLINK TELEGRAM'}</button>
             </div>
           ) : (
             <div>
-              <p className="text-body-md text-on-surface-variant mb-4">
-                Link your Telegram account to receive real-time alerts from your devices.
-              </p>
+              <p style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '16px' }}>Link your Telegram account to receive real-time alerts from your devices.</p>
               {telegramCode && (
-                <div className="p-4 bg-surface-container-lowest rounded border border-outline-variant mb-4">
-                  <p className="font-label-caps text-9px text-on-surface-variant mb-1">SEND THIS CODE TO @Mush2Bot</p>
-                  <p className="text-data-lg text-primary font-mono tracking-wider">{telegramCode}</p>
-                  <p className="text-body-sm text-on-surface-variant mt-2">Send <code className="bg-surface-container-low px-1 rounded">/link {telegramCode}</code> to @Mush2Bot on Telegram</p>
+                <div style={{ padding: '16px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)', marginBottom: '16px' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Send this code to @Mush2Bot</span>
+                  <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--spore-green)', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>{telegramCode}</span>
+                  <p style={{ fontSize: '11px', color: 'var(--outline)', marginTop: '8px' }}>Send <code style={{ background: 'var(--surface-container-low)', padding: '2px 4px', borderRadius: '4px', fontFamily: 'var(--font-mono)' }}>/link {telegramCode}</code> to @Mush2Bot on Telegram</p>
                 </div>
               )}
-              {telegramMsg && <p className={`text-body-md mb-4 ${telegramMsg.type === 'ok' ? 'text-primary' : 'text-error'}`}>{telegramMsg.text}</p>}
-              <button onClick={handleLinkTelegram} disabled={telegramLoading} className="px-6 py-2.5 bg-primary text-on-primary font-label-caps text-label-caps rounded hover:opacity-90 disabled:opacity-40 transition-all">
-                {telegramLoading ? 'PROCESSING...' : telegramCode ? 'REFRESH CODE' : 'LINK TELEGRAM'}
-              </button>
+              {telegramMsg && <p style={{ fontSize: '12px', color: telegramMsg.type === 'ok' ? 'var(--spore-green)' : 'var(--error-red)', fontWeight: 600, marginBottom: '12px' }}>{telegramMsg.text}</p>}
+              <button onClick={handleLinkTelegram} disabled={telegramLoading} className="btn btn-glow" style={{ fontSize: '10px' }}>{telegramLoading ? 'PROCESSING...' : telegramCode ? 'REFRESH CODE' : 'LINK TELEGRAM'}</button>
             </div>
           )}
         </div>
       </div>
 
-      <div className="glass-card p-6 rounded-xl border border-outline-variant">
-        <div className="flex items-center gap-3 mb-6">
-          <span className="material-symbols-outlined text-secondary">lock</span>
-          <h3 className="font-label-caps text-label-caps text-secondary">CHANGE PASSWORD</h3>
-        </div>
-        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+      {/* Password */}
+      <div className="glass-card" style={{ padding: '24px' }}>
+        <SectionHeader icon="lock" title="Change Password" />
+        <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '400px' }}>
           <div>
-            <label className="font-label-caps text-9px text-on-surface-variant block mb-1">CURRENT PASSWORD</label>
-            <input type="password" className="w-full bg-surface-container-lowest border border-outline-variant rounded p-3 text-body-md text-on-surface focus:border-primary outline-none" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} />
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Current Password</label>
+            <input type="password" className="form-input" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} />
           </div>
           <div>
-            <label className="font-label-caps text-9px text-on-surface-variant block mb-1">NEW PASSWORD</label>
-            <input type="password" className="w-full bg-surface-container-lowest border border-outline-variant rounded p-3 text-body-md text-on-surface focus:border-primary outline-none" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>New Password</label>
+            <input type="password" className="form-input" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
           </div>
           <div>
-            <label className="font-label-caps text-9px text-on-surface-variant block mb-1">CONFIRM NEW PASSWORD</label>
-            <input type="password" className="w-full bg-surface-container-lowest border border-outline-variant rounded p-3 text-body-md text-on-surface focus:border-primary outline-none" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Confirm New Password</label>
+            <input type="password" className="form-input" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
           </div>
-          {pwMsg && <p className={`text-body-md ${pwMsg.type === 'ok' ? 'text-primary' : 'text-error'}`}>{pwMsg.text}</p>}
-          <button type="submit" disabled={pwSaving || !currentPassword || !newPassword || !confirmPassword} className="px-6 py-2.5 bg-primary text-on-primary font-label-caps text-label-caps rounded hover:opacity-90 disabled:opacity-40 transition-all">{pwSaving ? 'CHANGING...' : 'CHANGE PASSWORD'}</button>
+          {pwMsg && <p style={{ fontSize: '12px', color: pwMsg.type === 'ok' ? 'var(--spore-green)' : 'var(--error-red)', fontWeight: 600 }}>{pwMsg.text}</p>}
+          <button type="submit" disabled={pwSaving || !currentPassword || !newPassword || !confirmPassword} className="btn btn-glow" style={{ fontSize: '10px', alignSelf: 'flex-start' }}>{pwSaving ? 'CHANGING...' : 'CHANGE PASSWORD'}</button>
         </form>
       </div>
     </div>

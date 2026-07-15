@@ -13,7 +13,7 @@ function CycleCard({ cycle }) {
   const progress = cycle.progress || 0
 
   return (
-    <Link to={`/cycles/${cycle.id}/bioactives`} className="glass-card rounded-lg p-4 block hover:border-primary/30 transition-all">
+    <Link to={`/cultivation/cycles/${cycle.id}/bioactives`} className="glass-card rounded-lg p-4 block hover:border-primary/30 transition-all">
       <div className="flex items-center justify-between mb-2">
         <span className="text-body-md text-on-surface font-medium">{cycle.name || `Cycle ${cycle.id}`}</span>
         <StatusBadge status={cycle.status?.toLowerCase()} label={cycle.status} />

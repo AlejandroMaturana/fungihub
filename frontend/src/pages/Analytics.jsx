@@ -3,98 +3,11 @@ import { getDevices, getChamberAnalytics } from '../api/client.js'
 import { useSSE } from '../api/useSSE.js'
 import RiskBar from '../components/analytics/RiskBar.jsx'
 import LoadingState from '../components/ui/LoadingState.jsx'
-import ErrorState from '../components/ui/ErrorState.jsx'
 
-function ChamberSelector({ devices, selected, onChange }) {
-  return (
-    <div className="flex items-center gap-3 mb-6">
-      <span className="material-symbols-outlined text-on-surface-variant">door_front</span>
-      <select
-        className="bg-surface-container border border-outline-variant rounded-md text-body-md text-on-surface px-3 py-2 cursor-pointer min-w-[200px]"
-        value={selected || ''}
-        onChange={e => onChange(e.target.value)}
-      >
-        {devices.map(d => (
-          <option key={d.id} value={d.id}>{d.chamberName || d.deviceId}</option>
-        ))}
-      </select>
-    </div>
-  )
-}
-
-function LiveMetric({ label, value, unit, icon, color = 'primary' }) {
-  return (
-    <div className="glass-card p-4 rounded-xl border border-outline-variant">
-      <div className="flex items-center gap-2 mb-2">
-        <span className={`material-symbols-outlined text-16px text-${color}`}>{icon}</span>
-        <p className="font-label-caps text-9px text-on-surface-variant">{label}</p>
-      </div>
-      <p className={`text-headline-lg text-${color}`}>
-        {value != null ? value : '—'}
-        <span className="text-body-sm text-on-surface-variant ml-1">{unit || ''}</span>
-      </p>
-    </div>
-  )
-}
-
-function BiologicalRisks({ risks }) {
-  if (!risks) return null
-  const items = [
-    { key: 'condensation', label: 'Condensation / Botrytis', icon: 'water_drop' },
-    { key: 'heatStress', label: 'Heat Stress', icon: 'thermostat' },
-    { key: 'waterStress', label: 'Water Stress', icon: 'humidity_high' },
-  ]
-  return (
-    <section className="glass-card p-5 rounded-xl border border-outline-variant">
-      <div className="flex items-center gap-3 mb-4">
-        <span className="material-symbols-outlined text-error">warning</span>
-        <h3 className="font-label-caps text-label-caps text-on-surface-variant">BIOLOGICAL RISKS</h3>
-      </div>
-      {items.map(item => (
-        <RiskBar key={item.key} label={item.label} value={risks[item.key] || 0} icon={item.icon} />
-      ))}
-    </section>
-  )
-}
-
-function CycleDetail({ cycle }) {
-  if (!cycle) {
-    return (
-      <section className="glass-card p-5 rounded-xl border border-outline-variant">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="material-symbols-outlined text-on-surface-variant">cyclone</span>
-          <h3 className="font-label-caps text-label-caps text-on-surface-variant">ACTIVE CYCLE</h3>
-        </div>
-        <p className="text-body-md text-on-surface-variant py-4 text-center">No active cycle</p>
-      </section>
-    )
-  }
-  return (
-    <section className="glass-card p-5 rounded-xl border border-outline-variant">
-      <div className="flex items-center gap-3 mb-4">
-        <span className="material-symbols-outlined text-primary">cyclone</span>
-        <h3 className="font-label-caps text-label-caps text-on-surface-variant">ACTIVE CYCLE</h3>
-      </div>
-      <div className="space-y-2">
-        <div className="flex justify-between p-2 bg-surface-container-low rounded">
-          <span className="font-label-caps text-9px text-on-surface-variant">SPECIES</span>
-          <span className="text-data-sm text-on-surface">{cycle.species || '—'}</span>
-        </div>
-        <div className="flex justify-between p-2 bg-surface-container-low rounded">
-          <span className="font-label-caps text-9px text-on-surface-variant">STATUS</span>
-          <span className="text-data-sm text-primary">{cycle.status}</span>
-        </div>
-        <div className="flex justify-between p-2 bg-surface-container-low rounded">
-          <span className="font-label-caps text-9px text-on-surface-variant">PHASE</span>
-          <span className="text-data-sm text-on-surface">{cycle.currentPhase || '—'}</span>
-        </div>
-        <div className="flex justify-between p-2 bg-surface-container-low rounded">
-          <span className="font-label-caps text-9px text-on-surface-variant">DAYS ELAPSED</span>
-          <span className="text-headline-sm text-primary">{cycle.daysElapsed ?? '—'}</span>
-        </div>
-      </div>
-    </section>
-  )
+const METRIC_CONFIG = {
+  temperature: { label: 'TEMPERATURE', icon: 'thermostat', color: 'var(--spore-green)' },
+  humidity: { label: 'HUMIDITY', icon: 'water_drop', color: 'var(--accent-blue, #60a5fa)' },
+  co2: { label: 'CO₂', icon: 'co2', color: 'var(--accent-purple, #a78bfa)' },
 }
 
 function Analytics() {
@@ -138,86 +51,186 @@ function Analytics() {
   }, [selectedId]))
 
   if (loading) return <LoadingState message="Loading analytics..." icon="analytics" />
-  if (error && !analytics) return <ErrorState message={error} onRetry={loadDevices} />
 
   const { telemetry, vpd, risks, cycle, chamber, efficiency } = analytics || {}
+  const vpdColor = vpd?.vpd > 1.5 ? 'var(--error-red)' : 'var(--spore-green)'
+  const hasHighRisk = risks && (risks.condensation > 50 || risks.heatStress > 50 || risks.waterStress > 50)
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 className="text-headline-lg text-on-surface mb-1">Chamber Analytics</h1>
-          <p className="text-on-surface-variant text-body-md">VPD, biological risks and live metrics.</p>
+          <h1 className="gradient-title" style={{ fontSize: '28px', marginBottom: '4px' }}>Chamber Analytics</h1>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--outline)' }}>
+            VPD, biological risks and live metrics
+          </p>
         </div>
-        {chamber && (
-          <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${chamber.status === 'ONLINE' ? 'bg-primary breathing-pulse' : 'bg-outline-variant'}`} />
-            <span className={`text-data-sm ${chamber.status === 'ONLINE' ? 'text-primary' : 'text-on-surface-variant'}`}>
-              {chamber.status || '—'}
-            </span>
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {chamber && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: chamber.status === 'ONLINE' ? 'var(--spore-green)' : 'var(--outline)', boxShadow: chamber.status === 'ONLINE' ? '0 0 8px var(--spore-green)' : 'none' }} />
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: chamber.status === 'ONLINE' ? 'var(--spore-green)' : 'var(--outline)' }}>
+                {chamber.status || '—'}
+              </span>
+            </div>
+          )}
+          {devices.length > 1 && (
+            <select
+              value={selectedId || ''}
+              onChange={e => setSelectedId(e.target.value)}
+              className="form-select"
+              style={{ fontSize: '11px', minWidth: '180px' }}
+            >
+              {devices.map(d => (
+                <option key={d.id} value={d.id}>{d.chamberName || d.deviceId}</option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
 
-      {devices.length > 1 && (
-        <ChamberSelector devices={devices} selected={selectedId} onChange={setSelectedId} />
+      {/* Error */}
+      {error && (
+        <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--error-red)' }}>warning</span>
+          <span style={{ fontSize: '12px', color: 'var(--error-red)', fontWeight: 600 }}>{error}</span>
+        </div>
       )}
 
       {analytics ? (
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <LiveMetric label="TEMPERATURE" value={telemetry?.temperature?.value} unit={telemetry?.temperature?.unit} icon="thermostat" color="primary" />
-            <LiveMetric label="HUMIDITY" value={telemetry?.humidity?.value} unit={telemetry?.humidity?.unit} icon="water_drop" color="secondary" />
-            <LiveMetric label="CO₂" value={telemetry?.co2?.value} unit={telemetry?.co2?.unit} icon="co2" color="tertiary" />
-            <LiveMetric label="VPD" value={vpd?.vpd} unit={vpd?.unit} icon="air" color={vpd?.vpd > 1.5 ? 'error' : 'primary'} />
+        <>
+          {/* Live Metrics Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
+            {/* Temp, Humidity, CO2 */}
+            {Object.entries(METRIC_CONFIG).map(([key, cfg]) => {
+              const t = telemetry?.[key]
+              return (
+                <div key={key} className="glass-card" style={{ padding: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: cfg.color }}>{cfg.icon}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{cfg.label}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                    <span style={{ fontSize: '28px', fontWeight: 700, color: cfg.color, lineHeight: 1 }}>
+                      {t?.value != null ? t.value : '—'}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--outline)' }}>{t?.unit || ''}</span>
+                  </div>
+                </div>
+              )
+            })}
+
+            {/* VPD */}
+            <div className="glass-card" style={{ padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '16px', color: vpdColor }}>air</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>VPD</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                <span style={{ fontSize: '28px', fontWeight: 700, color: vpdColor, lineHeight: 1 }}>
+                  {vpd?.vpd ?? '—'}
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--outline)' }}>{vpd?.unit || ''}</span>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 space-y-4">
-              <BiologicalRisks risks={risks} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            {/* Left Column */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* Biological Risks */}
+              {risks && (
+                <div className="glass-card" style={{ padding: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--error-red)' }}>warning</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>Biological Risks</span>
+                  </div>
+                  <RiskBar label="Condensation / Botrytis" value={risks.condensation || 0} icon="water_drop" />
+                  <RiskBar label="Heat Stress" value={risks.heatStress || 0} icon="thermostat" />
+                  <RiskBar label="Water Stress" value={risks.waterStress || 0} icon="humidity_high" />
+                </div>
+              )}
 
-              <section className="glass-card p-5 rounded-xl border border-outline-variant">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="material-symbols-outlined text-secondary">insights</span>
-                  <h3 className="font-label-caps text-label-caps text-on-surface-variant">ENVIRONMENTAL INSIGHTS</h3>
+              {/* Environmental Insights */}
+              <div className="glass-card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--accent-blue, #60a5fa)' }}>insights</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>Environmental Insights</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-surface-container-low rounded">
-                    <p className="font-label-caps text-9px text-on-surface-variant mb-1">SATURATION DEFICIT</p>
-                    <p className="text-headline-md text-on-surface">{vpd?.saturationDeficit ?? '—'}</p>
-                    <p className="text-10px text-on-surface-variant">{vpd?.unit}</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ padding: '12px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Saturation Deficit</span>
+                    <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--on-surface)' }}>{vpd?.saturationDeficit ?? '—'}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--outline)', display: 'block' }}>{vpd?.unit}</span>
                   </div>
-                  <div className="p-3 bg-surface-container-low rounded">
-                    <p className="font-label-caps text-9px text-on-surface-variant mb-1">EFFICIENCY</p>
-                    <p className="text-headline-md text-on-surface">{efficiency?.totalDevices ?? '—'}</p>
-                    <p className="text-10px text-on-surface-variant">devices • FAE: {efficiency?.faeEnabled ? 'ON' : 'OFF'}</p>
+                  <div style={{ padding: '12px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Efficiency</span>
+                    <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--on-surface)' }}>{efficiency?.totalDevices ?? '—'}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--outline)', display: 'block' }}>devices · FAE: {efficiency?.faeEnabled ? 'ON' : 'OFF'}</span>
                   </div>
                 </div>
-              </section>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <CycleDetail cycle={cycle} />
-
-              {risks && (risks.condensation > 50 || risks.heatStress > 50 || risks.waterStress > 50) && (
-                <section className="glass-card p-4 rounded-xl border border-error/30 bg-error/5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="material-symbols-outlined text-error text-18px">priority_high</span>
-                    <h3 className="font-label-caps text-10px text-error">ALERT</h3>
+            {/* Right Column */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* Active Cycle */}
+              <div className="glass-card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--spore-green)' }}>cyclone</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>Active Cycle</span>
+                </div>
+                {cycle ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {[
+                      { label: 'Species', value: cycle.species || '—' },
+                      { label: 'Status', value: cycle.status, color: 'var(--spore-green)' },
+                      { label: 'Phase', value: cycle.currentPhase || '—' },
+                    ].map((item, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{item.label}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: item.color || 'var(--on-surface)' }}>{item.value}</span>
+                      </div>
+                    ))}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Days Elapsed</span>
+                      <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--spore-green)' }}>{cycle.daysElapsed ?? '—'}</span>
+                    </div>
                   </div>
-                  <p className="text-body-sm text-on-surface">
+                ) : (
+                  <p style={{ fontSize: '13px', color: 'var(--outline)', textAlign: 'center', padding: '24px 0' }}>No active cycle</p>
+                )}
+              </div>
+
+              {/* Alert */}
+              {hasHighRisk && (
+                <div style={{
+                  padding: '16px', borderRadius: '8px',
+                  background: 'rgba(239, 68, 68, 0.05)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span className="material-symbols-outlined pulse-error" style={{ fontSize: '18px', color: 'var(--error-red)' }}>priority_high</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, color: 'var(--error-red)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Alert</span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'var(--on-surface)', lineHeight: 1.6 }}>
                     {risks.condensation > 75 && 'High condensation risk — check ventilation. '}
                     {risks.heatStress > 75 && 'Critical heat stress — reduce temperature. '}
                     {risks.waterStress > 75 && 'Severe water stress — increase humidity. '}
-                    {(risks.condensation <= 75 && risks.heatStress <= 75 && risks.waterStress <= 75) && 'Elevated risk levels — monitor closely.'}
+                    {risks.condensation <= 75 && risks.heatStress <= 75 && risks.waterStress <= 75 && 'Elevated risk levels — monitor closely.'}
                   </p>
-                </section>
+                </div>
               )}
             </div>
           </div>
-        </div>
+        </>
       ) : (
-        <p className="text-body-md text-on-surface-variant text-center py-12">Select a chamber to view analytics.</p>
+        <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--outline)', marginBottom: '16px', display: 'block' }}>analytics</span>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '8px' }}>No Chamber Selected</h3>
+          <p style={{ fontSize: '13px', color: 'var(--outline)' }}>Select a chamber to view analytics.</p>
+        </div>
       )}
     </div>
   )

@@ -5,171 +5,64 @@ import LoadingState from '../components/ui/LoadingState.jsx'
 import RecipesEmptyState from '../components/ui/RecipesEmptyState.jsx'
 
 const SPECIES_PRESETS = [
-  {
-    id: 'lions-mane',
-    name: "Lion's Mane",
-    species: 'Hericium erinaceus',
-    icon: 'emoji_emotions',
-    color: 'text-tertiary',
-    incubation: { tempMin: 21, tempMax: 24, humMin: 85, humMax: 95, co2Max: 1200, days: 14 },
-    fruiting: { tempMin: 18, tempMax: 22, humMin: 85, humMax: 95, co2Max: 600, days: 10 },
-    fae: { interval: 60, strategy: 'TIMER', level: 'MEDIUM' },
-    light: 12,
-  },
-  {
-    id: 'blue-oyster',
-    name: 'Blue Oyster',
-    species: 'Pleurotus ostreatus',
-    icon: 'water_drop',
-    color: 'text-blue-400',
-    incubation: { tempMin: 22, tempMax: 26, humMin: 85, humMax: 95, co2Max: 1200, days: 10 },
-    fruiting: { tempMin: 15, tempMax: 20, humMin: 85, humMax: 95, co2Max: 600, days: 7 },
-    fae: { interval: 45, strategy: 'TIMER', level: 'HIGH' },
-    light: 12,
-  },
-  {
-    id: 'pink-oyster',
-    name: 'Pink Oyster',
-    species: 'Pleurotus djamor',
-    icon: 'water_drop',
-    color: 'text-pink-400',
-    incubation: { tempMin: 24, tempMax: 28, humMin: 85, humMax: 95, co2Max: 1200, days: 8 },
-    fruiting: { tempMin: 20, tempMax: 25, humMin: 85, humMax: 95, co2Max: 600, days: 5 },
-    fae: { interval: 45, strategy: 'TIMER', level: 'HIGH' },
-    light: 12,
-  },
-  {
-    id: 'shiitake',
-    name: 'Shiitake',
-    species: 'Lentinula edodes',
-    icon: 'forest',
-    color: 'text-amber-600',
-    incubation: { tempMin: 22, tempMax: 26, humMin: 80, humMax: 90, co2Max: 1500, days: 14 },
-    fruiting: { tempMin: 15, tempMax: 20, humMin: 80, humMax: 90, co2Max: 800, days: 10 },
-    fae: { interval: 60, strategy: 'TIMER', level: 'MEDIUM' },
-    light: 12,
-  },
-  {
-    id: 'reishi',
-    name: 'Reishi',
-    species: 'Ganoderma lucidum',
-    icon: 'spa',
-    color: 'text-red-400',
-    incubation: { tempMin: 26, tempMax: 30, humMin: 85, humMax: 95, co2Max: 1200, days: 14 },
-    fruiting: { tempMin: 22, tempMax: 26, humMin: 85, humMax: 95, co2Max: 600, days: 21 },
-    fae: { interval: 90, strategy: 'CO2_TRIGGER', level: 'LOW' },
-    light: 12,
-  },
-  {
-    id: 'king-oyster',
-    name: 'King Oyster',
-    species: 'Pleurotus eryngii',
-    icon: 'yard',
-    color: 'text-yellow-600',
-    incubation: { tempMin: 22, tempMax: 25, humMin: 85, humMax: 95, co2Max: 1200, days: 14 },
-    fruiting: { tempMin: 15, tempMax: 18, humMin: 80, humMax: 90, co2Max: 600, days: 10 },
-    fae: { interval: 60, strategy: 'TIMER', level: 'MEDIUM' },
-    light: 14,
-  },
+  { id: 'lions-mane', name: "Lion's Mane", species: 'Hericium erinaceus', icon: 'emoji_emotions', color: 'var(--accent-purple, #8b5cf6)', incubation: { tempMin: 21, tempMax: 24, humMin: 85, humMax: 95, co2Max: 1200, days: 14 }, fruiting: { tempMin: 18, tempMax: 22, humMin: 85, humMax: 95, co2Max: 600, days: 10 }, fae: { interval: 60, strategy: 'TIMER', level: 'MEDIUM' }, light: 12 },
+  { id: 'blue-oyster', name: 'Blue Oyster', species: 'Pleurotus ostreatus', icon: 'water_drop', color: '#60a5fa', incubation: { tempMin: 22, tempMax: 26, humMin: 85, humMax: 95, co2Max: 1200, days: 10 }, fruiting: { tempMin: 15, tempMax: 20, humMin: 85, humMax: 95, co2Max: 600, days: 7 }, fae: { interval: 45, strategy: 'TIMER', level: 'HIGH' }, light: 12 },
+  { id: 'pink-oyster', name: 'Pink Oyster', species: 'Pleurotus djamor', icon: 'water_drop', color: '#f472b6', incubation: { tempMin: 24, tempMax: 28, humMin: 85, humMax: 95, co2Max: 1200, days: 8 }, fruiting: { tempMin: 20, tempMax: 25, humMin: 85, humMax: 95, co2Max: 600, days: 5 }, fae: { interval: 45, strategy: 'TIMER', level: 'HIGH' }, light: 12 },
+  { id: 'shiitake', name: 'Shiitake', species: 'Lentinula edodes', icon: 'forest', color: '#fbbf24', incubation: { tempMin: 22, tempMax: 26, humMin: 80, humMax: 90, co2Max: 1500, days: 14 }, fruiting: { tempMin: 15, tempMax: 20, humMin: 80, humMax: 90, co2Max: 800, days: 10 }, fae: { interval: 60, strategy: 'TIMER', level: 'MEDIUM' }, light: 12 },
+  { id: 'reishi', name: 'Reishi', species: 'Ganoderma lucidum', icon: 'spa', color: '#f87171', incubation: { tempMin: 26, tempMax: 30, humMin: 85, humMax: 95, co2Max: 1200, days: 14 }, fruiting: { tempMin: 22, tempMax: 26, humMin: 85, humMax: 95, co2Max: 600, days: 21 }, fae: { interval: 90, strategy: 'CO2_TRIGGER', level: 'LOW' }, light: 12 },
+  { id: 'king-oyster', name: 'King Oyster', species: 'Pleurotus eryngii', icon: 'yard', color: '#a3e635', incubation: { tempMin: 22, tempMax: 25, humMin: 85, humMax: 95, co2Max: 1200, days: 14 }, fruiting: { tempMin: 15, tempMax: 18, humMin: 80, humMax: 90, co2Max: 600, days: 10 }, fae: { interval: 60, strategy: 'TIMER', level: 'MEDIUM' }, light: 14 },
 ]
-
-function TempRange({ min, max, label, idealMin, idealMax }) {
-  const toPercent = (v) => Math.min(100, Math.max(0, ((v - 10) / 30) * 100))
-  const left = toPercent(idealMin || min)
-  const width = toPercent(idealMax || max) - left
-  return (
-    <div className="relative h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
-      <div
-        className="absolute top-0 h-full rounded-full bg-gradient-to-r from-blue-500 via-green-500 to-red-500 opacity-20"
-        style={{ left: '0%', width: '100%' }}
-      />
-      <div
-        className="absolute top-0 h-full rounded-full bg-primary"
-        style={{ left: `${left}%`, width: `${width}%` }}
-      />
-    </div>
-  )
-}
-
-function HumRange({ min, max, label }) {
-  const left = Math.max(0, min)
-  const width = Math.min(100, max) - left
-  return (
-    <div className="relative h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
-      <div className="absolute top-0 h-full rounded-full bg-blue-400 opacity-20" />
-      <div
-        className="absolute top-0 h-full rounded-full bg-blue-400"
-        style={{ left: `${left}%`, width: `${width}%` }}
-      />
-    </div>
-  )
-}
 
 function PhaseTimeline({ incubationDays, fruitingDays }) {
   const total = (incubationDays || 0) + (fruitingDays || 0)
   if (total === 0) return null
   const incPct = Math.round(((incubationDays || 0) / total) * 100)
   return (
-    <div className="space-y-1">
-      <div className="flex gap-0.5 h-2 rounded-full overflow-hidden">
-        <div className="bg-primary rounded-l-full" style={{ width: `${incPct}%` }} />
-        <div className="bg-secondary rounded-r-full flex-1" />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <div style={{ display: 'flex', gap: '2px', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+        <div style={{ width: `${incPct}%`, background: 'var(--spore-green)', borderRadius: '4px 0 0 4px' }} />
+        <div style={{ flex: 1, background: 'var(--teal)', borderRadius: '0 4px 4px 0' }} />
       </div>
-      <div className="flex justify-between text-7px text-on-surface-variant">
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)' }}>
         <span>Inc {incubationDays || 0}d</span>
         <span>Frt {fruitingDays || 0}d</span>
-        <span className="font-semibold text-on-surface">{total}d</span>
+        <span style={{ fontWeight: 600, color: 'var(--on-surface)' }}>{total}d</span>
       </div>
     </div>
   )
 }
 
-function PhaseSection({ title, icon, iconColor, phase, data, onChange }) {
+function PhaseSection({ title, icon, data, onChange }) {
   return (
-    <div className="border border-outline-variant rounded-lg p-3 bg-surface-container-low space-y-3">
-      <div className="flex items-center gap-2">
-        <span className={`material-symbols-outlined text-16px ${iconColor}`}>{icon}</span>
-        <h4 className="font-label-caps text-label-caps text-on-surface-variant">{title}</h4>
+    <div style={{ border: '1px solid var(--outline-variant)', borderRadius: '8px', padding: '12px', background: 'var(--surface-container)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--spore-green)' }}>{icon}</span>
+        <h4 style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>{title}</h4>
       </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label className="font-label-caps text-8px text-on-surface-variant block">Temp °C</label>
-          <div className="flex gap-1">
-            <input type="number" step="0.5" value={data.tempMin} onChange={e => onChange({ ...data, tempMin: e.target.value })}
-              placeholder="Min" className="w-1/2 bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-data-sm text-center font-mono focus:outline-none focus:border-primary" />
-            <input type="number" step="0.5" value={data.tempMax} onChange={e => onChange({ ...data, tempMax: e.target.value })}
-              placeholder="Max" className="w-1/2 bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-data-sm text-center font-mono focus:outline-none focus:border-primary" />
-          </div>
-          {data.tempMin && data.tempMax && (
-            <TempRange min={data.tempMin} max={data.tempMax} label={`${data.tempMin}–${data.tempMax}°C`} />
-          )}
-        </div>
-
-        <div className="space-y-1">
-          <label className="font-label-caps text-8px text-on-surface-variant block">Humidity %</label>
-          <div className="flex gap-1">
-            <input type="number" step="0.5" value={data.humMin} onChange={e => onChange({ ...data, humMin: e.target.value })}
-              placeholder="Min" className="w-1/2 bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-data-sm text-center font-mono focus:outline-none focus:border-primary" />
-            <input type="number" step="0.5" value={data.humMax} onChange={e => onChange({ ...data, humMax: e.target.value })}
-              placeholder="Max" className="w-1/2 bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-data-sm text-center font-mono focus:outline-none focus:border-primary" />
-          </div>
-          {data.humMin && data.humMax && (
-            <HumRange min={data.humMin} max={data.humMax} label={`${data.humMin}–${data.humMax}%`} />
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
         <div>
-          <label className="font-label-caps text-8px text-on-surface-variant block mb-0.5">CO₂ Max</label>
-          <input type="number" value={data.co2Max} onChange={e => onChange({ ...data, co2Max: e.target.value })}
-            className="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-data-sm text-center font-mono focus:outline-none focus:border-primary" />
+          <label style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Temp °C</label>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <input type="number" step="0.5" value={data.tempMin} onChange={e => onChange({ ...data, tempMin: e.target.value })} className="form-input" style={{ width: '50%', textAlign: 'center', fontSize: '12px' }} placeholder="Min" />
+            <input type="number" step="0.5" value={data.tempMax} onChange={e => onChange({ ...data, tempMax: e.target.value })} className="form-input" style={{ width: '50%', textAlign: 'center', fontSize: '12px' }} placeholder="Max" />
+          </div>
         </div>
         <div>
-          <label className="font-label-caps text-8px text-on-surface-variant block mb-0.5">Days</label>
-          <input type="number" value={data.days} onChange={e => onChange({ ...data, days: e.target.value })}
-            className="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-data-sm text-center font-mono focus:outline-none focus:border-primary" />
+          <label style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Humidity %</label>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <input type="number" step="0.5" value={data.humMin} onChange={e => onChange({ ...data, humMin: e.target.value })} className="form-input" style={{ width: '50%', textAlign: 'center', fontSize: '12px' }} placeholder="Min" />
+            <input type="number" step="0.5" value={data.humMax} onChange={e => onChange({ ...data, humMax: e.target.value })} className="form-input" style={{ width: '50%', textAlign: 'center', fontSize: '12px' }} placeholder="Max" />
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div>
+          <label style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>CO₂ Max</label>
+          <input type="number" value={data.co2Max} onChange={e => onChange({ ...data, co2Max: e.target.value })} className="form-input" style={{ textAlign: 'center', fontSize: '12px' }} />
+        </div>
+        <div>
+          <label style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Days</label>
+          <input type="number" value={data.days} onChange={e => onChange({ ...data, days: e.target.value })} className="form-input" style={{ textAlign: 'center', fontSize: '12px' }} />
         </div>
       </div>
     </div>
@@ -187,8 +80,7 @@ function Recipes() {
     name: '', species: '',
     incubation: { tempMin: '', tempMax: '', humMin: '', humMax: '', co2Max: 1200, days: '' },
     fruiting: { tempMin: '', tempMax: '', humMin: '', humMax: '', co2Max: 800, days: '' },
-    faeInterval: 60, ventilationStrategy: 'TIMER', faeLevel: 'MEDIUM',
-    lightCycle: 12,
+    faeInterval: 60, ventilationStrategy: 'TIMER', faeLevel: 'MEDIUM', lightCycle: 12,
   })
 
   async function load() {
@@ -208,28 +100,10 @@ function Recipes() {
   function applyPreset(preset) {
     setSelectedPreset(preset.id)
     setForm({
-      name: preset.name,
-      species: preset.species,
-      incubation: {
-        tempMin: preset.incubation.tempMin,
-        tempMax: preset.incubation.tempMax,
-        humMin: preset.incubation.humMin,
-        humMax: preset.incubation.humMax,
-        co2Max: preset.incubation.co2Max,
-        days: preset.incubation.days,
-      },
-      fruiting: {
-        tempMin: preset.fruiting.tempMin,
-        tempMax: preset.fruiting.tempMax,
-        humMin: preset.fruiting.humMin,
-        humMax: preset.fruiting.humMax,
-        co2Max: preset.fruiting.co2Max,
-        days: preset.fruiting.days,
-      },
-      faeInterval: preset.fae.interval,
-      ventilationStrategy: preset.fae.strategy,
-      faeLevel: preset.fae.level,
-      lightCycle: preset.light,
+      name: preset.name, species: preset.species,
+      incubation: { tempMin: preset.incubation.tempMin, tempMax: preset.incubation.tempMax, humMin: preset.incubation.humMin, humMax: preset.incubation.humMax, co2Max: preset.incubation.co2Max, days: preset.incubation.days },
+      fruiting: { tempMin: preset.fruiting.tempMin, tempMax: preset.fruiting.tempMax, humMin: preset.fruiting.humMin, humMax: preset.fruiting.humMax, co2Max: preset.fruiting.co2Max, days: preset.fruiting.days },
+      faeInterval: preset.fae.interval, ventilationStrategy: preset.fae.strategy, faeLevel: preset.fae.level, lightCycle: preset.light,
     })
   }
 
@@ -239,8 +113,7 @@ function Recipes() {
       name: '', species: '',
       incubation: { tempMin: '', tempMax: '', humMin: '', humMax: '', co2Max: 1200, days: '' },
       fruiting: { tempMin: '', tempMax: '', humMin: '', humMax: '', co2Max: 800, days: '' },
-      faeInterval: 60, ventilationStrategy: 'TIMER', faeLevel: 'MEDIUM',
-      lightCycle: 12,
+      faeInterval: 60, ventilationStrategy: 'TIMER', faeLevel: 'MEDIUM', lightCycle: 12,
     })
   }
 
@@ -249,23 +122,14 @@ function Recipes() {
     setSubmitting(true)
     try {
       await createRecipe({
-        name: form.name,
-        species: form.species,
-        incubationTempMin: parseFloat(form.incubation.tempMin) || null,
-        incubationTempMax: parseFloat(form.incubation.tempMax) || null,
-        incubationHumMin: parseFloat(form.incubation.humMin) || null,
-        incubationHumMax: parseFloat(form.incubation.humMax) || null,
-        incubationCo2Max: parseInt(form.incubation.co2Max) || 1200,
-        incubationDurationDays: parseInt(form.incubation.days) || null,
-        fruitingTempMin: parseFloat(form.fruiting.tempMin) || null,
-        fruitingTempMax: parseFloat(form.fruiting.tempMax) || null,
-        fruitingHumMin: parseFloat(form.fruiting.humMin) || null,
-        fruitingHumMax: parseFloat(form.fruiting.humMax) || null,
-        fruitingCo2Max: parseInt(form.fruiting.co2Max) || 800,
-        fruitingDurationDays: parseInt(form.fruiting.days) || null,
-        faeIntervalMinutes: parseInt(form.faeInterval) || 60,
-        ventilationStrategy: form.ventilationStrategy,
-        faeLevel: form.faeLevel,
+        name: form.name, species: form.species,
+        incubationTempMin: parseFloat(form.incubation.tempMin) || null, incubationTempMax: parseFloat(form.incubation.tempMax) || null,
+        incubationHumMin: parseFloat(form.incubation.humMin) || null, incubationHumMax: parseFloat(form.incubation.humMax) || null,
+        incubationCo2Max: parseInt(form.incubation.co2Max) || 1200, incubationDurationDays: parseInt(form.incubation.days) || null,
+        fruitingTempMin: parseFloat(form.fruiting.tempMin) || null, fruitingTempMax: parseFloat(form.fruiting.tempMax) || null,
+        fruitingHumMin: parseFloat(form.fruiting.humMin) || null, fruitingHumMax: parseFloat(form.fruiting.humMax) || null,
+        fruitingCo2Max: parseInt(form.fruiting.co2Max) || 800, fruitingDurationDays: parseInt(form.fruiting.days) || null,
+        faeIntervalMinutes: parseInt(form.faeInterval) || 60, ventilationStrategy: form.ventilationStrategy, faeLevel: form.faeLevel,
         lightCycleHours: parseInt(form.lightCycle) || 12,
       })
       setShowForm(false)
@@ -281,76 +145,77 @@ function Recipes() {
   if (loading) return <LoadingState message="Loading recipes..." icon="science" />
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex justify-between items-end pb-4 mb-4 border-b border-outline-variant/30">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 className="text-headline-lg text-on-surface">Recipes</h1>
-          <p className="text-body-md text-on-surface-variant">{recipes.length} recipe{recipes.length !== 1 ? 's' : ''}</p>
+          <h1 className="gradient-title" style={{ fontSize: '28px', marginBottom: '4px' }}>Recipes</h1>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--outline)' }}>
+            {recipes.length} recipe{recipes.length !== 1 ? 's' : ''}
+          </p>
         </div>
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: '8px' }}>
           {recipes.length >= 2 && (
-            <Link to="/recipes/compare" className="btn btn-secondary">
-              <span className="material-symbols-outlined text-16px">compare</span>
+            <Link to="/cultivation/recipes/compare" className="btn btn-secondary" style={{ fontSize: '11px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>compare</span>
               COMPARE
             </Link>
           )}
-          <button onClick={() => { resetForm(); setShowForm(true) }} className="btn btn-primary">
-            <span className="material-symbols-outlined text-16px">add</span>
+          <button onClick={() => { resetForm(); setShowForm(true) }} className="btn btn-glow" style={{ fontSize: '11px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>
             NEW RECIPE
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded bg-error-container/10 border border-error/40 flex items-center gap-3">
-          <span className="material-symbols-outlined text-error text-18px">warning</span>
-          <span className="text-data-sm text-error font-semibold">{error}</span>
+        <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--error-red)' }}>warning</span>
+          <span style={{ fontSize: '12px', color: 'var(--error-red)', fontWeight: 600 }}>{error}</span>
         </div>
       )}
 
+      {/* Recipe Cards */}
       {recipes.length === 0 ? (
-        <RecipesEmptyState onCreate={() => { resetForm(); setShowForm(true) }} />
+        <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--outline)', marginBottom: '16px', display: 'block' }}>science</span>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '8px' }}>No recipes yet</h3>
+          <p style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '24px' }}>Create your first recipe to define cultivation parameters.</p>
+          <button onClick={() => { resetForm(); setShowForm(true) }} className="btn btn-glow" style={{ fontSize: '11px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>
+            NEW RECIPE
+          </button>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
           {recipes.map(r => {
             const totalDays = (r.incubationDurationDays || 0) + (r.fruitingDurationDays || 0)
             return (
-              <div key={r.id} className="glass-card p-4 rounded-xl border border-outline-variant hover:border-primary/40 transition-colors">
-                <div className="flex items-start justify-between mb-3">
+              <div key={r.id} className="glass-card" style={{ padding: '16px', transition: 'border-color 0.2s' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                   <div>
-                    <h3 className="text-body-lg text-primary font-semibold">{r.name}</h3>
-                    <p className="text-body-sm text-on-surface-variant italic">{r.species}</p>
+                    <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--spore-green)', marginBottom: '2px' }}>{r.name}</h3>
+                    <p style={{ fontSize: '12px', color: 'var(--outline)', fontStyle: 'italic' }}>{r.species}</p>
                   </div>
-                  <span className="font-mono text-data-sm text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded">
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--on-surface-variant)', background: 'var(--surface-container)', padding: '2px 8px', borderRadius: '4px' }}>
                     {totalDays || '?'}d
                   </span>
                 </div>
                 <PhaseTimeline incubationDays={r.incubationDurationDays} fruitingDays={r.fruitingDurationDays} />
-                <div className="grid grid-cols-2 gap-2 mt-3 text-8px">
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-10px text-blue-400">thermostat</span>
-                    <span className="text-on-surface-variant">Inc: {r.incubationTempMin || '?'}–{r.incubationTempMax || '?'}°C</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-10px text-blue-400">thermostat</span>
-                    <span className="text-on-surface-variant">Frut: {r.fruitingTempMin || '?'}–{r.fruitingTempMax || '?'}°C</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-10px text-cyan-400">water_drop</span>
-                    <span className="text-on-surface-variant">Inc: {r.incubationHumMin || '?'}–{r.incubationHumMax || '?'}%</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-10px text-cyan-400">water_drop</span>
-                    <span className="text-on-surface-variant">Frut: {r.fruitingHumMin || '?'}–{r.fruitingHumMax || '?'}%</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-10px text-green-400">air</span>
-                    <span className="text-on-surface-variant">FAE: {r.faeIntervalMinutes || '?'}min</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-10px text-amber-400">light_mode</span>
-                    <span className="text-on-surface-variant">Light: {r.lightCycleHours || 12}h</span>
-                  </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px', fontSize: '10px' }}>
+                  {[
+                    { icon: 'thermostat', color: '#60a5fa', text: `Inc: ${r.incubationTempMin || '?'}–${r.incubationTempMax || '?'}°C` },
+                    { icon: 'thermostat', color: '#60a5fa', text: `Frut: ${r.fruitingTempMin || '?'}–${r.fruitingTempMax || '?'}°C` },
+                    { icon: 'water_drop', color: '#22d3ee', text: `Inc: ${r.incubationHumMin || '?'}–${r.incubationHumMax || '?'}%` },
+                    { icon: 'water_drop', color: '#22d3ee', text: `Frut: ${r.fruitingHumMin || '?'}–${r.fruitingHumMax || '?'}%` },
+                    { icon: 'air', color: '#4ade80', text: `FAE: ${r.faeIntervalMinutes || '?'}min` },
+                    { icon: 'light_mode', color: '#fbbf24', text: `Light: ${r.lightCycleHours || 12}h` },
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '12px', color: item.color }}>{item.icon}</span>
+                      <span style={{ color: 'var(--on-surface-variant)' }}>{item.text}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )
@@ -358,128 +223,93 @@ function Recipes() {
         </div>
       )}
 
+      {/* Create Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'color-mix(in srgb, var(--surface-dim) 85%, transparent)', backdropFilter: 'blur(4px)' }}>
-          <div className="relative bg-surface border border-outline-variant rounded-xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-
-            <div className="px-5 py-3 border-b border-outline-variant flex justify-between items-center">
-              <h2 className="text-title-lg text-on-surface">New Recipe</h2>
-              <button onClick={() => setShowForm(false)} className="btn btn-ghost">
-                <span className="material-symbols-outlined text-20px">close</span>
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="glass-card modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--outline-variant)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--on-surface)' }}>New Recipe</h2>
+              <button onClick={() => setShowForm(false)} className="btn btn-ghost btn-sm">
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
               </button>
             </div>
-
-            <form onSubmit={handleCreate} className="flex-1 overflow-y-auto px-5 py-3 space-y-4">
-
-              <section>
-                <h3 className="font-label-caps text-label-caps text-secondary mb-2">Quick Start — Species Preset</h3>
-                <div className="grid grid-cols-4 gap-1.5">
+            <form onSubmit={handleCreate} style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Presets */}
+              <div>
+                <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--teal)', marginBottom: '8px' }}>Quick Start — Species Preset</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
                   {SPECIES_PRESETS.map(p => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => applyPreset(p)}
-                      className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${
-                        selectedPreset === p.id
-                          ? 'border-primary bg-primary/10 shadow-sm'
-                          : 'border-outline-variant hover:border-primary/40 bg-surface-container-low'
-                      }`}
-                    >
-                      <span className={`material-symbols-outlined text-18px ${p.color}`}>{p.icon}</span>
-                      <span className="text-7px text-on-surface font-medium text-center leading-tight">{p.name}</span>
+                    <button key={p.id} type="button" onClick={() => applyPreset(p)} style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: '8px', borderRadius: '8px',
+                      border: `1px solid ${selectedPreset === p.id ? 'var(--spore-green)' : 'var(--outline-variant)'}`,
+                      background: selectedPreset === p.id ? 'rgba(var(--spore-green-rgb), 0.1)' : 'var(--surface-container)',
+                      cursor: 'pointer', transition: 'all 0.2s',
+                    }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px', color: p.color }}>{p.icon}</span>
+                      <span style={{ fontSize: '9px', color: 'var(--on-surface)', fontWeight: 500, textAlign: 'center', lineHeight: 1.2 }}>{p.name}</span>
                     </button>
                   ))}
                 </div>
-              </section>
-
-              <section>
-                <h3 className="font-label-caps text-label-caps text-secondary mb-2">Identity</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="font-label-caps text-8px text-on-surface-variant block mb-0.5">Name</label>
-                    <input
-                      value={form.name}
-                      onChange={e => setForm({ ...form, name: e.target.value })}
-                      required
-                      className="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-body-sm focus:outline-none focus:border-primary"
-                      placeholder="e.g. Lion's Mane Standard"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-label-caps text-8px text-on-surface-variant block mb-0.5">Species</label>
-                    <input
-                      value={form.species}
-                      onChange={e => setForm({ ...form, species: e.target.value })}
-                      required
-                      className="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-body-sm italic focus:outline-none focus:border-primary"
-                      placeholder="Hericium erinaceus"
-                    />
-                  </div>
-                </div>
-              </section>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <PhaseSection
-                  title="Incubation"
-                  icon="science"
-                  iconColor="text-primary"
-                  phase="incubation"
-                  data={form.incubation}
-                  onChange={d => setForm({ ...form, incubation: d })}
-                />
-                <PhaseSection
-                  title="Fruiting"
-                  icon="grass"
-                  iconColor="text-secondary"
-                  phase="fruiting"
-                  data={form.fruiting}
-                  onChange={d => setForm({ ...form, fruiting: d })}
-                />
               </div>
 
-              <section>
-                <h3 className="font-label-caps text-label-caps text-secondary mb-2">Environment</h3>
-                <div className="grid grid-cols-4 gap-3">
+              {/* Identity */}
+              <div>
+                <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--teal)', marginBottom: '8px' }}>Identity</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
-                    <label className="font-label-caps text-8px text-on-surface-variant block mb-0.5">FAE (min)</label>
-                    <input type="number" value={form.faeInterval} onChange={e => setForm({ ...form, faeInterval: e.target.value })}
-                      className="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-data-sm text-center font-mono focus:outline-none focus:border-primary" />
+                    <label style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Name</label>
+                    <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required className="form-input" placeholder="e.g. Lion's Mane Standard" />
                   </div>
                   <div>
-                    <label className="font-label-caps text-8px text-on-surface-variant block mb-0.5">Ventilation</label>
-                    <select value={form.ventilationStrategy} onChange={e => setForm({ ...form, ventilationStrategy: e.target.value })}
-                      className="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-data-sm focus:outline-none focus:border-primary cursor-pointer">
+                    <label style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Species</label>
+                    <input value={form.species} onChange={e => setForm({ ...form, species: e.target.value })} required className="form-input" style={{ fontStyle: 'italic' }} placeholder="Hericium erinaceus" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Phases */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <PhaseSection title="Incubation" icon="science" data={form.incubation} onChange={d => setForm({ ...form, incubation: d })} />
+                <PhaseSection title="Fruiting" icon="grass" data={form.fruiting} onChange={d => setForm({ ...form, fruiting: d })} />
+              </div>
+
+              {/* Environment */}
+              <div>
+                <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--teal)', marginBottom: '8px' }}>Environment</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>FAE (min)</label>
+                    <input type="number" value={form.faeInterval} onChange={e => setForm({ ...form, faeInterval: e.target.value })} className="form-input" style={{ textAlign: 'center', fontSize: '12px' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Ventilation</label>
+                    <select value={form.ventilationStrategy} onChange={e => setForm({ ...form, ventilationStrategy: e.target.value })} className="form-select" style={{ fontSize: '12px' }}>
                       <option value="TIMER">Timer</option>
                       <option value="CO2_TRIGGER">CO₂</option>
                       <option value="HYBRID">Hybrid</option>
                     </select>
                   </div>
                   <div>
-                    <label className="font-label-caps text-8px text-on-surface-variant block mb-0.5">FAE Level</label>
-                    <select value={form.faeLevel} onChange={e => setForm({ ...form, faeLevel: e.target.value })}
-                      className="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-data-sm focus:outline-none focus:border-primary cursor-pointer">
+                    <label style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>FAE Level</label>
+                    <select value={form.faeLevel} onChange={e => setForm({ ...form, faeLevel: e.target.value })} className="form-select" style={{ fontSize: '12px' }}>
                       <option value="LOW">Low</option>
                       <option value="MEDIUM">Medium</option>
                       <option value="HIGH">High</option>
                     </select>
                   </div>
                   <div>
-                    <label className="font-label-caps text-8px text-on-surface-variant block mb-0.5">Light (h)</label>
-                    <input type="number" min="0" max="24" value={form.lightCycle} onChange={e => setForm({ ...form, lightCycle: e.target.value })}
-                      className="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1.5 text-data-sm text-center font-mono focus:outline-none focus:border-primary" />
+                    <label style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Light (h)</label>
+                    <input type="number" min="0" max="24" value={form.lightCycle} onChange={e => setForm({ ...form, lightCycle: e.target.value })} className="form-input" style={{ textAlign: 'center', fontSize: '12px' }} />
                   </div>
                 </div>
-              </section>
+              </div>
 
-              <div className="flex justify-between items-center pt-2 pb-3 border-t border-outline-variant/30">
-                <button type="button" onClick={resetForm} className="text-body-sm text-on-surface-variant hover:text-error transition-colors">
-                  Reset
-                </button>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setShowForm(false)} className="btn btn-secondary">Cancel</button>
-                  <button type="submit" disabled={submitting} className="btn btn-primary">
-                    {submitting ? '...' : 'Create'}
-                  </button>
+              {/* Actions */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--outline-variant)' }}>
+                <button type="button" onClick={resetForm} style={{ fontSize: '12px', color: 'var(--outline)', background: 'none', border: 'none', cursor: 'pointer' }}>Reset</button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="button" onClick={() => setShowForm(false)} className="btn btn-secondary" style={{ fontSize: '11px' }}>Cancel</button>
+                  <button type="submit" disabled={submitting} className="btn btn-glow" style={{ fontSize: '11px' }}>{submitting ? '...' : 'Create'}</button>
                 </div>
               </div>
             </form>

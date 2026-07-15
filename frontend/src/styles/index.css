@@ -245,6 +245,57 @@ input, select, textarea, button { color: var(--on-surface); font-family: inherit
   line-height: 1;
 }
 
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.sidebar-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 8px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--outline);
+  transition: all 0.2s;
+  border-radius: var(--radius-md);
+}
+
+.sidebar-section-header:hover {
+  color: var(--on-surface-variant);
+  background: var(--surface-container-high);
+}
+
+.sidebar-chevron {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: rotate(-90deg);
+}
+
+.sidebar-chevron.expanded {
+  transform: rotate(0deg);
+}
+
+.sidebar-section-items {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
+  opacity: 0;
+}
+
+.sidebar-section-items.open {
+  max-height: 300px;
+  opacity: 1;
+}
+
 /* --- TopBar --- */
 .topbar {
   position: fixed;

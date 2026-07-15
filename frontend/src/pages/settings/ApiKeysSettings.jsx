@@ -1,39 +1,31 @@
 import { useState, useEffect } from 'react'
 import { getApiKeys, createApiKey, rotateApiKey, deleteApiKey } from '../../api/client.js'
 import LoadingState from '../../components/ui/LoadingState.jsx'
-import ErrorState from '../../components/ui/ErrorState.jsx'
-import EmptyState from '../../components/ui/EmptyState.jsx'
 
 function KeyModal({ rawKey, name, onClose }) {
   const [copied, setCopied] = useState(false)
-
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(rawKey)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch { /* fallback */ }
-  }
+  async function handleCopy() { try { await navigator.clipboard.writeText(rawKey); setCopied(true); setTimeout(() => setCopied(false), 2000) } catch {} }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="glass-card p-8 rounded-xl border border-outline-variant max-w-lg w-full mx-4" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center gap-3 mb-4">
-          <span className="material-symbols-outlined text-primary">vpn_key</span>
-          <h3 className="text-headline-md text-on-surface">New API Key</h3>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="glass-card modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+        <div style={{ padding: '20px', borderBottom: '1px solid var(--outline-variant)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--spore-green)' }}>vpn_key</span>
+            <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--on-surface)' }}>New API Key</h3>
+          </div>
+          <button onClick={onClose} className="btn btn-ghost btn-sm"><span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span></button>
         </div>
-        <p className="text-body-sm text-on-surface-variant mb-4">
-          {name ? `Key for: ${name}` : 'Copy this key now. You won\'t be able to see it again.'}
-        </p>
-        <div className="bg-surface-dim border border-outline-variant rounded p-3 mb-4 font-mono text-data-sm text-on-surface break-all select-all">
-          {rawKey}
-        </div>
-        <div className="flex gap-3 justify-end">
-          <button className="btn btn-outline" onClick={onClose}>Close</button>
-          <button className="btn btn-primary" onClick={handleCopy}>
-            <span className="material-symbols-outlined text-16px">{copied ? 'check' : 'content_copy'}</span>
-            {copied ? 'Copied!' : 'Copy'}
-          </button>
+        <div style={{ padding: '20px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--outline)', marginBottom: '12px' }}>{name ? `Key for: ${name}` : "Copy this key now. You won't be able to see it again."}</p>
+          <div style={{ padding: '12px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--on-surface)', wordBreak: 'break-all', userSelect: 'all', marginBottom: '16px' }}>{rawKey}</div>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <button className="btn btn-secondary" style={{ fontSize: '10px' }} onClick={onClose}>Close</button>
+            <button className="btn btn-glow" style={{ fontSize: '10px' }} onClick={handleCopy}>
+              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>{copied ? 'check' : 'content_copy'}</span>
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -42,7 +34,6 @@ function KeyModal({ rawKey, name, onClose }) {
 
 function ApiKeysSettings() {
   const [keys, setKeys] = useState([])
-  const [pagination, setPagination] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [newKeyData, setNewKeyData] = useState(null)
@@ -50,137 +41,103 @@ function ApiKeysSettings() {
   const [showCreate, setShowCreate] = useState(false)
 
   async function fetchKeys() {
-    try {
-      const { data, pagination: p } = await getApiKeys()
-      setKeys(data)
-      setPagination(p)
-      setError(null)
-    } catch (err) {
-      setError(err.message || 'Error loading API keys')
-    } finally {
-      setLoading(false)
-    }
+    try { const { data } = await getApiKeys(); setKeys(data); setError(null) }
+    catch (err) { setError(err.message || 'Error loading') }
+    finally { setLoading(false) }
   }
 
   useEffect(() => { fetchKeys() }, [])
 
   async function handleCreate() {
-    try {
-      const result = await createApiKey({ name: keyName || undefined })
-      setNewKeyData({ rawKey: result.data.rawKey, name: keyName })
-      setKeyName('')
-      setShowCreate(false)
-      await fetchKeys()
-    } catch (err) {
-      setError(err.message || 'Error creating key')
-    }
+    try { const result = await createApiKey({ name: keyName || undefined }); setNewKeyData({ rawKey: result.data.rawKey, name: keyName }); setKeyName(''); setShowCreate(false); await fetchKeys() }
+    catch (err) { setError(err.message || 'Error creating') }
   }
 
   async function handleRotate(id) {
-    try {
-      const result = await rotateApiKey(id)
-      setNewKeyData({ rawKey: result.data.rawKey, name: result.data.name })
-      await fetchKeys()
-    } catch (err) {
-      setError(err.message || 'Error rotating key')
-    }
+    try { const result = await rotateApiKey(id); setNewKeyData({ rawKey: result.data.rawKey, name: result.data.name }); await fetchKeys() }
+    catch (err) { setError(err.message || 'Error rotating') }
   }
 
   async function handleRevoke(id) {
     if (!window.confirm('Revoke this API key? This cannot be undone.')) return
-    try {
-      await deleteApiKey(id)
-      await fetchKeys()
-    } catch (err) {
-      setError(err.message || 'Error revoking key')
-    }
+    try { await deleteApiKey(id); await fetchKeys() }
+    catch (err) { setError(err.message || 'Error revoking') }
   }
 
   if (loading) return <LoadingState message="Loading API keys..." icon="vpn_key" />
-  if (error && keys.length === 0) return <ErrorState message={error} onRetry={fetchKeys} />
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 className="text-headline-lg text-on-surface mb-1">API Keys</h1>
-          <p className="text-on-surface-variant text-body-md">Manage API keys for programmatic access.</p>
+          <h1 className="gradient-title" style={{ fontSize: '28px', marginBottom: '4px' }}>API Keys</h1>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--outline)' }}>Manage API keys for programmatic access</p>
         </div>
-        {!showCreate ? (
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-            <span className="material-symbols-outlined text-16px">add</span>
-            NEW KEY
+        {!showCreate && (
+          <button className="btn btn-glow" style={{ fontSize: '10px' }} onClick={() => setShowCreate(true)}>
+            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>add</span> NEW KEY
           </button>
-        ) : null}
+        )}
       </div>
 
+      {error && (
+        <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--error-red)' }}>warning</span>
+          <span style={{ fontSize: '12px', color: 'var(--error-red)', fontWeight: 600 }}>{error}</span>
+        </div>
+      )}
+
+      {/* Create Form */}
       {showCreate && (
-        <div className="glass-card p-5 rounded-xl border border-outline-variant mb-6">
-          <h3 className="text-headline-md text-on-surface mb-4">Generate New API Key</h3>
-          <div className="flex gap-3 items-end">
-            <div className="flex-1">
-              <p className="text-label-caps text-9px text-on-surface-variant mb-1">KEY NAME (OPTIONAL)</p>
-              <input
-                className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 text-body-md text-on-surface focus:border-primary outline-none"
-                value={keyName}
-                onChange={e => setKeyName(e.target.value)}
-                placeholder="e.g. CI/CD, ThingSpeak bridge"
-                onKeyDown={e => { if (e.key === 'Enter') handleCreate() }}
-              />
+        <div className="glass-card" style={{ padding: '20px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '12px' }}>Generate New API Key</h3>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Key Name (optional)</label>
+              <input className="form-input" style={{ fontSize: '11px' }} value={keyName} onChange={e => setKeyName(e.target.value)} placeholder="e.g. CI/CD, ThingSpeak bridge" onKeyDown={e => { if (e.key === 'Enter') handleCreate() }} />
             </div>
-            <button className="btn btn-primary" onClick={handleCreate}>GENERATE</button>
-            <button className="btn btn-outline" onClick={() => { setShowCreate(false); setKeyName('') }}>CANCEL</button>
+            <button className="btn btn-glow" style={{ fontSize: '10px' }} onClick={handleCreate}>GENERATE</button>
+            <button className="btn btn-secondary" style={{ fontSize: '10px' }} onClick={() => { setShowCreate(false); setKeyName('') }}>CANCEL</button>
           </div>
         </div>
       )}
 
+      {/* Keys Table */}
       {keys.length > 0 ? (
-        <div className="bg-surface-container border border-outline-variant rounded-lg overflow-hidden">
-          <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
+        <div className="glass-card" style={{ overflow: 'hidden' }}>
+          <table className="data-table">
             <thead>
-              <tr className="border-b border-outline-variant text-label-caps text-9px text-on-surface-variant">
-                <th className="p-3 font-weight-normal">Name</th>
-                <th className="p-3 font-weight-normal">Key</th>
-                <th className="p-3 font-weight-normal">Status</th>
-                <th className="p-3 font-weight-normal">Created</th>
-                <th className="p-3 font-weight-normal">Last used</th>
-                <th className="p-3 font-weight-normal">Actions</th>
+              <tr>
+                <th>Name</th>
+                <th>Key</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Last used</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {keys.map(key => (
-                <tr key={key.id} className="border-b border-outline-variant">
-                  <td className="p-3 text-body-sm text-on-surface">{key.name || '—'}</td>
-                  <td className="p-3">
-                    <span className="font-mono text-data-sm text-secondary">{key.keyPrefix}...</span>
+                <tr key={key.id}>
+                  <td><span style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{key.name || '—'}</span></td>
+                  <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--accent-blue, #60a5fa)' }}>{key.keyPrefix}...</span></td>
+                  <td>
+                    <span style={{
+                      padding: '2px 8px', borderRadius: '4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
+                      background: key.isActive ? 'rgba(var(--spore-green-rgb), 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      color: key.isActive ? 'var(--spore-green)' : 'var(--error-red)',
+                      border: `1px solid ${key.isActive ? 'rgba(var(--spore-green-rgb), 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                    }}>{key.isActive ? 'Active' : 'Revoked'}</span>
                   </td>
-                  <td className="p-3">
-                    <span className={`status-badge ${key.isActive ? 'online' : 'offline'}`}>
-                      {key.isActive ? 'Active' : 'Revoked'}
-                    </span>
-                  </td>
-                  <td className="p-3 text-body-xs text-on-surface-variant">
-                    {new Date(key.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="p-3 text-body-xs text-on-surface-variant">
-                    {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : 'Never'}
-                  </td>
-                  <td className="p-3">
-                    <div className="flex gap-2">
+                  <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--outline)' }}>{new Date(key.createdAt).toLocaleDateString()}</span></td>
+                  <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--outline)' }}>{key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : 'Never'}</span></td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '6px' }}>
                       {key.isActive && (
                         <>
-                          <button
-                            className="btn btn-sm btn-outline"
-                            onClick={() => handleRotate(key.id)}
-                          >
-                            Rotate
-                          </button>
-                          <button
-                            className="btn btn-sm btn-danger"
-                            onClick={() => handleRevoke(key.id)}
-                          >
-                            Revoke
-                          </button>
+                          <button className="btn btn-secondary" style={{ fontSize: '9px', padding: '4px 8px' }} onClick={() => handleRotate(key.id)}>Rotate</button>
+                          <button className="btn btn-danger" style={{ fontSize: '9px', padding: '4px 8px' }} onClick={() => handleRevoke(key.id)}>Revoke</button>
                         </>
                       )}
                     </div>
@@ -191,16 +148,14 @@ function ApiKeysSettings() {
           </table>
         </div>
       ) : (
-        <EmptyState icon="vpn_key" title="No API keys" message="Generate your first API key for programmatic access." />
+        <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--outline)', marginBottom: '16px', display: 'block' }}>vpn_key</span>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '8px' }}>No API Keys</h3>
+          <p style={{ fontSize: '13px', color: 'var(--outline)' }}>Generate your first API key for programmatic access.</p>
+        </div>
       )}
 
-      {newKeyData && (
-        <KeyModal
-          rawKey={newKeyData.rawKey}
-          name={newKeyData.name}
-          onClose={() => setNewKeyData(null)}
-        />
-      )}
+      {newKeyData && <KeyModal rawKey={newKeyData.rawKey} name={newKeyData.name} onClose={() => setNewKeyData(null)} />}
     </div>
   )
 }

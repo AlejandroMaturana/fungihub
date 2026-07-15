@@ -11,6 +11,7 @@ const PROV_CHAR_STATUS = 'a7c3d6e5-f1b2-4a5b-8c9d-0e1f2a3b4c5d'
 const PROV_CHAR_SSR_MODE = 'a7c3d6e6-f1b2-4a5b-8c9d-0e1f2a3b4c5d'
 
 const STEPS = { SCAN: 0, CONFIG: 1, PROVISIONING: 2, DONE: 3, ERROR: -1 }
+const STEP_LABELS = ['SCAN', 'CONFIG', 'SEND', 'DONE']
 
 function Provisioning() {
   const navigate = useNavigate()
@@ -28,330 +29,277 @@ function Provisioning() {
   const serviceRef = useRef(null)
   const statusCharRef = useRef(null)
 
-  const isWebBluetoothSupported = useCallback(() => {
-    return navigator.bluetooth !== undefined
-  }, [])
+  const isWebBluetoothSupported = useCallback(() => navigator.bluetooth !== undefined, [])
 
   const handleScan = useCallback(async () => {
-    setError(null)
-    setDevices([])
-
-    if (!isWebBluetoothSupported()) {
-      setBleNotSupported(true)
-      setError('Web Bluetooth no está soportado en este navegador. Usa Chrome o Edge versión 90+.')
-      return
-    }
-
+    setError(null); setDevices([])
+    if (!isWebBluetoothSupported()) { setBleNotSupported(true); setError('Web Bluetooth no soportado. Usa Chrome o Edge 90+.'); return }
     try {
-      const device = await navigator.bluetooth.requestDevice({
-        filters: [{ namePrefix: 'Mush2' }],
-        optionalServices: [PROV_SERVICE_UUID],
-      })
-
-      setDevices([device])
-      setSelectedDevice(device)
-      setStep(STEPS.CONFIG)
-
-      const server = await device.gatt.connect()
-      serverRef.current = server
-
-      const service = await server.getPrimaryService(PROV_SERVICE_UUID)
-      serviceRef.current = service
-
+      const device = await navigator.bluetooth.requestDevice({ filters: [{ namePrefix: 'Mush2' }], optionalServices: [PROV_SERVICE_UUID] })
+      setDevices([device]); setSelectedDevice(device); setStep(STEPS.CONFIG)
+      const server = await device.gatt.connect(); serverRef.current = server
+      const service = await server.getPrimaryService(PROV_SERVICE_UUID); serviceRef.current = service
       const infoChar = await service.getCharacteristic(PROV_CHAR_DEVICE_INFO)
-      const infoValue = await infoChar.readValue()
-      const infoStr = new TextDecoder().decode(infoValue)
-      try {
-        setDeviceInfo(JSON.parse(infoStr))
-      } catch {
-        setDeviceInfo({ raw: infoStr })
-      }
-
+      const infoValue = await infoChar.readValue(); const infoStr = new TextDecoder().decode(infoValue)
+      try { setDeviceInfo(JSON.parse(infoStr)) } catch { setDeviceInfo({ raw: infoStr }) }
       statusCharRef.current = await service.getCharacteristic(PROV_CHAR_STATUS)
       await statusCharRef.current.startNotifications()
-
       const ssrModeChar = await service.getCharacteristic(PROV_CHAR_SSR_MODE)
       const ssrModeValue = await ssrModeChar.readValue()
-      const ssrModeStr = new TextDecoder().decode(ssrModeValue)
-      setSsrActiveLow(ssrModeStr === '1')
+      setSsrActiveLow(new TextDecoder().decode(ssrModeValue) === '1')
       statusCharRef.current.addEventListener('characteristicvaluechanged', (event) => {
         const val = new TextDecoder().decode(event.target.value)
         try {
-          const status = JSON.parse(val)
-          setStatusMsg(`${status.status}: ${status.msg}`)
-          if (status.status === 'ok' && status.msg.includes('Credenciales guardadas')) {
-            setStep(STEPS.DONE)
-          } else if (status.status === 'error') {
-            setStep(STEPS.ERROR)
-            setError(status.msg)
-          }
-        } catch {
-          setStatusMsg(val)
-        }
+          const status = JSON.parse(val); setStatusMsg(`${status.status}: ${status.msg}`)
+          if (status.status === 'ok' && status.msg.includes('Credenciales guardadas')) setStep(STEPS.DONE)
+          else if (status.status === 'error') { setStep(STEPS.ERROR); setError(status.msg) }
+        } catch { setStatusMsg(val) }
       })
-
       await new Promise(resolve => setTimeout(resolve, 500))
-
     } catch (err) {
-      if (err.name === 'NotFoundError') {
-        setError('No se encontró ningún dispositivo Mush2. Asegúrate de que el dispositivo esté en modo provisioning.')
-      } else {
-        setError(err.message || 'Error al conectar con el dispositivo')
-      }
+      if (err.name === 'NotFoundError') setError('No se encontró ningún dispositivo Mush2. Asegúrate de que esté en modo provisioning.')
+      else setError(err.message || 'Error al conectar')
       setStep(STEPS.ERROR)
     }
   }, [isWebBluetoothSupported])
 
   const handleProvision = useCallback(async () => {
-    if (!ssid.trim()) {
-      setError('El nombre de la red Wi-Fi es requerido')
-      return
-    }
-
-    setError(null)
-    setStep(STEPS.PROVISIONING)
-    setStatusMsg('Enviando credenciales...')
-
+    if (!ssid.trim()) { setError('El nombre de la red Wi-Fi es requerido'); return }
+    setError(null); setStep(STEPS.PROVISIONING); setStatusMsg('Enviando credenciales...')
     try {
       const service = serviceRef.current
-
       const ssidChar = await service.getCharacteristic(PROV_CHAR_WIFI_SSID)
       const passChar = await service.getCharacteristic(PROV_CHAR_WIFI_PASS)
       const cmdChar = await service.getCharacteristic(PROV_CHAR_CMD)
-
       const encoder = new TextEncoder()
-      await ssidChar.writeValue(encoder.encode(ssid))
-      await passChar.writeValue(encoder.encode(password))
-      const ssrModeChar = await service.getCharacteristic(PROV_CHAR_SSR_MODE)
-      await ssrModeChar.writeValue(encoder.encode(ssrActiveLow ? '1' : '0'))
+      await ssidChar.writeValue(encoder.encode(ssid)); await passChar.writeValue(encoder.encode(password))
+      await (await service.getCharacteristic(PROV_CHAR_SSR_MODE)).writeValue(encoder.encode(ssrActiveLow ? '1' : '0'))
       await cmdChar.writeValue(encoder.encode('provision'))
-
       setStatusMsg('Credenciales enviadas. El dispositivo se reiniciará...')
-
-    } catch (err) {
-      setStep(STEPS.ERROR)
-      setError(err.message || 'Error al enviar credenciales')
-    }
-  }, [ssid, password])
+    } catch (err) { setStep(STEPS.ERROR); setError(err.message || 'Error al enviar credenciales') }
+  }, [ssid, password, ssrActiveLow])
 
   const handleFactoryReset = useCallback(async () => {
-    if (!confirm('¿Estás seguro de resetear el dispositivo? Se borrarán todas las credenciales.')) return
-
+    if (!confirm('¿Resetear el dispositivo? Se borrarán todas las credenciales.')) return
     try {
       const cmdChar = await serviceRef.current.getCharacteristic(PROV_CHAR_CMD)
-      const encoder = new TextEncoder()
-      await cmdChar.writeValue(encoder.encode('factory_reset'))
+      await cmdChar.writeValue(new TextEncoder().encode('factory_reset'))
       setStatusMsg('Factory reset ejecutado. El dispositivo se reiniciará en modo provisioning.')
-    } catch (err) {
-      setError(err.message || 'Error al ejecutar factory reset')
-    }
+    } catch (err) { setError(err.message || 'Error al ejecutar factory reset') }
   }, [])
 
   const handleDisconnect = useCallback(async () => {
-    if (serverRef.current) {
-      try { serverRef.current.disconnect() } catch {}
-      serverRef.current = null
-      serviceRef.current = null
-      statusCharRef.current = null
-    }
-    setStep(STEPS.SCAN)
-    setSelectedDevice(null)
-    setDeviceInfo(null)
-    setStatusMsg('')
-    setError(null)
+    if (serverRef.current) { try { serverRef.current.disconnect() } catch {} serverRef.current = null; serviceRef.current = null; statusCharRef.current = null }
+    setStep(STEPS.SCAN); setSelectedDevice(null); setDeviceInfo(null); setStatusMsg(''); setError(null)
   }, [])
 
-  const renderScan = () => (
-    <div className="flex flex-col items-center justify-center py-16">
-      <div className="mb-8 text-center">
-        <span className="material-symbols-outlined text-6xl text-primary mb-4">bluetooth_searching</span>
-        <h2 className="text-headline-lg text-on-surface mb-2">BLE Device Provisioning</h2>
-        <p className="text-on-surface-variant text-body-md max-w-lg">
-          Escanea dispositivos Mush2 cercanos para configurar su conexión Wi-Fi.
-          Asegúrate de que el dispositivo esté encendido y en modo provisioning.
-        </p>
-      </div>
-
-      {bleNotSupported && (
-        <div className="glass-card p-4 rounded-xl border border-error/40 bg-error-container/5 mb-6 max-w-md">
-          <p className="text-error text-body-sm">
-            Web Bluetooth requiere Chrome 90+, Edge 90+, o navegadores basados en Chromium.
-          </p>
-        </div>
-      )}
-
-      <button onClick={handleScan} className="btn-primary px-8 py-3 rounded-xl text-body-lg font-medium">
-        <span className="material-symbols-outlined mr-2">search</span>
-        Escanear dispositivos
-      </button>
-    </div>
-  )
-
-  const renderConfig = () => (
-    <div className="max-w-lg mx-auto py-8">
-      <button onClick={handleDisconnect} className="text-on-surface-variant text-body-sm mb-6 flex items-center gap-1 hover:text-on-surface">
-        <span className="material-symbols-outlined text-sm">arrow_back</span>
-        Volver al escaneo
-      </button>
-
-      {deviceInfo && (
-        <div className="glass-card p-4 rounded-xl border border-outline-variant mb-6">
-          <h3 className="font-label-caps text-label-caps text-secondary mb-3">DISPOSITIVO DETECTADO</h3>
-          <div className="grid grid-cols-2 gap-3 text-body-sm">
-            <div>
-              <span className="text-on-surface-variant">Device ID</span>
-              <p className="text-on-surface font-mono">{deviceInfo.deviceId || selectedDevice.name}</p>
-            </div>
-            <div>
-              <span className="text-on-surface-variant">Firmware</span>
-              <p className="text-on-surface font-mono">{deviceInfo.fwVer || '-'}</p>
-            </div>
-            <div>
-              <span className="text-on-surface-variant">HW Rev</span>
-              <p className="text-on-surface font-mono">{deviceInfo.hwRev || '-'}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="glass-card p-5 rounded-xl border border-outline-variant mb-6">
-        <h3 className="font-label-caps text-label-caps text-secondary mb-4">CONFIGURACIÓN Wi-Fi</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="font-label-caps text-9px text-on-surface-variant block mb-1">SSID (NOMBRE DE RED)</label>
-            <input className="form-input" value={ssid} onChange={e => setSsid(e.target.value)} placeholder="MiRedWiFi" />
-          </div>
-          <div>
-            <label className="font-label-caps text-9px text-on-surface-variant block mb-1">CONTRASEÑA</label>
-            <input className="form-input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
-          </div>
-        </div>
-      </div>
-
-      <div className="glass-card p-5 rounded-xl border border-outline-variant mb-6">
-        <h3 className="font-label-caps text-label-caps text-secondary mb-4">CONFIGURACIÓN SSR</h3>
-        <label className="flex items-center justify-between cursor-pointer">
-          <div>
-            <p className="text-body-md text-on-surface">SSR Active Low</p>
-            <p className="text-body-sm text-on-surface-variant">
-              {ssrActiveLow ? 'HIGH=OFF, LOW=ON (low-level)' : 'HIGH=ON, LOW=OFF (high-level)'}
-            </p>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={ssrActiveLow}
-            onClick={() => setSsrActiveLow(v => !v)}
-            className={`relative w-12 h-7 rounded-full transition-colors ${ssrActiveLow ? 'bg-primary' : 'bg-surface-container-highest'}`}
-          >
-            <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${ssrActiveLow ? 'translate-x-5' : 'translate-x-0'}`} />
-          </button>
-        </label>
-      </div>
-
-      <div className="flex gap-3">
-        <button onClick={handleProvision} className="btn-primary flex-1 py-3 rounded-xl text-body-md font-medium">
-          <span className="material-symbols-outlined mr-2">settings_ethernet</span>
-          Provisionar dispositivo
-        </button>
-        <button onClick={handleFactoryReset} className="glass-card px-4 py-3 rounded-xl border border-outline-variant text-on-surface-variant hover:text-error">
-          <span className="material-symbols-outlined">restart_alt</span>
-        </button>
-      </div>
-    </div>
-  )
-
-  const renderProvisioning = () => (
-    <div className="flex flex-col items-center justify-center py-16">
-      <div className="mb-6">
-        <div className="w-16 h-16 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-      </div>
-      <h2 className="text-headline-lg text-on-surface mb-2">Provisionando...</h2>
-      <p className="text-on-surface-variant text-body-md">{statusMsg || 'Enviando configuración al dispositivo'}</p>
-    </div>
-  )
-
-  // Register device with user account after provisioning succeeds
   useEffect(() => {
     if (step === STEPS.DONE && deviceInfo?.deviceId) {
-      createDevice({
-        deviceId: deviceInfo.deviceId,
-        macAddress: deviceInfo.deviceId,
-        chamberName: `Mush2-${deviceInfo.deviceId.slice(-4)}`,
-      }).catch((err) => {
-        // Non-critical — device already self-registered via firmware
-        console.warn('[Provisioning] Device registration failed (non-critical):', err)
-      })
+      createDevice({ deviceId: deviceInfo.deviceId, macAddress: deviceInfo.deviceId, chamberName: `Mush2-${deviceInfo.deviceId.slice(-4)}` }).catch(() => {})
     }
   }, [step, deviceInfo])
 
-  const renderDone = () => (
-    <div className="flex flex-col items-center justify-center py-16">
-      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-        <span className="material-symbols-outlined text-4xl text-primary">check_circle</span>
-      </div>
-      <h2 className="text-headline-lg text-on-surface mb-2">Dispositivo configurado</h2>
-      <p className="text-on-surface-variant text-body-md max-w-md text-center mb-6">
-        Las credenciales Wi-Fi han sido enviadas al dispositivo.
-        Se reiniciará automáticamente y debería aparecer en tu dashboard en breve.
-      </p>
-      <div className="flex gap-3">
-        <button onClick={() => navigate('/devices')} className="btn-primary px-6 py-3 rounded-xl text-body-md font-medium">
-          <span className="material-symbols-outlined mr-2">dashboard</span>
-          Ir al Dashboard
-        </button>
-        <button onClick={handleDisconnect} className="glass-card px-6 py-3 rounded-xl border border-outline-variant text-on-surface">
-          Configurar otro dispositivo
-        </button>
-      </div>
-    </div>
-  )
-
-  const renderError = () => (
-    <div className="flex flex-col items-center justify-center py-16">
-      <div className="w-16 h-16 rounded-full bg-error/20 flex items-center justify-center mb-6">
-        <span className="material-symbols-outlined text-4xl text-error">error</span>
-      </div>
-      <h2 className="text-headline-lg text-on-surface mb-2">Error en provisioning</h2>
-      <p className="text-on-surface-variant text-body-md max-w-md text-center mb-2">{error}</p>
-      <p className="text-on-surface-variant text-body-sm max-w-md text-center mb-6">{statusMsg}</p>
-      <button onClick={handleDisconnect} className="btn-primary px-6 py-3 rounded-xl text-body-md font-medium">
-        <span className="material-symbols-outlined mr-2">refresh</span>
-        Reintentar
-      </button>
-    </div>
-  )
-
   return (
-    <div className="max-w-4xl mx-auto pb-20">
-      <div className="mb-8">
-        <h1 className="text-headline-lg text-on-surface mb-1">Provisioning</h1>
-        <p className="text-on-surface-variant text-body-md">
-          Configura dispositivos Mush2 nuevos mediante Bluetooth.
+    <div style={{ maxWidth: '800px', margin: '0 auto', paddingBottom: '80px' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '32px' }}>
+        <h1 className="gradient-title" style={{ fontSize: '28px', marginBottom: '4px' }}>Provisioning</h1>
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--outline)' }}>
+          Configura dispositivos Mush2 nuevos mediante Bluetooth
         </p>
       </div>
 
-      <div className="flex items-center gap-2 mb-8">
+      {/* Step Indicator */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '32px' }}>
         {[0, 1, 2, 3].map((s, i) => (
-          <div key={s} className="flex items-center gap-2">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-medium ${
-              step >= s ? 'bg-primary text-black' : 'bg-surface-container-highest text-on-surface-variant'
-            }`}>
+          <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '12px', fontWeight: 700, transition: 'all 0.3s',
+              background: step >= s ? 'var(--spore-green)' : 'var(--surface-container-high)',
+              color: step >= s ? 'var(--bg-primary)' : 'var(--on-surface-variant)',
+              boxShadow: step >= s ? '0 0 12px rgba(var(--spore-green-rgb), 0.3)' : 'none',
+            }}>
               {step > s ? '✓' : i + 1}
             </div>
-            <span className={`text-label-caps text-9px ${step >= s ? 'text-on-surface' : 'text-on-surface-variant'}`}>
-              {['ESCANEAR', 'CONFIGURAR', 'ENVIAR', 'LISTO'][i]}
-            </span>
-            {i < 3 && <div className={`w-8 h-px ${step > s ? 'bg-primary' : 'bg-outline-variant'}`} />}
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.1em',
+              color: step >= s ? 'var(--on-surface)' : 'var(--on-surface-variant)', fontWeight: step >= s ? 700 : 400,
+            }}>{STEP_LABELS[i]}</span>
+            {i < 3 && <div style={{ width: '32px', height: '1px', background: step > s ? 'var(--spore-green)' : 'var(--outline-variant)' }} />}
           </div>
         ))}
       </div>
 
-      {step === STEPS.SCAN && renderScan()}
-      {step === STEPS.CONFIG && renderConfig()}
-      {step === STEPS.PROVISIONING && renderProvisioning()}
-      {step === STEPS.DONE && renderDone()}
-      {step === STEPS.ERROR && renderError()}
+      {/* Error Banner */}
+      {error && (
+        <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--error-red)' }}>warning</span>
+          <span style={{ fontSize: '12px', color: 'var(--error-red)', fontWeight: 600 }}>{error}</span>
+        </div>
+      )}
+
+      {/* SCAN */}
+      {step === STEPS.SCAN && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 0' }}>
+          <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '64px', color: 'var(--spore-green)', marginBottom: '16px', display: 'block' }}>bluetooth_searching</span>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '8px' }}>BLE Device Provisioning</h2>
+            <p style={{ fontSize: '13px', color: 'var(--on-surface-variant)', maxWidth: '400px', margin: '0 auto', lineHeight: 1.6 }}>
+              Escanea dispositivos Mush2 cercanos para configurar su conexión Wi-Fi.
+              Asegúrate de que el dispositivo esté encendido y en modo provisioning.
+            </p>
+          </div>
+
+          {bleNotSupported && (
+            <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', marginBottom: '24px', maxWidth: '400px' }}>
+              <p style={{ fontSize: '12px', color: 'var(--error-red)' }}>Web Bluetooth requiere Chrome 90+, Edge 90+, o navegadores basados en Chromium.</p>
+            </div>
+          )}
+
+          <button onClick={handleScan} className="btn btn-glow" style={{ fontSize: '12px', padding: '12px 32px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>search</span>
+            Escanear dispositivos
+          </button>
+        </div>
+      )}
+
+      {/* CONFIG */}
+      {step === STEPS.CONFIG && (
+        <div style={{ maxWidth: '480px', margin: '0 auto' }}>
+          <button onClick={handleDisconnect} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--on-surface-variant)', fontSize: '12px', marginBottom: '24px', padding: 0 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_back</span>
+            Volver al escaneo
+          </button>
+
+          {/* Device Info */}
+          {deviceInfo && (
+            <div className="glass-card" style={{ padding: '20px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--spore-green)' }}>developer_board</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>Dispositivo Detectado</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                {[
+                  { label: 'Device ID', value: deviceInfo.deviceId || selectedDevice.name },
+                  { label: 'Firmware', value: deviceInfo.fwVer || '—' },
+                  { label: 'HW Rev', value: deviceInfo.hwRev || '—' },
+                ].map((item, i) => (
+                  <div key={i} style={{ padding: '10px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>{item.label}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--on-surface)' }}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Wi-Fi Config */}
+          <div className="glass-card" style={{ padding: '20px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--spore-green)' }}>wifi</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>Configuración Wi-Fi</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>SSID (Nombre de Red)</label>
+                <input className="form-input" value={ssid} onChange={e => setSsid(e.target.value)} placeholder="MiRedWiFi" />
+              </div>
+              <div>
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Contraseña</label>
+                <input className="form-input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+              </div>
+            </div>
+          </div>
+
+          {/* SSR Config */}
+          <div className="glass-card" style={{ padding: '20px', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--spore-green)' }}>electrical_services</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>Configuración SSR</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ fontSize: '13px', color: 'var(--on-surface)', marginBottom: '2px' }}>SSR Active Low</p>
+                <p style={{ fontSize: '11px', color: 'var(--outline)' }}>
+                  {ssrActiveLow ? 'HIGH=OFF, LOW=ON (low-level)' : 'HIGH=ON, LOW=OFF (high-level)'}
+                </p>
+              </div>
+              <button type="button" role="switch" aria-checked={ssrActiveLow} onClick={() => setSsrActiveLow(v => !v)} style={{
+                width: '48px', height: '28px', borderRadius: '14px', border: 'none', cursor: 'pointer', position: 'relative', padding: 0, transition: 'background 0.2s',
+                background: ssrActiveLow ? 'var(--spore-green)' : 'var(--surface-container-high)',
+              }}>
+                <span style={{
+                  position: 'absolute', top: '3px', width: '22px', height: '22px', borderRadius: '50%', background: 'var(--bg-primary, #fff)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', transition: 'transform 0.2s',
+                  transform: ssrActiveLow ? 'translateX(23px)' : 'translateX(3px)',
+                }} />
+              </button>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button onClick={handleProvision} className="btn btn-glow" style={{ flex: 1, fontSize: '12px', padding: '12px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>settings_ethernet</span>
+              Provisionar dispositivo
+            </button>
+            <button onClick={handleFactoryReset} className="btn btn-secondary" style={{ padding: '12px 16px' }} title="Factory Reset">
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>restart_alt</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* PROVISIONING */}
+      {step === STEPS.PROVISIONING && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 0' }}>
+          <div style={{
+            width: '64px', height: '64px', borderRadius: '50%', border: '3px solid var(--spore-green)', borderTopColor: 'transparent',
+            animation: 'spin 1s linear infinite', marginBottom: '24px',
+          }} />
+          <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '8px' }}>Provisionando...</h2>
+          <p style={{ fontSize: '13px', color: 'var(--on-surface-variant)' }}>{statusMsg || 'Enviando configuración al dispositivo'}</p>
+        </div>
+      )}
+
+      {/* DONE */}
+      {step === STEPS.DONE && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 0' }}>
+          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(var(--spore-green-rgb), 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '40px', color: 'var(--spore-green)' }}>check_circle</span>
+          </div>
+          <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '8px' }}>Dispositivo configurado</h2>
+          <p style={{ fontSize: '13px', color: 'var(--on-surface-variant)', maxWidth: '400px', textAlign: 'center', marginBottom: '24px', lineHeight: 1.6 }}>
+            Las credenciales Wi-Fi han sido enviadas al dispositivo.
+            Se reiniciará automáticamente y debería aparecer en tu dashboard en breve.
+          </p>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button onClick={() => navigate('/overview')} className="btn btn-glow" style={{ fontSize: '12px', padding: '12px 24px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>dashboard</span>
+              Ir al Dashboard
+            </button>
+            <button onClick={handleDisconnect} className="btn btn-secondary" style={{ fontSize: '12px', padding: '12px 24px' }}>Configurar otro dispositivo</button>
+          </div>
+        </div>
+      )}
+
+      {/* ERROR */}
+      {step === STEPS.ERROR && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 0' }}>
+          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '40px', color: 'var(--error-red)' }}>error</span>
+          </div>
+          <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '8px' }}>Error en provisioning</h2>
+          <p style={{ fontSize: '13px', color: 'var(--on-surface-variant)', maxWidth: '400px', textAlign: 'center', marginBottom: '8px' }}>{error}</p>
+          {statusMsg && <p style={{ fontSize: '11px', color: 'var(--outline)', maxWidth: '400px', textAlign: 'center', marginBottom: '24px' }}>{statusMsg}</p>}
+          <button onClick={handleDisconnect} className="btn btn-glow" style={{ fontSize: '12px', padding: '12px 24px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>refresh</span>
+            Reintentar
+          </button>
+        </div>
+      )}
+
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }

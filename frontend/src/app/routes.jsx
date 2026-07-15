@@ -1,4 +1,5 @@
 import { lazy } from 'react'
+import { Navigate } from 'react-router-dom'
 
 const Landing = lazy(() => import('../features/auth/pages/LandingPage.jsx'))
 const Home = lazy(() => import('../features/auth/pages/HomeRedirect.jsx'))
@@ -29,19 +30,24 @@ export const publicRoutes = [
 
 export const protectedRoutes = [
   { path: '/', element: Home },
-  { path: '/dashboard', element: Dashboard },
-  { path: '/devices/:id', element: DeviceDetail },
-  { path: '/recipes', element: Recipes },
-  { path: '/recipes/compare', element: RecipeComparator },
-  { path: '/species', element: SpeciesLibrary },
-  { path: '/cycles', element: Cycles },
-  { path: '/cycles/:id/bioactives', element: BioactiveDashboard },
-  { path: '/alarms', element: Alarms },
-  { path: '/logs', element: Logs },
-  { path: '/diagnostics', element: Diagnostics },
-  { path: '/analytics', element: Analytics },
+  { path: '/overview', element: Dashboard },
+
+  { path: '/fleet/provision', element: Provisioning },
+  { path: '/fleet/devices/:id', element: DeviceDetail },
+
+  { path: '/cultivation/recipes', element: Recipes },
+  { path: '/cultivation/recipes/compare', element: RecipeComparator },
+  { path: '/cultivation/species', element: SpeciesLibrary },
+  { path: '/cultivation/cycles', element: Cycles },
+  { path: '/cultivation/cycles/:id/bioactives', element: BioactiveDashboard },
+
+  { path: '/operations/analytics', element: Analytics },
+  { path: '/operations/alarms', element: Alarms },
+  { path: '/operations/logs', element: Logs },
+  { path: '/operations/diagnostics', element: Diagnostics },
+
   {
-    path: '/settings',
+    path: '/system/settings',
     element: Settings,
     children: [
       { index: true, element: SettingsHub },
@@ -53,5 +59,19 @@ export const protectedRoutes = [
       { path: 'subscription', element: SubscriptionSettings },
     ],
   },
-  { path: '/provisioning', element: Provisioning },
+
+  { path: '/dashboard', element: <Navigate to="/overview" replace /> },
+  { path: '/recipes', element: <Navigate to="/cultivation/recipes" replace /> },
+  { path: '/recipes/compare', element: <Navigate to="/cultivation/recipes/compare" replace /> },
+  { path: '/species', element: <Navigate to="/cultivation/species" replace /> },
+  { path: '/cycles', element: <Navigate to="/cultivation/cycles" replace /> },
+  { path: '/cycles/:id/bioactives', element: <Navigate to="/cultivation/cycles/:id/bioactives" replace /> },
+  { path: '/analytics', element: <Navigate to="/operations/analytics" replace /> },
+  { path: '/alarms', element: <Navigate to="/operations/alarms" replace /> },
+  { path: '/logs', element: <Navigate to="/operations/logs" replace /> },
+  { path: '/diagnostics', element: <Navigate to="/operations/diagnostics" replace /> },
+  { path: '/settings', element: <Navigate to="/system/settings" replace /> },
+  { path: '/settings/*', element: <Navigate to="/system/settings" replace /> },
+  { path: '/provisioning', element: <Navigate to="/fleet/provision" replace /> },
+  { path: '/devices/:id', element: <Navigate to="/fleet/devices/:id" replace /> },
 ]

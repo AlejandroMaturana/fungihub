@@ -193,10 +193,10 @@ function DeviceDetail() {
   if (error) return <ErrorState message={error} onRetry={loadData} />
 
   if (!device) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="text-center">
-        <span className="material-symbols-outlined text-48px text-on-surface-variant mb-4">sensors_off</span>
-        <p className="text-body-md text-on-surface-variant">Device not found</p>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+      <div style={{ textAlign: 'center' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--outline)', marginBottom: '16px', display: 'block' }}>sensors_off</span>
+        <p style={{ fontSize: '14px', color: 'var(--outline)' }}>Device not found</p>
       </div>
     </div>
   )
@@ -210,87 +210,124 @@ function DeviceDetail() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Back Button */}
       <button
-        onClick={() => navigate('/dashboard')}
-        className="back-btn"
+        onClick={() => navigate('/overview')}
+        className="btn btn-ghost"
+        style={{ alignSelf: 'flex-start', padding: '6px 12px', fontSize: '11px' }}
       >
-        <span className="material-symbols-outlined text-16px" style={{ verticalAlign: 'middle', marginRight: '4px' }}>arrow_back</span>
+        <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_back</span>
         BACK TO DASHBOARD
       </button>
 
-      <section className="flex flex-wrap justify-between items-end gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <span className={`status-dot ${isOnline ? 'online' : 'offline'}`} />
-            <h1 className="text-headline-lg text-on-surface">{device.chamberName || device.deviceId}</h1>
-            <StatusBadge status={isOnline ? 'online' : 'critical'} label={isOnline ? 'ONLINE' : device.status} />
+      {/* Device Header */}
+      <section className="glass-card" style={{ padding: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span className={`status-dot ${isOnline ? 'online' : 'offline'}`} style={{ width: '12px', height: '12px' }} />
+            <div>
+              <h1 className="gradient-title" style={{ fontSize: '24px', marginBottom: '4px' }}>{device.chamberName || device.deviceId}</h1>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--outline)' }}>
+                {device.hwRevision ? `HW ${device.hwRevision} · ` : ''}Firmware {device.firmwareVersion} · {device.macAddress || 'MAC —'}
+              </p>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--outline)', marginTop: '4px' }}>
+                Last seen {device.lastSeen ? new Date(device.lastSeen).toLocaleString() : 'never'}
+              </p>
+            </div>
           </div>
-          <p className="text-body-md text-on-surface-variant" style={{ marginTop: '4px' }}>
-            {device.hwRevision ? `HW ${device.hwRevision} · ` : ''}Firmware {device.firmwareVersion} · {device.macAddress || 'MAC —'} · Last seen {device.lastSeen ? new Date(device.lastSeen).toLocaleString() : 'never'}
-          </p>
+          <StatusBadge status={isOnline ? 'online' : 'critical'} label={isOnline ? 'ONLINE' : device.status} />
         </div>
       </section>
 
-      <section className="flex gap-4">
-        <div className="flex flex-col" style={{ flex: '1 1 70%', minWidth: 0 }}>
-          <div className="chart-panel-label">TELEMETRY</div>
-          <div className="flex flex-1">
+      {/* Telemetry + System Log */}
+      <section style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+        {/* Telemetry Gauges */}
+        <div className="glass-card" style={{ flex: '1 1 65%', minWidth: '300px', padding: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--spore-green)' }}>sensors</span>
+            <span className="chart-panel-label">TELEMETRY</span>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
             <DomeGauge value={has.temp ? telemetry.temperature : SENSOR_CFG.temp.min} prevValue={telemetry.temperature} min={SENSOR_CFG.temp.min} max={SENSOR_CFG.temp.max} optMin={SENSOR_CFG.temp.optMin} optMax={SENSOR_CFG.temp.optMax} unit={SENSOR_CFG.temp.unit} label={SENSOR_CFG.temp.label} decimals={SENSOR_CFG.temp.decimals} history={sparkHistory.current.temp} noData={!has.temp} />
             <DomeGauge value={has.hum ? telemetry.humidity : SENSOR_CFG.hum.min} prevValue={telemetry.humidity} min={SENSOR_CFG.hum.min} max={SENSOR_CFG.hum.max} optMin={SENSOR_CFG.hum.optMin} optMax={SENSOR_CFG.hum.optMax} unit={SENSOR_CFG.hum.unit} label={SENSOR_CFG.hum.label} decimals={SENSOR_CFG.hum.decimals} history={sparkHistory.current.hum} noData={!has.hum} />
             <DomeGauge value={has.eco2 ? telemetry.co2 : SENSOR_CFG.eco2.min} prevValue={telemetry.co2} min={SENSOR_CFG.eco2.min} max={SENSOR_CFG.eco2.max} optMin={SENSOR_CFG.eco2.optMin} optMax={SENSOR_CFG.eco2.optMax} unit={SENSOR_CFG.eco2.unit} label={SENSOR_CFG.eco2.label} decimals={SENSOR_CFG.eco2.decimals} history={sparkHistory.current.eco2} noData={!has.eco2} />
             <DomeGauge value={has.tvoc ? telemetry.voc : SENSOR_CFG.tvoc.min} prevValue={telemetry.voc} min={SENSOR_CFG.tvoc.min} max={SENSOR_CFG.tvoc.max} optMin={SENSOR_CFG.tvoc.optMin} optMax={SENSOR_CFG.tvoc.optMax} unit={SENSOR_CFG.tvoc.unit} label={SENSOR_CFG.tvoc.label} decimals={SENSOR_CFG.tvoc.decimals} history={sparkHistory.current.tvoc} noData={!has.tvoc} />
           </div>
         </div>
-        <div className="bg-surface-container border border-outline-variant flex flex-col" style={{ flex: '1 1 30%', minWidth: 0, borderRadius: '8px' }}>
-          <div className="flex items-center justify-between" style={{ padding: '8px 12px', borderBottom: '1px solid var(--outline-variant)' }}>
-            <span className="chart-panel-label">SYSTEM LOG</span>
-            <span className="text-8px text-primary bg-primary/10" style={{ padding: '2px 6px', borderRadius: '4px' }}>LIVE</span>
+
+        {/* System Log */}
+        <div className="glass-card" style={{ flex: '1 1 30%', minWidth: '250px', padding: 0, overflow: 'hidden' }}>
+          <div className="terminal-header" style={{ borderBottom: '1px solid var(--outline-variant)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--spore-green)' }}>terminal</span>
+              <span className="chart-panel-label">SYSTEM LOG</span>
+            </div>
+            <span style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '9px',
+              fontWeight: 700,
+              color: 'var(--spore-green)',
+              background: 'rgba(var(--spore-green-rgb), 0.1)',
+              padding: '2px 8px',
+              borderRadius: '4px',
+            }}>LIVE</span>
           </div>
-          <div className="flex-1 overflow-y-auto" style={{ padding: '4px 8px', fontSize: '10px', fontFamily: 'var(--font-mono)', lineHeight: '1.25' }}>
+          <div className="terminal-body">
             {logs.length === 0 && (
-              <div className="opacity-30" style={{ padding: '4px' }}>[--:--:--] Waiting for data...</div>
+              <div style={{ opacity: 0.3, padding: '4px' }}>[--:--:--] Waiting for data...</div>
             )}
             {logs.map((entry, i) => (
-              <div key={i} className="flex gap-2" style={{ padding: '1px 0', opacity: i === 0 ? 1 : 0.6 }}>
-                <span className="text-outline shrink-0">{entry.ts}</span>
-                <span className={
-                  entry.type === 'error' ? 'text-error' :
-                  entry.type === 'success' ? 'text-primary' :
-                  entry.type === 'warn' ? 'text-tertiary' :
-                  'text-on-surface-variant'
-                }>{entry.text}</span>
+              <div key={i} style={{
+                display: 'flex',
+                gap: '8px',
+                padding: '2px 0',
+                opacity: i === 0 ? 1 : 0.5,
+              }}>
+                <span style={{ color: 'var(--outline)', flexShrink: 0 }}>{entry.ts}</span>
+                <span style={{
+                  color: entry.type === 'error' ? 'var(--error-red)' :
+                    entry.type === 'success' ? 'var(--spore-green)' :
+                    entry.type === 'warn' ? 'var(--amber)' :
+                    'var(--on-surface-variant)',
+                }}>{entry.text}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <div className="bg-surface-container-low border" style={{ borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column', borderColor: 'var(--outline-variant)' }}>
-        <div style={{ background: 'rgba(49,54,51,0.3)', padding: '8px 12px', borderBottom: '1px solid var(--outline-variant)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-sm">grid_view</span>
+      {/* Actuators */}
+      <div className="glass-card" style={{ overflow: 'hidden', padding: 0 }}>
+        <div style={{
+          background: 'rgba(var(--surface-container-rgb, 30, 41, 59), 0.3)',
+          padding: '10px 16px',
+          borderBottom: '1px solid var(--outline-variant)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--spore-green)' }}>grid_view</span>
             <span className="chart-panel-label">ACTUATORS</span>
           </div>
-          <div className="flex items-center gap-3">
-            <span style={{
-              fontSize: '7px',
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              border: '1px solid',
-              borderColor: actuators.some(a => a.mode === 'REMOTE') ? 'rgba(107,251,154,0.2)' : 'var(--outline-variant)',
-              background: actuators.some(a => a.mode === 'REMOTE') ? 'rgba(107,251,154,0.1)' : 'transparent',
-              color: actuators.some(a => a.mode === 'REMOTE') ? 'var(--spore-green)' : 'var(--on-surface-variant)',
-            }}>
-              MODE: {actuators.some(a => a.mode === 'REMOTE') ? 'REMOTE' : 'LOCAL'}
-            </span>
-          </div>
+          <span style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '9px',
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            border: '1px solid',
+            borderColor: actuators.some(a => a.mode === 'REMOTE') ? 'rgba(107,251,154,0.3)' : 'var(--outline-variant)',
+            background: actuators.some(a => a.mode === 'REMOTE') ? 'rgba(107,251,154,0.1)' : 'transparent',
+            color: actuators.some(a => a.mode === 'REMOTE') ? 'var(--spore-green)' : 'var(--on-surface-variant)',
+          }}>
+            MODE: {actuators.some(a => a.mode === 'REMOTE') ? 'REMOTE' : 'LOCAL'}
+          </span>
         </div>
-        <div className="grid" style={{ height: '128px', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <div className="grid" style={{ height: '140px', gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {[1, 2, 3, 4].map((ch, idx) => {
             const act = actuators.find(a => a.channel === ch) || { channel: ch, state: 'OFF', mode: 'LOCAL', label: `CH${ch}` }
             return (
@@ -305,29 +342,45 @@ function DeviceDetail() {
             )
           })}
         </div>
-        <div className="bg-surface-container-lowest" style={{ padding: '6px 12px', borderTop: '1px solid var(--outline-variant)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
+        <div style={{
+          background: 'var(--surface-container-lowest)',
+          padding: '8px 16px',
+          borderTop: '1px solid var(--outline-variant)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--spore-green)', display: 'inline-block' }} />
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--on-surface-variant)' }}>{actuators.filter(a => a.lastAck === 'ACKED').length}/{actuators.length} ACKED</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--on-surface-variant)' }}>
+                {actuators.filter(a => a.lastAck === 'ACKED').length}/{actuators.length} ACKED
+              </span>
             </div>
-            <span style={{ width: '1px', height: '12px', background: 'rgba(61,74,62,0.4)', display: 'inline-block' }} />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--on-surface-variant)' }}>
+            <span style={{ width: '1px', height: '12px', background: 'var(--outline-variant)', display: 'inline-block' }} />
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--on-surface-variant)' }}>
               LATEST: {logs[0] ? `[${logs[0].ts}] ${logs[0].text}` : '--:--:-- waiting...'}
             </span>
           </div>
         </div>
       </div>
 
+      {/* Telegram Config */}
       {tgConfig && (
-        <section className="bg-surface-container border border-outline-variant" style={{ borderRadius: '8px', overflow: 'hidden' }}>
-          <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--outline-variant)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-sm">send</span>
+        <section className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{
+            padding: '10px 16px',
+            borderBottom: '1px solid var(--outline-variant)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--spore-green)' }}>send</span>
               <span className="chart-panel-label">TELEGRAM ALERTS</span>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <span className="text-8px font-label-caps text-on-surface-variant">ENABLED</span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--on-surface-variant)' }}>ENABLED</span>
               <input type="checkbox" className="toggle-checkbox" checked={tgConfig.enabled} onChange={async e => {
                 const val = e.target.checked
                 setTgConfig(prev => ({ ...prev, enabled: val }))
@@ -337,10 +390,10 @@ function DeviceDetail() {
               }} />
             </label>
           </div>
-          <div className="grid grid-cols-2 gap-4" style={{ padding: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', padding: '16px' }}>
             <div>
-              <label className="font-label-caps text-9px text-on-surface-variant block mb-1">MIN SEVERITY</label>
-              <select className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 text-body-sm text-on-surface cursor-pointer" value={tgConfig.minSeverity} onChange={async e => {
+              <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px', display: 'block' }}>MIN SEVERITY</label>
+              <select className="form-select" value={tgConfig.minSeverity} onChange={async e => {
                 const val = e.target.value
                 setTgConfig(prev => ({ ...prev, minSeverity: val }))
                 setTgSaving(true)
@@ -353,45 +406,36 @@ function DeviceDetail() {
                 <option value="CRITICAL">Critical</option>
               </select>
             </div>
-            <div className="flex items-end">
-              {tgSaving && <span className="text-8px text-on-surface-variant">SAVING...</span>}
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              {tgSaving && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)' }}>SAVING...</span>}
             </div>
-            <div className="flex items-center justify-between p-2 bg-surface-container-low rounded">
-              <span className="text-8px font-label-caps text-on-surface-variant">SENSOR FAULT</span>
-              <input type="checkbox" className="toggle-checkbox" checked={tgConfig.alertOnFault} onChange={async e => {
-                const val = e.target.checked
-                setTgConfig(prev => ({ ...prev, alertOnFault: val }))
-                try { await updateTelegramDeviceConfig(id, { alertOnFault: val }) } catch {}
-              }} />
-            </div>
-            <div className="flex items-center justify-between p-2 bg-surface-container-low rounded">
-              <span className="text-8px font-label-caps text-on-surface-variant">OUT OF RANGE</span>
-              <input type="checkbox" className="toggle-checkbox" checked={tgConfig.alertOnRange} onChange={async e => {
-                const val = e.target.checked
-                setTgConfig(prev => ({ ...prev, alertOnRange: val }))
-                try { await updateTelegramDeviceConfig(id, { alertOnRange: val }) } catch {}
-              }} />
-            </div>
-            <div className="flex items-center justify-between p-2 bg-surface-container-low rounded">
-              <span className="text-8px font-label-caps text-on-surface-variant">DISCONNECT</span>
-              <input type="checkbox" className="toggle-checkbox" checked={tgConfig.alertOnDisconnect} onChange={async e => {
-                const val = e.target.checked
-                setTgConfig(prev => ({ ...prev, alertOnDisconnect: val }))
-                try { await updateTelegramDeviceConfig(id, { alertOnDisconnect: val }) } catch {}
-              }} />
-            </div>
-            <div className="flex items-center justify-between p-2 bg-surface-container-low rounded">
-              <span className="text-8px font-label-caps text-on-surface-variant">SYSTEM ERROR</span>
-              <input type="checkbox" className="toggle-checkbox" checked={tgConfig.alertOnSystem} onChange={async e => {
-                const val = e.target.checked
-                setTgConfig(prev => ({ ...prev, alertOnSystem: val }))
-                try { await updateTelegramDeviceConfig(id, { alertOnSystem: val }) } catch {}
-              }} />
-            </div>
+            {[
+              { key: 'alertOnFault', label: 'SENSOR FAULT' },
+              { key: 'alertOnRange', label: 'OUT OF RANGE' },
+              { key: 'alertOnDisconnect', label: 'DISCONNECT' },
+              { key: 'alertOnSystem', label: 'SYSTEM ERROR' },
+            ].map(({ key, label }) => (
+              <div key={key} style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '8px 12px',
+                background: 'var(--surface-container)',
+                borderRadius: '8px',
+              }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
+                <input type="checkbox" className="toggle-checkbox" checked={tgConfig[key]} onChange={async e => {
+                  const val = e.target.checked
+                  setTgConfig(prev => ({ ...prev, [key]: val }))
+                  try { await updateTelegramDeviceConfig(id, { [key]: val }) } catch {}
+                }} />
+              </div>
+            ))}
           </div>
         </section>
       )}
 
+      {/* Chart Panel */}
       <ChartPanel deviceId={id} telemetry={telemetry} has={has} />
     </div>
   )

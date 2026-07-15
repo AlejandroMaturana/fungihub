@@ -16,7 +16,7 @@ function DevicesEmptyState({ onConnect }) {
       </div>
       <div className="flex gap-3">
         <button
-          onClick={() => navigate('/provisioning')}
+          onClick={() => navigate('/fleet/provision')}
           className="btn btn-primary"
           style={{ boxShadow: '0 0 12px var(--spore-glow)' }}
         >
