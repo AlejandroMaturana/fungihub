@@ -2,7 +2,7 @@ import client from '../../../shared/api/axiosInstance'
 
 export async function getDevices() {
   const { data } = await client.get('/devices')
-  return data
+  return data.data ?? data
 }
 
 export async function getDevice(id) {

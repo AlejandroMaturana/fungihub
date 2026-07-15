@@ -2,7 +2,7 @@ import client from '../../../shared/api/axiosInstance'
 
 export async function getCycles(params = {}) {
   const { data } = await client.get('/cycles', { params })
-  return data
+  return data.data ?? data
 }
 
 export async function createCycle(payload) {

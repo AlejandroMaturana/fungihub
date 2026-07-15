@@ -2,7 +2,7 @@ import client from '../../../shared/api/axiosInstance'
 
 export async function getRecipes(params = {}) {
   const { data } = await client.get('/recipes', { params })
-  return data
+  return data.data ?? data
 }
 
 export async function createRecipe(payload) {
