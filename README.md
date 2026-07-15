@@ -18,7 +18,7 @@
 <table>
   <tr>
     <td align="center">
-      <a href="https://mush2.onrender.com/overview">
+      <a href="https://mush2.onrender.com">
         <img src="frontend/public/r1_page.svg" alt="Preview" width="320">
       </a>
     </td>
