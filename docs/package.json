@@ -9,6 +9,8 @@
     "build": "vitepress build",
     "preview": "vitepress preview"
   },
+  "author": "AlejandroMaturana",
+  "license": "MIT",
   "devDependencies": {
     "vitepress": "^1.6.3"
   },

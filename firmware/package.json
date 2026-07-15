@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "AlejandroMaturana",
+  "license": "MIT",
   "packageManager": "pnpm@10.28.2"
 }
