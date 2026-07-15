@@ -1,7 +1,9 @@
 import { Subscription } from '../models/index.js';
+import { env } from '../config/env.js';
 
 export async function checkApiRateLimit(req, res, next) {
   if (!req.user) return next();
+  if (env.NODE_ENV === 'development' || env.NODE_ENV === 'local') return next();
 
   try {
     let sub = await Subscription.findOne({ where: { userId: req.user.id } });
