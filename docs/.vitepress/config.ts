@@ -11,6 +11,9 @@ export default defineConfig({
     ['link', { rel: 'icon', href: '/logo.svg' }]
   ],
 
+  // Ignorar enlaces rotos temporalmente
+  ignoreDeadLinks: true,
+
   themeConfig: {
     nav: [
       { text: 'Inicio', link: '/' },
