@@ -4,9 +4,9 @@ export default defineConfig({
   title: 'Mush2',
   description: 'Sistema IoT de control ambiental para hongos adaptógenos',
   lang: 'es',
-  
+
   base: '/mush2/',
-  
+
   head: [
     ['link', { rel: 'icon', href: '/logo.svg' }]
   ],
