@@ -12,7 +12,35 @@
 ![FreeRTOS](https://img.shields.io/badge/FreeRTOS-Real%20Time-00979D?logo=freertos&logoColor=white)
 
 </div>
+---
+<div align="center">
 
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://mush2.onrender.com/overview">
+        <img src="frontend/public/r1_page.svg" alt="Preview" width="320">
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://alejandromaturana.github.io/mush2/">
+        <img src="frontend/public/r2_docs.svg" alt="Documentation" width="320">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>🚀 Preview</strong><br>
+      Explora la aplicación ejecutándose en producción.
+    </td>
+    <td align="center">
+      <strong>📚 Documentation</strong><br>
+      Consulta la documentación técnica del proyecto.
+    </td>
+  </tr>
+</table>
+
+</div>
 ---
 
 ## Características Principales
