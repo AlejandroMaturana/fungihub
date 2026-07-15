@@ -48,11 +48,11 @@ features:
     link: /RFC/RFC-0001-https-tls-firmware
     linkText: Ver RFCs
 
-  - icon: 🗺️
-    title: Roadmap
-    details: Planificación estratégica del proyecto con fases, milestones y dependencias.
-    link: /roadmap/roadmap
-    linkText: Ver roadmap
+  - icon: 📊
+    title: Diagramas
+    details: Diagramas de arquitectura propia de Mush2
+    link: /diagrams/exports/README
+    linkText: Ver diagramas
 
   - icon: 📋
     title: Gobernanza
@@ -63,7 +63,7 @@ features:
   - icon: 🗂️
     title: DDD — Dominio
     details: Lineamientos y contexto del diseño orientado al dominio del sistema.
-    link: /DDD/DDD-001-Lineamientos
+    link: /DDD/DDD-001-domain-model
     linkText: Ver DDD
 
   - icon: ⚙️
