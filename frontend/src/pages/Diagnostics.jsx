@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { getMqttDiagnostics, publishMqttTest } from '../api/client.js'
 import LoadingState from '../components/ui/LoadingState.jsx'
-import ErrorState from '../components/ui/ErrorState.jsx'
+
+const BROKER_FIELDS = [
+  { key: 'primary', label: 'PRIMARY', statusKey: 'primaryConnected' },
+  { key: 'fallback', label: 'FALLBACK', statusKey: 'fallbackConnected' },
+]
 
 function Diagnostics() {
   const [data, setData] = useState(null)
@@ -43,135 +47,186 @@ function Diagnostics() {
   }
 
   if (loading) return <LoadingState message="Loading diagnostics..." icon="diagnosis" />
-  if (error) return <ErrorState message={error} onRetry={fetchDiag} />
 
   const { mqtt, ssrChannels, chamberControlMode } = data || {}
+  const uniqueDevices = ssrChannels?.length > 0
+    ? [...new Set(ssrChannels.map(ch => ch.deviceId))]
+    : chamberControlMode ? Object.keys(chamberControlMode) : []
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-headline-lg text-on-surface mb-1">Diagnostics</h1>
-        <p className="text-on-surface-variant text-body-md">MQTT connection status and system diagnostics.</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Header */}
+      <div>
+        <h1 className="gradient-title" style={{ fontSize: '28px', marginBottom: '4px' }}>Diagnostics</h1>
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--outline)' }}>
+          MQTT connection status and system diagnostics
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <section className="glass-card p-5 rounded-xl border border-outline-variant">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="material-symbols-outlined text-secondary">podcast</span>
-            <h3 className="font-label-caps text-label-caps text-on-surface-variant">MQTT BROKER STATUS</h3>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-surface-container-low rounded">
-              <span className="font-label-caps text-9px text-on-surface-variant">PRIMARY</span>
-              <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${mqtt?.primaryConnected ? 'bg-primary breathing-pulse' : 'bg-error'}`} />
-                <span className="text-data-sm text-on-surface">{mqtt?.primaryConnected ? 'Connected' : 'Disconnected'}</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-container-low rounded">
-              <span className="font-label-caps text-9px text-on-surface-variant">FALLBACK</span>
-              <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${mqtt?.fallbackConnected ? 'bg-primary breathing-pulse' : mqtt?.fallbackConnected === false ? 'bg-error' : 'bg-outline-variant'}`} />
-                <span className="text-data-sm text-on-surface">{mqtt?.fallbackConnected ? 'Connected' : mqtt?.fallbackConnected === false ? 'Disconnected' : 'Not configured'}</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-container-low rounded">
-              <span className="font-label-caps text-9px text-on-surface-variant">ACTIVE BROKER</span>
-              <span className="text-data-sm text-on-surface font-mono">{mqtt?.active || '—'}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-container-low rounded">
-              <span className="font-label-caps text-9px text-on-surface-variant">CONNECTED DEVICES</span>
-              <span className="text-headline-sm text-primary">{mqtt?.connectedDevices ?? '—'}</span>
-            </div>
-          </div>
-        </section>
+      {/* Error */}
+      {error && (
+        <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--error-red)' }}>warning</span>
+          <span style={{ fontSize: '12px', color: 'var(--error-red)', fontWeight: 600 }}>{error}</span>
+        </div>
+      )}
 
-        <section className="glass-card p-5 rounded-xl border border-outline-variant">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="material-symbols-outlined text-secondary">sensors</span>
-            <h3 className="font-label-caps text-label-caps text-on-surface-variant">CHAMBER CONTROL MODE</h3>
+      {/* Top Row: MQTT + Control Mode */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        {/* MQTT Broker Status */}
+        <div className="glass-card" style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--accent-blue, #60a5fa)' }}>podcast</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>MQTT Broker Status</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {BROKER_FIELDS.map(({ key, label, statusKey }) => {
+              const connected = mqtt?.[statusKey]
+              return (
+                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                      width: '8px', height: '8px', borderRadius: '50%',
+                      background: connected ? 'var(--spore-green)' : (connected === false ? 'var(--error-red)' : 'var(--outline)'),
+                      boxShadow: connected ? '0 0 8px var(--spore-green)' : 'none',
+                    }} />
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: connected ? 'var(--spore-green)' : (connected === false ? 'var(--error-red)' : 'var(--outline)') }}>
+                      {connected ? 'Connected' : (connected === false ? 'Disconnected' : 'Not configured')}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Active Broker</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--on-surface)' }}>{mqtt?.active || '—'}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Connected Devices</span>
+              <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--spore-green)' }}>{mqtt?.connectedDevices ?? '—'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Chamber Control Mode */}
+        <div className="glass-card" style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--accent-blue, #60a5fa)' }}>sensors</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>Chamber Control Mode</span>
           </div>
           {chamberControlMode && Object.keys(chamberControlMode).length > 0 ? (
-            <div className="space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {Object.entries(chamberControlMode).map(([deviceId, mode]) => (
-                <div key={deviceId} className="flex items-center justify-between p-3 bg-surface-container-low rounded">
-                  <span className="font-mono text-data-sm text-on-surface">{deviceId}</span>
-                  <span className={`font-label-caps text-10px px-2 py-0.5 rounded ${mode === 'AUTO' ? 'bg-primary/20 text-primary' : 'bg-tertiary/20 text-tertiary'}`}>
+                <div key={deviceId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--on-surface)' }}>{deviceId}</span>
+                  <span style={{
+                    padding: '2px 8px', borderRadius: '4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
+                    background: mode === 'AUTO' ? 'rgba(var(--spore-green-rgb), 0.15)' : 'rgba(167, 139, 250, 0.15)',
+                    color: mode === 'AUTO' ? 'var(--spore-green)' : 'var(--accent-purple, #a78bfa)',
+                    border: `1px solid ${mode === 'AUTO' ? 'rgba(var(--spore-green-rgb), 0.3)' : 'rgba(167, 139, 250, 0.3)'}`,
+                  }}>
                     {mode}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-body-sm text-on-surface-variant py-4 text-center">No devices registered</p>
+            <p style={{ fontSize: '13px', color: 'var(--outline)', textAlign: 'center', padding: '32px 0' }}>No devices registered</p>
           )}
-        </section>
+        </div>
       </div>
 
-      <section className="glass-card p-5 rounded-xl border border-outline-variant mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="material-symbols-outlined text-secondary">ssr</span>
-          <h3 className="font-label-caps text-label-caps text-on-surface-variant">SSR CHANNELS</h3>
+      {/* SSR Channels */}
+      <div className="glass-card" style={{ padding: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--accent-blue, #60a5fa)' }}>ssr</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>SSR Channels</span>
         </div>
         {ssrChannels && ssrChannels.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
+          <div style={{ overflow: 'hidden' }}>
+            <table className="data-table">
               <thead>
-                <tr className="border-b border-outline-variant text-label-caps text-9px text-on-surface-variant">
-                  <th className="p-2 font-weight-normal">Device</th>
-                  <th className="p-2 font-weight-normal">Channel</th>
-                  <th className="p-2 font-weight-normal">State</th>
-                  <th className="p-2 font-weight-normal">Mode</th>
+                <tr>
+                  <th>Device</th>
+                  <th>Channel</th>
+                  <th>State</th>
+                  <th>Mode</th>
                 </tr>
               </thead>
               <tbody>
                 {ssrChannels.map((ch, i) => (
-                  <tr key={i} className="border-b border-outline-variant">
-                    <td className="p-2 text-data-sm text-on-surface font-mono">{ch.deviceId}</td>
-                    <td className="p-2 text-data-sm text-on-surface">{ch.channel}</td>
-                    <td className="p-2">
-                      <span className={`text-data-sm ${ch.state === 'ON' || ch.state === 1 ? 'text-primary' : 'text-on-surface-variant'}`}>
-                        {ch.state ?? '—'}
-                      </span>
+                  <tr key={i}>
+                    <td>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--on-surface)' }}>{ch.deviceId}</span>
                     </td>
-                    <td className="p-2 text-data-sm text-on-surface-variant">{ch.mode || '—'}</td>
+                    <td>
+                      <span style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{ch.channel}</span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{
+                          width: '6px', height: '6px', borderRadius: '50%',
+                          background: (ch.state === 'ON' || ch.state === 1) ? 'var(--spore-green)' : 'var(--outline)',
+                        }} />
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: (ch.state === 'ON' || ch.state === 1) ? 'var(--spore-green)' : 'var(--on-surface-variant)' }}>
+                          {ch.state ?? '—'}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '12px', color: 'var(--on-surface-variant)' }}>{ch.mode || '—'}</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <p className="text-body-sm text-on-surface-variant py-4 text-center">No SSR channels</p>
+          <p style={{ fontSize: '13px', color: 'var(--outline)', textAlign: 'center', padding: '24px 0' }}>No SSR channels</p>
         )}
-      </section>
+      </div>
 
-      <section className="glass-card p-5 rounded-xl border border-outline-variant">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="material-symbols-outlined text-secondary">publish</span>
-          <h3 className="font-label-caps text-label-caps text-on-surface-variant">MQTT PUBLISH TEST</h3>
+      {/* MQTT Publish Test */}
+      <div className="glass-card" style={{ padding: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--accent-blue, #60a5fa)' }}>publish</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>MQTT Publish Test</span>
         </div>
-        <div className="flex gap-3 items-end">
-          <div className="flex-1">
-            <p className="font-label-caps text-9px text-on-surface-variant mb-1">DEVICE</p>
-            <select className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 text-body-md text-on-surface cursor-pointer" value={selectedDevice} onChange={e => setSelectedDevice(e.target.value)}>
-              {(ssrChannels?.length > 0
-                ? [...new Set(ssrChannels.map(ch => ch.deviceId))]
-                : chamberControlMode ? Object.keys(chamberControlMode) : []
-              ).map(id => (
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Device</label>
+            <select className="form-select" style={{ fontSize: '11px' }} value={selectedDevice} onChange={e => setSelectedDevice(e.target.value)}>
+              {uniqueDevices.map(id => (
                 <option key={id} value={id}>{id}</option>
               ))}
             </select>
           </div>
-          <button className="btn btn-primary" onClick={handlePublish} disabled={publishing || !selectedDevice}>
+          <button
+            className="btn btn-glow"
+            style={{ fontSize: '10px', whiteSpace: 'nowrap' }}
+            onClick={handlePublish}
+            disabled={publishing || !selectedDevice}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>send</span>
             {publishing ? 'PUBLISHING...' : 'PUBLISH TEST'}
           </button>
         </div>
         {pubMsg && (
-          <p className={`mt-3 text-body-sm ${pubMsg.type === 'ok' ? 'text-primary' : pubMsg.type === 'warn' ? 'text-tertiary' : 'text-error'}`}>
-            {pubMsg.text}
-          </p>
+          <div style={{
+            marginTop: '12px', padding: '10px 14px', borderRadius: '8px',
+            background: pubMsg.type === 'ok' ? 'rgba(var(--spore-green-rgb), 0.08)' : pubMsg.type === 'warn' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+            border: `1px solid ${pubMsg.type === 'ok' ? 'rgba(var(--spore-green-rgb), 0.2)' : pubMsg.type === 'warn' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+          }}>
+            <span style={{
+              fontSize: '12px', fontWeight: 600,
+              color: pubMsg.type === 'ok' ? 'var(--spore-green)' : pubMsg.type === 'warn' ? 'var(--amber)' : 'var(--error-red)',
+            }}>
+              {pubMsg.text}
+            </span>
+          </div>
         )}
-      </section>
+      </div>
     </div>
   )
 }

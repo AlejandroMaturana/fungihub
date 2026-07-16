@@ -1,23 +1,10 @@
 import { useState, useEffect } from 'react'
 import { getSubscription, getSubscriptionUsage, upgradePlan, cancelSubscription } from '../../api/client.js'
 
-const PLAN_COLORS = { FREE: 'bg-neutral-600', BASIC: 'bg-primary', PREMIUM: 'bg-amber-500' }
-const PLAN_BG = { FREE: 'bg-neutral-100 text-neutral-800', BASIC: 'bg-primary-container text-on-primary-container', PREMIUM: 'bg-amber-100 text-amber-800' }
-const PLAN_STYLES = { FREE: 'neutral', BASIC: 'primary', PREMIUM: 'amber' }
-
-function UsageBar({ used, limit, percentage }) {
-  const color = percentage >= 90 ? 'bg-red-500' : percentage >= 70 ? 'bg-amber-500' : 'bg-primary'
-  return (
-    <div className="mt-4">
-      <div className="flex justify-between text-body-sm text-on-surface-variant mb-1">
-        <span>{used.toLocaleString()} / {limit.toLocaleString()} calls</span>
-        <span>{percentage}%</span>
-      </div>
-      <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${Math.min(percentage, 100)}%` }} />
-      </div>
-    </div>
-  )
+const PLAN_STYLES = {
+  FREE: { bg: 'rgba(153, 153, 153, 0.1)', color: 'var(--outline)', border: 'rgba(153, 153, 153, 0.3)' },
+  BASIC: { bg: 'rgba(var(--spore-green-rgb), 0.15)', color: 'var(--spore-green)', border: 'rgba(var(--spore-green-rgb), 0.3)' },
+  PREMIUM: { bg: 'rgba(245, 158, 11, 0.15)', color: 'var(--amber)', border: 'rgba(245, 158, 11, 0.3)' },
 }
 
 function UpgradeModal({ currentPlan, onClose, onUpgrade }) {
@@ -30,32 +17,43 @@ function UpgradeModal({ currentPlan, onClose, onUpgrade }) {
   // When the backend exposes a /plans endpoint, replace this with an API call.
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-surface rounded-xl shadow-xl border border-outline-variant p-6 w-full max-w-2xl mx-4 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <h2 className="text-headline-md text-on-surface mb-6">Mejorar plan</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {plans.map(p => {
-            const isCurrent = p.id === currentPlan
-            const isDown = (currentPlan === 'BASIC' && p.id === 'FREE') || (currentPlan === 'PREMIUM' && p.id !== 'PREMIUM')
-            return (
-              <div key={p.id} className={`rounded-xl border p-4 ${isCurrent ? 'border-primary bg-primary-container/30' : 'border-outline-variant bg-surface-container-lowest'} ${isDown ? 'opacity-50' : ''}`}>
-                <div className={`inline-block px-2.5 py-0.5 rounded-full text-label-sm mb-2 ${PLAN_BG[p.id]}`}>{p.name}</div>
-                <p className="text-headline-lg text-on-surface mb-1">{p.price}</p>
-                <ul className="text-body-sm text-on-surface-variant space-y-1 mt-3">
-                  {p.features.map((f, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-primary mt-0.5">✓</span>{f}</li>)}
-                </ul>
-                {isCurrent && <p className="text-label-sm text-primary mt-3 text-center">Plan actual</p>}
-                {!isCurrent && !isDown && (
-                  <button onClick={() => onUpgrade(p.id)} className="w-full mt-3 py-2 px-4 rounded-lg bg-primary text-on-primary text-label-sm hover:bg-primary-hover transition-colors">
-                    {p.id === 'PREMIUM' ? 'Seleccionar' : 'Seleccionar'}
-                  </button>
-                )}
-              </div>
-            )
-          })}
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="glass-card modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--outline-variant)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--on-surface)' }}>Upgrade Plan</h2>
+          <button onClick={onClose} className="btn btn-ghost btn-sm"><span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span></button>
         </div>
-        <div className="flex justify-end">
-          <button onClick={onClose} className="py-2 px-4 text-label-sm text-on-surface-variant hover:text-on-surface transition-colors">Cerrar</button>
+        <div style={{ padding: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+            {plans.map(p => {
+              const isCurrent = p.id === currentPlan
+              const isDown = (currentPlan === 'BASIC' && p.id === 'FREE') || (currentPlan === 'PREMIUM' && p.id !== 'PREMIUM')
+              const ps = PLAN_STYLES[p.id]
+              return (
+                <div key={p.id} className="glass-card" style={{
+                  padding: '16px', opacity: isDown ? 0.5 : 1, transition: 'all 0.2s',
+                  borderColor: isCurrent ? ps.color : undefined,
+                }}>
+                  <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', background: ps.bg, color: ps.color, border: `1px solid ${ps.border}`, display: 'inline-block', marginBottom: '8px' }}>{p.name}</span>
+                  <p style={{ fontSize: '18px', fontWeight: 700, color: 'var(--on-surface)', marginBottom: '12px' }}>{p.price}</p>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {p.features.map((f, i) => (
+                      <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '11px', color: 'var(--on-surface-variant)' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--spore-green)', flexShrink: 0, marginTop: '1px' }}>check</span>{f}
+                      </li>
+                    ))}
+                  </ul>
+                  {isCurrent && <p style={{ fontSize: '10px', fontWeight: 600, color: 'var(--spore-green)', textAlign: 'center', marginTop: '12px' }}>Plan actual</p>}
+                  {!isCurrent && !isDown && (
+                    <button onClick={() => onUpgrade(p.id)} className="btn btn-glow" style={{ width: '100%', fontSize: '10px', marginTop: '12px' }}>Seleccionar</button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button onClick={onClose} className="btn btn-secondary" style={{ fontSize: '10px' }}>Cerrar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -64,13 +62,15 @@ function UpgradeModal({ currentPlan, onClose, onUpgrade }) {
 
 function CancelModal({ onClose, onConfirm }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-surface rounded-xl shadow-xl border border-outline-variant p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
-        <h2 className="text-headline-md text-on-surface mb-2">Cancelar suscripción</h2>
-        <p className="text-body-md text-on-surface-variant mb-6">¿Estás seguro? Tu plan se cancelará y los datos se retendrán según el período actual.</p>
-        <div className="flex justify-end gap-3">
-          <button onClick={onClose} className="py-2 px-4 text-label-sm text-on-surface-variant hover:text-on-surface transition-colors">Volver</button>
-          <button onClick={onConfirm} className="py-2 px-4 rounded-lg bg-red-600 text-white text-label-sm hover:bg-red-700 transition-colors">Cancelar suscripción</button>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="glass-card modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+        <div style={{ padding: '20px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '8px' }}>Cancelar suscripción</h2>
+          <p style={{ fontSize: '13px', color: 'var(--on-surface-variant)', marginBottom: '20px' }}>¿Estás seguro? Tu plan se cancelará y los datos se retendrán según el período actual.</p>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <button onClick={onClose} className="btn btn-secondary" style={{ fontSize: '10px' }}>Volver</button>
+            <button onClick={onConfirm} className="btn btn-danger" style={{ fontSize: '10px' }}>Cancelar suscripción</button>
+          </div>
         </div>
       </div>
     </div>
@@ -87,92 +87,74 @@ function SubscriptionSettings() {
 
   useEffect(() => {
     Promise.all([getSubscription(), getSubscriptionUsage()])
-      .then(([subData, usageData]) => {
-        setSub(subData.data)
-        setUsage(usageData.data)
-      })
+      .then(([subData, usageData]) => { setSub(subData.data); setUsage(usageData.data) })
       .catch(() => setMessage({ type: 'error', text: 'Error al cargar datos de suscripción' }))
       .finally(() => setLoading(false))
   }, [])
 
   async function handleUpgrade(plan) {
-    try {
-      const { data } = await upgradePlan(plan)
-      setSub(data)
-      setUsage(prev => ({ ...prev, plan: data.plan, ...SubscriptionSettings.getPlanLimits(data.plan) }))
-      setShowUpgrade(false)
-      setMessage({ type: 'success', text: `Plan actualizado a ${plan}` })
-    } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.error || 'Error al actualizar plan' })
-    }
+    try { const { data } = await upgradePlan(plan); setSub(data); setShowUpgrade(false); setMessage({ type: 'success', text: `Plan actualizado a ${plan}` }) }
+    catch (err) { setMessage({ type: 'error', text: err.response?.data?.error || 'Error' }) }
   }
 
   async function handleCancel() {
-    try {
-      await cancelSubscription()
-      setSub(prev => ({ ...prev, status: 'CANCELED', canceledAt: new Date().toISOString() }))
-      setShowCancel(false)
-      setMessage({ type: 'success', text: 'Suscripción cancelada' })
-    } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.error || 'Error al cancelar' })
-    }
+    try { await cancelSubscription(); setSub(p => ({ ...p, status: 'CANCELED', canceledAt: new Date().toISOString() })); setShowCancel(false); setMessage({ type: 'success', text: 'Suscripción cancelada' }) }
+    catch (err) { setMessage({ type: 'error', text: err.response?.data?.error || 'Error' }) }
   }
 
-  if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 w-48 bg-surface-container-high rounded" />
-          <div className="h-40 bg-surface-container-high rounded-xl" />
-        </div>
-      </div>
-    )
-  }
+  if (loading) return (
+    <div style={{ maxWidth: '600px' }}>
+      <div style={{ height: '32px', width: '180px', background: 'var(--surface-container-high)', borderRadius: '8px', marginBottom: '16px' }} />
+      <div style={{ height: '160px', background: 'var(--surface-container-high)', borderRadius: '12px' }} />
+    </div>
+  )
+
+  const ps = PLAN_STYLES[sub?.plan] || PLAN_STYLES.FREE
+  const pct = usage?.percentage || 0
+  const barColor = pct >= 90 ? 'var(--error-red)' : pct >= 70 ? 'var(--amber)' : 'var(--spore-green)'
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
-        <h2 className="text-headline-lg text-on-surface mb-1">Suscripción</h2>
-        <p className="text-body-md text-on-surface-variant">Gestiona tu plan y consume de API</p>
+    <div style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div>
+        <h1 className="gradient-title" style={{ fontSize: '28px', marginBottom: '4px' }}>Suscripción</h1>
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--outline)' }}>Gestiona tu plan y consumo de API</p>
       </div>
 
       {message && (
-        <div className={`mb-4 px-4 py-3 rounded-lg text-body-sm ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-          {message.text}
-          <button className="float-right text-current opacity-60 hover:opacity-100" onClick={() => setMessage(null)}>✕</button>
+        <div style={{ padding: '10px 14px', borderRadius: '8px', background: message.type === 'success' ? 'rgba(var(--spore-green-rgb), 0.08)' : 'rgba(239, 68, 68, 0.08)', border: `1px solid ${message.type === 'success' ? 'rgba(var(--spore-green-rgb), 0.2)' : 'rgba(239, 68, 68, 0.2)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: message.type === 'success' ? 'var(--spore-green)' : 'var(--error-red)' }}>{message.text}</span>
+          <button onClick={() => setMessage(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--outline)', fontSize: '16px' }}>✕</button>
         </div>
       )}
 
-      <div className="glass-card rounded-xl border border-outline-variant p-6 mb-4">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <span className={`inline-block px-3 py-0.5 rounded-full text-label-sm font-semibold ${PLAN_BG[sub?.plan]}`}>{sub?.plan}</span>
-              <span className={`inline-block px-2 py-0.5 rounded text-label-xs ${sub?.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{sub?.status}</span>
-            </div>
-            <p className="text-body-sm text-on-surface-variant mt-1">{sub?.dataRetentionDays} días de retención de datos</p>
-          </div>
+      <div className="glass-card" style={{ padding: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', background: ps.bg, color: ps.color, border: `1px solid ${ps.border}` }}>{sub?.plan}</span>
+          <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 700, background: sub?.status === 'ACTIVE' ? 'rgba(var(--spore-green-rgb), 0.15)' : 'rgba(239, 68, 68, 0.15)', color: sub?.status === 'ACTIVE' ? 'var(--spore-green)' : 'var(--error-red)' }}>{sub?.status}</span>
+          <span style={{ fontSize: '11px', color: 'var(--outline)' }}>{sub?.dataRetentionDays} días de retención</span>
         </div>
 
-        {usage && <UsageBar used={usage.apiCallsUsedThisMonth} limit={usage.apiCallsPerMonth} percentage={usage.percentage} />}
-
         {usage && (
-          <p className="text-body-xs text-on-surface-variant mt-2">
-            Período actual: {new Date(usage.currentPeriodStart).toLocaleDateString()} — {new Date(usage.currentPeriodEnd).toLocaleDateString()}
-          </p>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--on-surface-variant)', marginBottom: '6px' }}>
+              <span>{usage.apiCallsUsedThisMonth.toLocaleString()} / {usage.apiCallsPerMonth.toLocaleString()} calls</span>
+              <span style={{ fontWeight: 600, color: barColor }}>{pct}%</span>
+            </div>
+            <div style={{ height: '8px', background: 'rgba(var(--surface-dim-rgb, 28, 27, 31), 0.6)', borderRadius: '9999px', overflow: 'hidden', border: '1px solid var(--outline-variant)' }}>
+              <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, borderRadius: '9999px', background: barColor, transition: 'width 0.5s' }} />
+            </div>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', marginTop: '6px' }}>
+              Período: {new Date(usage.currentPeriodStart).toLocaleDateString()} — {new Date(usage.currentPeriodEnd).toLocaleDateString()}
+            </p>
+          </div>
         )}
       </div>
 
       {sub?.status === 'ACTIVE' && sub?.plan !== 'PREMIUM' && (
-        <button onClick={() => setShowUpgrade(true)} className="w-full py-3 px-4 rounded-xl bg-primary text-on-primary text-label-md font-semibold hover:bg-primary-hover transition-colors mb-3">
-          Mejorar plan
-        </button>
+        <button onClick={() => setShowUpgrade(true)} className="btn btn-glow" style={{ width: '100%', fontSize: '12px', padding: '12px' }}>Mejorar plan</button>
       )}
-
       {sub?.status === 'ACTIVE' && (
-        <button onClick={() => setShowCancel(true)} className="w-full py-3 px-4 rounded-xl border border-outline-variant text-on-surface-variant text-label-md hover:bg-surface-container-high hover:text-on-surface transition-colors">
-          Cancelar suscripción
-        </button>
+        <button onClick={() => setShowCancel(true)} className="btn btn-secondary" style={{ width: '100%', fontSize: '12px', padding: '12px' }}>Cancelar suscripción</button>
       )}
 
       {showUpgrade && <UpgradeModal currentPlan={sub?.plan} onClose={() => setShowUpgrade(false)} onUpgrade={handleUpgrade} />}

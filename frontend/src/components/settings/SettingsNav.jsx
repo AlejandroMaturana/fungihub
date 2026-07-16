@@ -1,28 +1,33 @@
 import { NavLink } from 'react-router-dom'
 
 const SECTIONS = [
-  { to: '/settings', icon: 'hub', label: 'Overview', end: true },
-  { to: '/settings/user', icon: 'fingerprint', label: 'User' },
-  { to: '/settings/device', icon: 'developer_board', label: 'Device' },
-  { to: '/settings/cultivation', icon: 'potted_plant', label: 'Cultivation' },
-  { to: '/settings/api-keys', icon: 'vpn_key', label: 'API Keys' },
-  { to: '/settings/subscription', icon: 'workspace_premium', label: 'Suscripción' },
-  { to: '/settings/system', icon: 'settings', label: 'System' },
+  { to: '/system/settings', icon: 'hub', label: 'Overview', end: true },
+  { to: '/system/settings/user', icon: 'fingerprint', label: 'User' },
+  { to: '/system/settings/device', icon: 'developer_board', label: 'Device' },
+  { to: '/system/settings/cultivation', icon: 'potted_plant', label: 'Cultivation' },
+  { to: '/system/settings/api-keys', icon: 'vpn_key', label: 'API Keys' },
+  { to: '/system/settings/subscription', icon: 'workspace_premium', label: 'Subscription' },
+  { to: '/system/settings/system', icon: 'settings', label: 'System' },
 ]
 
 function SettingsNav() {
   return (
-    <nav className="settings-nav flex flex-col gap-1">
+    <nav style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
       {SECTIONS.map(item => (
         <NavLink
           key={item.to}
           to={item.to}
           end={!!item.end}
-          className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-2.5 font-label-caps text-label-caps rounded-lg transition-all duration-200${isActive ? ' bg-surface-variant text-primary' : ' text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}`
-          }
+          style={({ isActive }) => ({
+            display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', borderRadius: '8px',
+            fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase',
+            textDecoration: 'none', transition: 'all 0.2s',
+            background: isActive ? 'rgba(var(--spore-green-rgb), 0.1)' : 'transparent',
+            color: isActive ? 'var(--spore-green)' : 'var(--on-surface-variant)',
+            borderLeft: isActive ? '2px solid var(--spore-green)' : '2px solid transparent',
+          })}
         >
-          <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{item.icon}</span>
           {item.label}
         </NavLink>
       ))}

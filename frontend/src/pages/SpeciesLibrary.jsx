@@ -3,15 +3,15 @@ import { getSpecies, getSpeciesById, getRecipes } from '../api/client.js'
 import LoadingState from '../components/ui/LoadingState.jsx'
 
 const DIFFICULTY_LABELS = {
-  BEGINNER: { label: 'Principiante', color: 'text-green-500', icon: 'signal_1' },
-  INTERMEDIATE: { label: 'Intermedio', color: 'text-amber-500', icon: 'signal_2' },
-  ADVANCED: { label: 'Avanzado', color: 'text-red-500', icon: 'signal_3' },
+  BEGINNER: { label: 'Principiante', color: '#4ade80', icon: 'signal_1' },
+  INTERMEDIATE: { label: 'Intermedio', color: '#fbbf24', icon: 'signal_2' },
+  ADVANCED: { label: 'Avanzado', color: '#f87171', icon: 'signal_3' },
 }
 
 const CLASS_LABELS = {
-  ADAPTOGEN: { label: 'Adaptógeno', color: 'text-purple-400' },
-  EDIBLE: { label: 'Comestible', color: 'text-green-400' },
-  MEDICINAL: { label: 'Medicinal', color: 'text-blue-400' },
+  ADAPTOGEN: { label: 'Adaptógeno', color: '#a78bfa' },
+  EDIBLE: { label: 'Comestible', color: '#4ade80' },
+  MEDICINAL: { label: 'Medicinal', color: '#60a5fa' },
 }
 
 function CompoundsBadges({ compounds }) {
@@ -19,15 +19,11 @@ function CompoundsBadges({ compounds }) {
   const entries = Object.entries(compounds).filter(([, v]) => v)
   if (entries.length === 0) return null
   return (
-    <div className="flex flex-wrap gap-1">
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
       {entries.map(([key, val]) => {
-        const label = typeof val === 'boolean'
-          ? key.replace(/([A-Z])/g, ' $1').trim()
-          : `${key.replace(/([A-Z])/g, ' $1').trim()}: ${val}`
+        const label = typeof val === 'boolean' ? key.replace(/([A-Z])/g, ' $1').trim() : `${key.replace(/([A-Z])/g, ' $1').trim()}: ${val}`
         return (
-          <span key={key} className="px-1.5 py-0.5 bg-tertiary-container/30 text-tertiary text-7px rounded-full font-semibold">
-            {label}
-          </span>
+          <span key={key} style={{ padding: '2px 6px', background: 'rgba(139, 92, 246, 0.15)', color: 'var(--accent-purple, #8b5cf6)', fontSize: '9px', borderRadius: '9999px', fontWeight: 600 }}>{label}</span>
         )
       })}
     </div>
@@ -80,28 +76,23 @@ function SpeciesLibrary() {
   if (loading) return <LoadingState message="Loading species library..." icon="potted_plant" />
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex justify-between items-end pb-4 mb-4 border-b border-outline-variant/30">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 className="text-headline-lg text-on-surface">Species Library</h1>
-          <p className="text-body-md text-on-surface-variant">{species.length} species</p>
+          <h1 className="gradient-title" style={{ fontSize: '28px', marginBottom: '4px' }}>Species Library</h1>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--outline)' }}>
+            {species.length} species
+          </p>
         </div>
-        <div className="flex gap-2">
-          <select
-            value={filters.adapterClass}
-            onChange={e => setFilters({ ...filters, adapterClass: e.target.value })}
-            className="bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-data-sm focus:outline-none focus:border-primary"
-          >
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <select value={filters.adapterClass} onChange={e => setFilters({ ...filters, adapterClass: e.target.value })} className="form-select" style={{ fontSize: '11px' }}>
             <option value="">All classes</option>
             <option value="ADAPTOGEN">Adaptógeno</option>
             <option value="EDIBLE">Comestible</option>
             <option value="MEDICINAL">Medicinal</option>
           </select>
-          <select
-            value={filters.difficultyLevel}
-            onChange={e => setFilters({ ...filters, difficultyLevel: e.target.value })}
-            className="bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-data-sm focus:outline-none focus:border-primary"
-          >
+          <select value={filters.difficultyLevel} onChange={e => setFilters({ ...filters, difficultyLevel: e.target.value })} className="form-select" style={{ fontSize: '11px' }}>
             <option value="">All levels</option>
             <option value="BEGINNER">Principiante</option>
             <option value="INTERMEDIATE">Intermedio</option>
@@ -111,20 +102,21 @@ function SpeciesLibrary() {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded bg-error-container/10 border border-error/40 flex items-center gap-3">
-          <span className="material-symbols-outlined text-error text-18px">warning</span>
-          <span className="text-data-sm text-error font-semibold">{error}</span>
+        <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--error-red)' }}>warning</span>
+          <span style={{ fontSize: '12px', color: 'var(--error-red)', fontWeight: 600 }}>{error}</span>
         </div>
       )}
 
+      {/* Species Cards */}
       {species.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-on-surface-variant">
-          <span className="material-symbols-outlined text-48px mb-3 opacity-40">potted_plant</span>
-          <p className="text-body-lg font-semibold">No species found</p>
-          <p className="text-body-sm opacity-60">Run the seed script to populate the species library</p>
+        <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--outline)', marginBottom: '16px', display: 'block' }}>potted_plant</span>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '8px' }}>No species found</h3>
+          <p style={{ fontSize: '13px', color: 'var(--outline)' }}>Run the seed script to populate the species library.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
           {species.map(sp => {
             const classInfo = CLASS_LABELS[sp.adapterClass] || {}
             const diffInfo = DIFFICULTY_LABELS[sp.difficultyLevel] || {}
@@ -133,47 +125,46 @@ function SpeciesLibrary() {
               <button
                 key={sp.id}
                 onClick={() => handleSelect(sp)}
-                className={`glass-card p-4 rounded-xl border transition-all text-left hover:border-primary/40 ${
-                  selectedSpecies?.id === sp.id ? 'border-primary shadow-md' : 'border-outline-variant'
-                }`}
+                className="glass-card"
+                style={{
+                  padding: '16px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s',
+                  borderColor: selectedSpecies?.id === sp.id ? 'var(--spore-green)' : undefined,
+                  boxShadow: selectedSpecies?.id === sp.id ? 'var(--glow-primary)' : undefined,
+                }}
               >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-title-md text-on-surface truncate">{sp.name}</h3>
-                    <p className="text-body-sm text-on-surface-variant italic truncate">{sp.scientificName}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--on-surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp.name}</h3>
+                    <p style={{ fontSize: '12px', color: 'var(--outline)', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp.scientificName}</p>
                   </div>
                   {diffInfo.icon && (
-                    <span className={`material-symbols-outlined text-18px ${diffInfo.color}`}>{diffInfo.icon}</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px', color: diffInfo.color }}>{diffInfo.icon}</span>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`px-1.5 py-0.5 rounded text-7px font-semibold ${
-                    sp.adapterClass === 'MEDICINAL' ? 'bg-blue-500/20 text-blue-400'
-                      : sp.adapterClass === 'EDIBLE' ? 'bg-green-500/20 text-green-400'
-                        : 'bg-purple-500/20 text-purple-400'
-                  }`}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 600, background: `${classInfo.color}20`, color: classInfo.color }}>
                     {classInfo.label || sp.adapterClass}
                   </span>
-                  <span className={`text-7px font-semibold ${diffInfo.color}`}>
+                  <span style={{ fontSize: '9px', fontWeight: 600, color: diffInfo.color }}>
                     {diffInfo.label || sp.difficultyLevel}
                   </span>
                   {sp.originClimate && (
-                    <span className="text-7px text-on-surface-variant">• {sp.originClimate}</span>
+                    <span style={{ fontSize: '9px', color: 'var(--outline)' }}>• {sp.originClimate}</span>
                   )}
                 </div>
 
                 {sp.description && (
-                  <p className="text-body-sm text-on-surface-variant mb-2 line-clamp-2">{sp.description}</p>
+                  <p style={{ fontSize: '12px', color: 'var(--outline)', marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{sp.description}</p>
                 )}
 
                 <CompoundsBadges compounds={sp.compounds} />
 
-                <div className="mt-3 pt-2 border-t border-outline-variant/30 flex items-center justify-between">
-                  <span className="text-7px text-on-surface-variant">
+                <div style={{ marginTop: '12px', paddingTop: '8px', borderTop: '1px solid var(--outline-variant)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '9px', color: 'var(--outline)' }}>
                     {recipeCount} recipe{recipeCount !== 1 ? 's' : ''}
                   </span>
-                  <span className="material-symbols-outlined text-12px text-on-surface-variant">chevron_right</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--outline)' }}>chevron_right</span>
                 </div>
               </button>
             )
@@ -181,90 +172,74 @@ function SpeciesLibrary() {
         </div>
       )}
 
+      {/* Species Detail Modal */}
       {selectedSpecies && (
-        <SpeciesDetail
-          species={selectedSpecies}
-          recipes={getRecipesForSpecies(selectedSpecies.id)}
-          onClose={() => setSelectedSpecies(null)}
-          loading={detailLoading}
-        />
-      )}
-    </div>
-  )
-}
-
-function SpeciesDetail({ species, recipes, onClose, loading }) {
-  const classInfo = CLASS_LABELS[species.adapterClass] || {}
-  const diffInfo = DIFFICULTY_LABELS[species.difficultyLevel] || {}
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-      style={{ background: 'color-mix(in srgb, rgba(0,0,0,0.6) 60%, transparent)', backdropFilter: 'blur(4px)' }}>
-      <div className="relative bg-surface border border-outline-variant rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-outline-variant">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-title-lg text-on-surface">{species.name}</h2>
-            <p className="text-body-sm text-on-surface-variant italic">{species.scientificName}</p>
-          </div>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-surface-container-highest transition-colors">
-            <span className="material-symbols-outlined text-20px text-on-surface-variant">close</span>
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-          {loading ? (
-            <LoadingState message="Loading details..." icon="hourglass_empty" />
-          ) : (
-            <>
-              <div className="flex flex-wrap gap-3">
-                <div className="px-3 py-2 rounded-lg bg-surface-container-low border border-outline-variant/30">
-                  <span className="font-label-caps text-8px text-on-surface-variant block">Class</span>
-                  <span className="text-title-sm font-semibold">{classInfo.label || species.adapterClass}</span>
-                </div>
-                <div className="px-3 py-2 rounded-lg bg-surface-container-low border border-outline-variant/30">
-                  <span className="font-label-caps text-8px text-on-surface-variant block">Difficulty</span>
-                  <span className={`text-title-sm font-semibold ${diffInfo.color}`}>{diffInfo.label || species.difficultyLevel}</span>
-                </div>
-                <div className="px-3 py-2 rounded-lg bg-surface-container-low border border-outline-variant/30">
-                  <span className="font-label-caps text-8px text-on-surface-variant block">Climate</span>
-                  <span className="text-title-sm">{species.originClimate || '—'}</span>
-                </div>
-              </div>
-
-              {species.description && (
-                <p className="text-body-md text-on-surface-variant">{species.description}</p>
-              )}
-
+        <div className="modal-overlay" onClick={() => setSelectedSpecies(null)}>
+          <div className="glass-card modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '640px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--outline-variant)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-2">Compounds</h3>
-                <CompoundsBadges compounds={species.compounds} />
+                <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--on-surface)' }}>{selectedSpecies.name}</h2>
+                <p style={{ fontSize: '12px', color: 'var(--outline)', fontStyle: 'italic' }}>{selectedSpecies.scientificName}</p>
               </div>
+              <button onClick={() => setSelectedSpecies(null)} className="btn btn-ghost btn-sm">
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
+              </button>
+            </div>
 
-              {recipes.length > 0 && (
-                <div>
-                  <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-2">
-                    Available Recipes ({recipes.length})
-                  </h3>
-                  <div className="space-y-2">
-                    {recipes.map(r => (
-                      <div key={r.id} className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/30">
-                        <div className="flex items-center justify-between">
-                          <span className="text-title-sm text-on-surface">{r.name}</span>
-                          <div className="flex items-center gap-3 text-7px text-on-surface-variant">
-                            <span>Inc: {r.incubationDurationDays}d</span>
-                            <span>Frt: {r.fruitingDurationDays}d</span>
-                            <span>CO₂: {r.fruitingCo2Max}ppm</span>
-                          </div>
-                        </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {detailLoading ? (
+                <LoadingState message="Loading details..." icon="hourglass_empty" />
+              ) : (
+                <>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {[
+                      { label: 'Class', value: CLASS_LABELS[selectedSpecies.adapterClass]?.label || selectedSpecies.adapterClass, color: CLASS_LABELS[selectedSpecies.adapterClass]?.color },
+                      { label: 'Difficulty', value: DIFFICULTY_LABELS[selectedSpecies.difficultyLevel]?.label || selectedSpecies.difficultyLevel, color: DIFFICULTY_LABELS[selectedSpecies.difficultyLevel]?.color },
+                      { label: 'Climate', value: selectedSpecies.originClimate || '—' },
+                    ].map((item, i) => (
+                      <div key={i} style={{ padding: '8px 12px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '2px' }}>{item.label}</span>
+                        <span style={{ fontSize: '14px', fontWeight: 600, color: item.color || 'var(--on-surface)' }}>{item.value}</span>
                       </div>
                     ))}
                   </div>
-                </div>
+
+                  {selectedSpecies.description && (
+                    <p style={{ fontSize: '13px', color: 'var(--on-surface-variant)', lineHeight: 1.6 }}>{selectedSpecies.description}</p>
+                  )}
+
+                  <div>
+                    <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)', marginBottom: '8px' }}>Compounds</h3>
+                    <CompoundsBadges compounds={selectedSpecies.compounds} />
+                  </div>
+
+                  {getRecipesForSpecies(selectedSpecies.id).length > 0 && (
+                    <div>
+                      <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)', marginBottom: '8px' }}>
+                        Available Recipes ({getRecipesForSpecies(selectedSpecies.id).length})
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {getRecipesForSpecies(selectedSpecies.id).map(r => (
+                          <div key={r.id} style={{ padding: '12px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--on-surface)' }}>{r.name}</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '9px', color: 'var(--outline)', fontFamily: 'var(--font-mono)' }}>
+                                <span>Inc: {r.incubationDurationDays}d</span>
+                                <span>Frt: {r.fruitingDurationDays}d</span>
+                                <span>CO₂: {r.fruitingCo2Max}ppm</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

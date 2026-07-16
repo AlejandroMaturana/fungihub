@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
 import { getDevices, getLatestTelemetry, getRecipes, getCycles } from '../../api/client.js'
 import LoadingState from '../../components/ui/LoadingState.jsx'
-import ErrorState from '../../components/ui/ErrorState.jsx'
 
 const ENV_PARAMS = [
-  { key: 'temperature', label: 'TEMPERATURE', unit: '°C', icon: 'thermostat', min: 18, max: 32, optimal: 'Optimal Range' },
-  { key: 'humidity', label: 'HUMIDITY', unit: '%', icon: 'water_drop', min: 60, max: 100, optimal: 'High Saturation' },
+  { key: 'temperature', label: 'TEMPERATURE', unit: '°C', icon: 'thermostat', min: 18, max: 32 },
+  { key: 'humidity', label: 'HUMIDITY', unit: '%', icon: 'water_drop', min: 60, max: 100 },
 ]
 
 function CultivationSettings() {
@@ -18,114 +17,110 @@ function CultivationSettings() {
 
   async function loadData() {
     try {
-      const [devs, rec, cyc] = await Promise.all([
-        getDevices().catch(() => []),
-        getRecipes().catch(() => []),
-        getCycles().catch(() => []),
-      ])
-      setDevices(devs)
-      setRecipes(rec)
-      setCycles(cyc)
-      if (devs[0]) {
-        const tel = await getLatestTelemetry(devs[0].id).catch(() => null)
-        setTelemetry(tel)
-      }
+      const [devs, rec, cyc] = await Promise.all([getDevices().catch(() => []), getRecipes().catch(() => []), getCycles().catch(() => [])])
+      setDevices(devs); setRecipes(rec); setCycles(cyc)
+      if (devs[0]) { const tel = await getLatestTelemetry(devs[0].id).catch(() => null); setTelemetry(tel) }
       setError(null)
-    } catch (err) {
-      setError(err.message || 'Connection error')
-    } finally {
-      setLoading(false)
-    }
+    } catch (err) { setError(err.message || 'Connection error') }
+    finally { setLoading(false) }
   }
 
   useEffect(() => { loadData() }, [])
 
   if (loading) return <LoadingState message="Loading cultivation configuration..." icon="potted_plant" />
-  if (error) return <ErrorState message={error} onRetry={loadData} />
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-headline-lg text-on-surface mb-1">Cultivation Configuration</h1>
-        <p className="text-on-surface-variant text-body-md">Environmental parameters, connection status, recipes and cycles.</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div>
+        <h1 className="gradient-title" style={{ fontSize: '28px', marginBottom: '4px' }}>Cultivation Configuration</h1>
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--outline)' }}>Environmental parameters, connection status, recipes and cycles</p>
       </div>
 
-      <div className="grid grid-cols-12 gap-4">
-        <section className="col-span-12 lg:col-span-8 glass-card p-5 rounded-xl border border-outline-variant">
-          <div className="flex items-center gap-3 mb-5">
-            <span className="material-symbols-outlined text-primary">settings_input_composite</span>
-            <h3 className="font-label-caps text-label-caps text-on-surface-variant">ENVIRONMENT PARAMETERS</h3>
+      {error && (
+        <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--error-red)' }}>warning</span>
+          <span style={{ fontSize: '12px', color: 'var(--error-red)', fontWeight: 600 }}>{error}</span>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+        {/* Environment */}
+        <div className="glass-card" style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--spore-green)' }}>settings_input_composite</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>Environment Parameters</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {ENV_PARAMS.map(param => {
               const value = telemetry ? telemetry[param.key] : null
               const pct = value != null ? ((value - param.min) / (param.max - param.min)) * 100 : 50
+              const color = pct < 20 || pct > 80 ? 'var(--error-red)' : 'var(--spore-green)'
               return (
-                <div key={param.key} className="p-4 bg-surface-container-low rounded-lg border border-outline-variant/30">
-                  <div className="flex justify-between items-end mb-2">
-                    <label className="font-label-caps text-10px text-on-surface-variant">{param.label} ({param.unit})</label>
-                    <span className="text-headline-md text-primary">{value != null ? value : '—'}</span>
+                <div key={param.key} style={{ padding: '16px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{param.label}</span>
+                    <span style={{ fontSize: '24px', fontWeight: 700, color }}>{value != null ? value : '—'}</span>
                   </div>
-                  <div className="relative h-2 bg-background rounded-full overflow-hidden mt-3">
-                    <div className="absolute inset-0 opacity-30" style={{ background: `linear-gradient(to right, transparent ${pct}%, var(--primary))` }} />
-                    <div className="absolute w-2 h-full bg-primary rounded-full" style={{ left: `calc(${pct}% - 4px)` }} />
+                  <div style={{ height: '6px', background: 'rgba(var(--surface-dim-rgb, 28, 27, 31), 0.6)', borderRadius: '9999px', overflow: 'hidden', position: 'relative' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, borderRadius: '9999px', background: `linear-gradient(90deg, ${color}, ${color}aa)`, transition: 'width 0.5s' }} />
                   </div>
-                  <div className="flex justify-between font-data-sm text-on-surface-variant mt-2">
-                    <span>{param.min}{param.unit}</span>
-                    <span className="text-primary">{param.optimal}</span>
-                    <span>{param.max}{param.unit}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)' }}>{param.min}{param.unit}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color }}>Optimal</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)' }}>{param.max}{param.unit}</span>
                   </div>
                 </div>
               )
             })}
           </div>
-        </section>
+        </div>
 
-        <section className="col-span-12 lg:col-span-4 glass-card p-5 rounded-xl border border-outline-variant">
-          <div className="flex items-center gap-3 mb-5">
-            <span className="material-symbols-outlined text-tertiary">restaurant_menu</span>
-            <h3 className="font-label-caps text-label-caps text-on-surface-variant">RECIPES</h3>
+        {/* Recipes */}
+        <div className="glass-card" style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--accent-purple, #a78bfa)' }}>restaurant_menu</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>Recipes</span>
           </div>
           {recipes.length === 0 ? (
-            <div className="py-8 text-center">
-              <span className="material-symbols-outlined text-48px text-on-surface-variant opacity-30 mb-2">potted_plant</span>
-              <p className="text-body-md text-on-surface-variant">No recipes defined</p>
-            </div>
+            <p style={{ fontSize: '13px', color: 'var(--outline)', textAlign: 'center', padding: '32px 0' }}>No recipes defined</p>
           ) : (
-            <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '320px', overflowY: 'auto' }}>
               {recipes.map(r => (
-                <div key={r.id} className="p-3 bg-surface-container border-l-2 border-primary rounded-r-md">
-                  <div className="flex justify-between items-start">
-                    <p className="font-mono text-data-sm text-primary">{r.name || `Recipe #${r.id}`}</p>
-                  </div>
-                  {r.species && <p className="text-10px text-on-surface-variant mt-1">{r.species}</p>}
+                <div key={r.id} style={{ padding: '10px 12px', borderRadius: '8px', background: 'var(--surface-container)', borderLeft: '3px solid var(--spore-green)' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--spore-green)' }}>{r.name || `Recipe #${r.id}`}</span>
+                  {r.species && <span style={{ fontSize: '10px', color: 'var(--outline)', display: 'block', marginTop: '2px' }}>{r.species}</span>}
                 </div>
               ))}
             </div>
           )}
-        </section>
+        </div>
+      </div>
 
-        <section className="col-span-12 glass-card p-5 rounded-xl border border-outline-variant">
-          <div className="flex items-center gap-3 mb-5">
-            <span className="material-symbols-outlined text-secondary">cyclone</span>
-            <h3 className="font-label-caps text-label-caps text-on-surface-variant">ACTIVE CYCLES</h3>
-          </div>
-          {cycles.length === 0 ? (
-            <p className="text-body-md text-on-surface-variant py-4 text-center">No active cultivation cycles</p>
-          ) : (
-            <div className="space-y-3">
-              {cycles.map(c => (
-                <div key={c.id} className="flex items-center justify-between p-3 bg-surface-container-low rounded border border-outline-variant/30">
-                  <div>
-                    <p className="text-data-sm text-on-surface">{c.species || `Cycle #${c.id}`}</p>
-                    <p className="text-10px text-on-surface-variant">{c.status} — {c.currentPhase || '—'}</p>
-                  </div>
-                  <span className={`text-10px font-bold ${c.status === 'ACTIVE' ? 'text-primary' : 'text-on-surface-variant'}`}>{c.status}</span>
+      {/* Active Cycles */}
+      <div className="glass-card" style={{ padding: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--spore-green)' }}>cyclone</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--on-surface-variant)' }}>Active Cycles</span>
+        </div>
+        {cycles.length === 0 ? (
+          <p style={{ fontSize: '13px', color: 'var(--outline)', textAlign: 'center', padding: '24px 0' }}>No active cultivation cycles</p>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+            {cycles.map(c => (
+              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderRadius: '8px', background: 'var(--surface-container)', border: '1px solid var(--outline-variant)' }}>
+                <div>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--on-surface)' }}>{c.species || `Cycle #${c.id}`}</span>
+                  <span style={{ fontSize: '10px', color: 'var(--outline)', display: 'block' }}>{c.status} — {c.currentPhase || '—'}</span>
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
+                <span style={{
+                  padding: '2px 8px', borderRadius: '4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
+                  background: c.status === 'ACTIVE' ? 'rgba(var(--spore-green-rgb), 0.15)' : 'rgba(153, 153, 153, 0.1)',
+                  color: c.status === 'ACTIVE' ? 'var(--spore-green)' : 'var(--outline)',
+                }}>{c.status}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

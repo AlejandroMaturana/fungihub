@@ -2,51 +2,72 @@ import { useState, useEffect, useCallback } from 'react'
 import { getAlarms, acknowledgeAlarm, resolveAlarm } from '../api/client.js'
 import { useSSE } from '../api/useSSE.js'
 import LoadingState from '../components/ui/LoadingState.jsx'
-import ErrorState from '../components/ui/ErrorState.jsx'
-import EmptyState from '../components/ui/EmptyState.jsx'
 
-const severityLabel = { CRITICAL: 'Critical', HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low' }
-const severityClass = { CRITICAL: 'text-error', HIGH: 'text-warning', MEDIUM: 'text-info', LOW: 'text-on-surface-variant' }
+const SEVERITY = {
+  CRITICAL: { label: 'Critical', color: 'var(--error-red)', icon: 'error', bg: 'rgba(239, 68, 68, 0.1)' },
+  HIGH: { label: 'High', color: 'var(--amber)', icon: 'warning', bg: 'rgba(245, 158, 11, 0.1)' },
+  MEDIUM: { label: 'Medium', color: 'var(--accent-blue, #60a5fa)', icon: 'info', bg: 'rgba(96, 165, 250, 0.1)' },
+  LOW: { label: 'Low', color: 'var(--outline)', icon: 'info', bg: 'rgba(153, 153, 153, 0.1)' },
+}
 
 function AlarmRow({ alarm, onAcknowledge, onResolve }) {
+  const sev = SEVERITY[alarm.severity] || SEVERITY.LOW
   const isActive = !alarm.resolvedAt
   return (
     <tr className="border-b border-outline-variant">
       <td className="p-3">
-        <span className={`font-mono text-tag-sm ${severityClass[alarm.severity]} uppercase`}>
-          {severityLabel[alarm.severity]}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '14px', color: sev.color }}>{sev.icon}</span>
+          <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', background: sev.bg, color: sev.color, border: `1px solid ${sev.color}33` }}>
+            {sev.label}
+          </span>
+        </div>
+      </td>
+      <td className="p-3">
+        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--on-surface)' }}>{alarm.type}</span>
+      </td>
+      <td className="p-3">
+        <span style={{ fontSize: '12px', color: 'var(--on-surface-variant)' }}>{alarm.message}</span>
+      </td>
+      <td className="p-3">
+        <span style={{ fontSize: '12px', color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)' }}>
+          {alarm.Device?.chamberName || alarm.Device?.deviceId || '—'}
         </span>
       </td>
-      <td className="p-3 text-body-sm text-on-surface">{alarm.type}</td>
-      <td className="p-3 text-body-sm text-on-surface-variant">{alarm.message}</td>
-      <td className="p-3 text-body-sm text-on-surface-variant">
-        {alarm.Device?.chamberName || alarm.Device?.deviceId || '—'}
-      </td>
-      <td className="p-3 text-body-xs text-on-surface-variant">
-        {new Date(alarm.createdAt).toLocaleString()}
+      <td className="p-3">
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--outline)' }}>
+          {new Date(alarm.createdAt).toLocaleString()}
+        </span>
       </td>
       <td className="p-3">
         {isActive ? (
-          <div className="flex gap-2">
+          <div style={{ display: 'flex', gap: '8px' }}>
             {!alarm.isAcknowledged && (
               <button
-                className="btn btn-sm btn-outline"
                 onClick={() => onAcknowledge(alarm.id)}
+                className="btn btn-secondary"
+                style={{ fontSize: '10px', padding: '4px 8px' }}
               >
-                Ack
+                <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>check</span>
+                ACK
               </button>
             )}
             <button
-              className="btn btn-sm btn-primary"
               onClick={() => onResolve(alarm.id)}
+              className="btn btn-glow"
+              style={{ fontSize: '10px', padding: '4px 8px' }}
             >
-              Resolve
+              <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>task_alt</span>
+              RESOLVE
             </button>
           </div>
         ) : (
-          <span className="text-body-xs text-on-surface-variant">
-            Resolved {new Date(alarm.resolvedAt).toLocaleString()}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--spore-green)' }}>check_circle</span>
+            <span style={{ fontSize: '9px', color: 'var(--outline)' }}>
+              Resolved {new Date(alarm.resolvedAt).toLocaleDateString()}
+            </span>
+          </div>
         )}
       </td>
     </tr>
@@ -109,47 +130,81 @@ function Alarms() {
   }
 
   if (loading && alarms.length === 0) return <LoadingState message="Loading alarms..." icon="warning" />
-  if (error && alarms.length === 0) return <ErrorState message={error} onRetry={fetchAlarms} />
+
+  const activeCount = alarms.filter(a => !a.resolvedAt).length
 
   return (
     <div className="alarms-page">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-headline-lg text-on-surface">Alarms</h1>
-        <div className="flex gap-3">
-          <select
-            className="select"
-            value={filter.severity}
-            onChange={e => { setFilter(f => ({ ...f, severity: e.target.value })); setPage(1) }}
-          >
-            <option value="">All Severities</option>
-            <option value="CRITICAL">Critical</option>
-            <option value="HIGH">High</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="LOW">Low</option>
-          </select>
-          <select
-            className="select"
-            value={filter.status}
-            onChange={e => { setFilter(f => ({ ...f, status: e.target.value })); setPage(1) }}
-          >
-            <option value="active">Active</option>
-            <option value="resolved">Resolved</option>
-            <option value="">All</option>
-          </select>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
+        <div>
+          <h1 className="gradient-title" style={{ fontSize: '28px', marginBottom: '4px' }}>Alarms</h1>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--outline)' }}>
+            {activeCount} active · {pagination?.total || alarms.length} total
+          </p>
         </div>
       </div>
 
+      {/* Error */}
+      {error && (
+        <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--error-red)' }}>warning</span>
+          <span style={{ fontSize: '12px', color: 'var(--error-red)', fontWeight: 600 }}>{error}</span>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="glass-card" style={{ padding: '16px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '120px' }}>
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Severity</label>
+            <select
+              value={filter.severity}
+              onChange={e => { setFilter(f => ({ ...f, severity: e.target.value })); setPage(1) }}
+              className="form-select"
+              style={{ fontSize: '11px' }}
+            >
+              <option value="">All Severities</option>
+              <option value="CRITICAL">Critical</option>
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
+            </select>
+          </div>
+          <div style={{ flex: 1, minWidth: '120px' }}>
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Status</label>
+            <select
+              value={filter.status}
+              onChange={e => { setFilter(f => ({ ...f, status: e.target.value })); setPage(1) }}
+              className="form-select"
+              style={{ fontSize: '11px' }}
+            >
+              <option value="active">Active</option>
+              <option value="resolved">Resolved</option>
+              <option value="">All</option>
+            </select>
+          </div>
+          {activeCount > 0 && (
+            <div style={{ padding: '4px 10px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="material-symbols-outlined pulse-error" style={{ fontSize: '14px', color: 'var(--error-red)' }}>warning</span>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--error-red)' }}>{activeCount} active</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Table */}
       {alarms.length > 0 ? (
-        <div className="bg-surface-container border border-outline-variant rounded-lg overflow-hidden">
-          <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
+        <div className="glass-card" style={{ overflow: 'hidden' }}>
+          <table className="data-table">
             <thead>
-              <tr className="border-b border-outline-variant text-label-caps text-9px text-on-surface-variant">
-                <th className="p-3 font-weight-normal">Severity</th>
-                <th className="p-3 font-weight-normal">Type</th>
-                <th className="p-3 font-weight-normal">Message</th>
-                <th className="p-3 font-weight-normal">Device</th>
-                <th className="p-3 font-weight-normal">Time</th>
-                <th className="p-3 font-weight-normal">Actions</th>
+              <tr>
+                <th>Severity</th>
+                <th>Type</th>
+                <th>Message</th>
+                <th>Device</th>
+                <th>Time</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -165,27 +220,38 @@ function Alarms() {
           </table>
         </div>
       ) : (
-        <EmptyState message="No alarms" icon="warning" />
+        <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--outline)', marginBottom: '16px', display: 'block' }}>check_circle</span>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '8px' }}>No Alarms</h3>
+          <p style={{ fontSize: '13px', color: 'var(--outline)' }}>
+            {filter.status === 'resolved' ? 'No resolved alarms found.' : filter.severity ? `No ${filter.severity.toLowerCase()} severity alarms.` : 'All systems running smoothly.'}
+          </p>
+        </div>
       )}
 
+      {/* Pagination */}
       {pagination && pagination.pages > 1 && (
-        <div className="flex justify-center gap-2 mt-6">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
           <button
-            className="btn btn-sm btn-outline"
+            className="btn btn-secondary"
+            style={{ fontSize: '10px' }}
             disabled={page <= 1}
             onClick={() => setPage(p => p - 1)}
           >
-            Previous
+            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>chevron_left</span>
+            PREV
           </button>
-          <span className="text-body-sm text-on-surface-variant self-center">
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--outline)' }}>
             Page {pagination.page} of {pagination.pages}
           </span>
           <button
-            className="btn btn-sm btn-outline"
+            className="btn btn-secondary"
+            style={{ fontSize: '10px' }}
             disabled={page >= pagination.pages}
             onClick={() => setPage(p => p + 1)}
           >
-            Next
+            NEXT
+            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>chevron_right</span>
           </button>
         </div>
       )}

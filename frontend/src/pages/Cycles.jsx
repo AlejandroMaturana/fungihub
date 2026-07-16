@@ -10,7 +10,6 @@ function CycleCard({ cycle, onUpdate }) {
   const { status, currentPhase, species, strain, startDate, endDate, Recipe } = cycle
   const isActive = status === 'ACTIVE'
   const isPlanned = status === 'PLANNED'
-  const isCompleted = status === 'COMPLETED'
 
   async function handleUpdate(payload) {
     try {
@@ -22,55 +21,58 @@ function CycleCard({ cycle, onUpdate }) {
   }
 
   return (
-    <div className={`bg-surface-container border border-outline-variant rounded-lg p-5 ${isActive ? 'border-l-4 border-l-primary' : isPlanned ? 'border-l-4 border-l-amber' : ''}`}>
-      <div className="flex justify-between items-start mb-4">
+    <div className="glass-card" style={{
+      padding: '20px',
+      borderLeft: `4px solid ${isActive ? 'var(--spore-green)' : isPlanned ? 'var(--amber)' : 'var(--outline-variant)'}`,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-primary' : isPlanned ? 'bg-amber' : 'bg-on-surface-variant'}`} />
-            <span className="font-label-caps text-10px text-on-surface-variant">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: isActive ? 'var(--spore-green)' : isPlanned ? 'var(--amber)' : 'var(--outline)' }} />
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               {STATUS_LABELS[status] || status} · {PHASE_LABELS[currentPhase] || currentPhase}
             </span>
           </div>
-          <h2 className="text-headline-md text-on-surface">{strain || species || 'Unknown'}</h2>
-          <p className="text-body-md text-on-surface-variant">{species}</p>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '2px' }}>{strain || species || 'Unknown'}</h2>
+          <p style={{ fontSize: '12px', color: 'var(--outline)' }}>{species}</p>
         </div>
         {startDate && (
-          <div className="text-right">
-            <span className="font-label-caps text-9px text-on-surface-variant block">START DATE</span>
-            <span className="text-data-sm text-on-surface font-mono">{new Date(startDate).toLocaleDateString()}</span>
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '2px' }}>START DATE</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--on-surface)' }}>{new Date(startDate).toLocaleDateString()}</span>
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-4 pt-4 border-t border-outline-variant/30">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid var(--outline-variant)' }}>
         <div>
-          <span className="font-label-caps text-9px text-on-surface-variant block uppercase">Recipe</span>
-          <span className="text-body-md text-on-surface">{Recipe?.name || '—'}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '2px' }}>Recipe</span>
+          <span style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{Recipe?.name || '—'}</span>
         </div>
         <div>
-          <span className="font-label-caps text-9px text-on-surface-variant block uppercase">End Date</span>
-          <span className="text-body-md text-on-surface">{endDate ? new Date(endDate).toLocaleDateString() : '—'}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '2px' }}>End Date</span>
+          <span style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{endDate ? new Date(endDate).toLocaleDateString() : '—'}</span>
         </div>
       </div>
 
-      <div className="flex gap-2">
-        {(isActive || isCompleted) && (
-          <Link to={`/cycles/${cycle.id}/bioactives`} className="btn btn-outline flex-1 text-center">
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {(isActive || status === 'COMPLETED') && (
+          <Link to={`/cultivation/cycles/${cycle.id}/bioactives`} className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center', fontSize: '10px' }}>
             BIOACTIVES
           </Link>
         )}
         {isActive && (
-          <button onClick={() => handleUpdate({ status: 'COMPLETED' })} className="btn btn-primary flex-1">
+          <button onClick={() => handleUpdate({ status: 'COMPLETED' })} className="btn btn-glow" style={{ flex: 1, fontSize: '10px' }}>
             COMPLETE
           </button>
         )}
         {isPlanned && (
-          <button onClick={() => handleUpdate({ status: 'ACTIVE' })} className="btn btn-primary flex-1">
+          <button onClick={() => handleUpdate({ status: 'ACTIVE' })} className="btn btn-glow" style={{ flex: 1, fontSize: '10px' }}>
             START
           </button>
         )}
         {(isActive || isPlanned) && (
-          <button onClick={() => handleUpdate({ status: 'ABORTED' })} className="btn btn-danger flex-1">
+          <button onClick={() => handleUpdate({ status: 'ABORTED' })} className="btn btn-danger" style={{ flex: 1, fontSize: '10px' }}>
             ABORT
           </button>
         )}
@@ -110,11 +112,8 @@ function Cycles() {
     setSubmitting(true)
     try {
       await createCycle({
-        recipeId: parseInt(form.recipeId, 10),
-        species: form.species,
-        strain: form.strain || undefined,
-        startDate: form.startDate || undefined,
-        deviceId: form.deviceId ? parseInt(form.deviceId, 10) : undefined,
+        recipeId: parseInt(form.recipeId, 10), species: form.species, strain: form.strain || undefined,
+        startDate: form.startDate || undefined, deviceId: form.deviceId ? parseInt(form.deviceId, 10) : undefined,
       })
       setShowForm(false)
       setForm({ recipeId: '', species: '', strain: '', startDate: '', deviceId: '' })
@@ -132,123 +131,121 @@ function Cycles() {
   if (loading) return <LoadingState message="Loading cycles..." icon="cyclone" />
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 className="text-headline-lg text-on-surface">Cultivation Cycles</h1>
-          <p className="text-body-md text-on-surface-variant">{cycles.length} cycle{cycles.length !== 1 ? 's' : ''} total</p>
+          <h1 className="gradient-title" style={{ fontSize: '28px', marginBottom: '4px' }}>Cultivation Cycles</h1>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--outline)' }}>
+            {cycles.length} cycle{cycles.length !== 1 ? 's' : ''} total
+          </p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="btn btn-primary"
-        >
-          <span className="material-symbols-outlined text-18px">add</span>
+        <button onClick={() => setShowForm(true)} className="btn btn-glow" style={{ fontSize: '11px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>
           NEW CYCLE
         </button>
       </div>
 
       {error && (
-        <div className="p-3 rounded bg-error-container/10 border border-error/40 flex items-center gap-3">
-          <span className="material-symbols-outlined text-error text-18px">warning</span>
-          <span className="text-data-sm text-error font-semibold">{error}</span>
+        <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--error-red)' }}>warning</span>
+          <span style={{ fontSize: '12px', color: 'var(--error-red)', fontWeight: 600 }}>{error}</span>
         </div>
       )}
 
+      {/* Active Cycles */}
       {active.length > 0 && (
         <section>
-          <h2 className="text-headline-md text-on-surface mb-4">Active</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '16px' }}>Active</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '16px' }}>
             {active.map(c => <CycleCard key={c.id} cycle={c} onUpdate={load} />)}
           </div>
         </section>
       )}
 
+      {/* Empty State */}
       {cycles.length === 0 && !error && (
-        <div className="flex-1 flex items-center justify-center py-20">
-          <div className="text-center max-w-md">
-            <span className="material-symbols-outlined text-96px text-on-surface-variant opacity-20 mb-6">cyclone</span>
-            <h2 className="text-headline-md text-on-surface mb-4">No Cycles</h2>
-            <p className="text-body-md text-on-surface-variant mb-8">
-              No cultivation cycles yet. Start a new batch to begin tracking growth.
-            </p>
-          </div>
+        <div className="glass-card" style={{ padding: '48px', textAlign: 'center' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--outline)', marginBottom: '16px', display: 'block' }}>cyclone</span>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '8px' }}>No Cycles</h3>
+          <p style={{ fontSize: '13px', color: 'var(--outline)', marginBottom: '24px' }}>
+            No cultivation cycles yet. Start a new batch to begin tracking growth.
+          </p>
         </div>
       )}
 
+      {/* History Table */}
       {historical.length > 0 && (
-        <section className="mt-4">
-          <h3 className="text-headline-md text-on-surface mb-4">History</h3>
-          <div className="bg-surface-container border border-outline-variant rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr className="border-b border-outline-variant text-label-caps text-9px text-on-surface-variant">
-                    <th className="p-3 font-weight-normal">Start</th>
-                    <th className="p-3 font-weight-normal">Species</th>
-                    <th className="p-3 font-weight-normal">Status</th>
-                    <th className="p-3 font-weight-normal">Phase</th>
-                    <th className="p-3 font-weight-normal">Recipe</th>
-                    <th className="p-3 font-weight-normal">End Date</th>
+        <section>
+          <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--on-surface)', marginBottom: '16px' }}>History</h3>
+          <div className="glass-card" style={{ overflow: 'hidden' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Start</th>
+                  <th>Species</th>
+                  <th>Status</th>
+                  <th>Phase</th>
+                  <th>Recipe</th>
+                  <th>End Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historical.map(c => (
+                  <tr key={c.id}>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
+                      {c.startDate ? new Date(c.startDate).toLocaleDateString() : '—'}
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{c.species || 'Unknown'}</span>
+                      {c.strain && <span style={{ fontSize: '9px', color: 'var(--outline)', display: 'block' }}>Strain: {c.strain}</span>}
+                    </td>
+                    <td>
+                      <span style={{
+                        padding: '2px 8px', borderRadius: '4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
+                        border: `1px solid ${c.status === 'ABORTED' ? 'rgba(239,68,68,0.3)' : 'rgba(var(--spore-green-rgb),0.3)'}`,
+                        background: c.status === 'ABORTED' ? 'rgba(239,68,68,0.1)' : 'rgba(var(--spore-green-rgb),0.1)',
+                        color: c.status === 'ABORTED' ? 'var(--error-red)' : 'var(--spore-green)',
+                      }}>
+                        {STATUS_LABELS[c.status] || c.status}
+                      </span>
+                    </td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--on-surface-variant)' }}>
+                      {PHASE_LABELS[c.currentPhase] || c.currentPhase}
+                    </td>
+                    <td style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{c.Recipe?.name || '—'}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--on-surface-variant)' }}>
+                      {c.endDate ? new Date(c.endDate).toLocaleDateString() : '—'}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {historical.map(c => (
-                    <tr key={c.id} className="hover:bg-surface-container-highest/40 transition-colors">
-                      <td className="p-3 text-data-sm text-on-surface-variant font-mono">
-                        {c.startDate ? new Date(c.startDate).toLocaleDateString() : '—'}
-                      </td>
-                      <td className="p-3">
-                        <span className="text-body-md text-on-surface">{c.species || 'Unknown'}</span>
-                        {c.strain && <span className="text-9px text-on-surface-variant block">Strain: {c.strain}</span>}
-                      </td>
-                      <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded border text-9px font-bold uppercase ${
-                          c.status === 'ABORTED'
-                            ? 'border-error/30 text-error bg-error/10'
-                            : 'border-primary/30 text-primary bg-primary/10'
-                        }`}>
-                          {STATUS_LABELS[c.status] || c.status}
-                        </span>
-                      </td>
-                      <td className="p-3 text-11px font-mono text-on-surface-variant">{PHASE_LABELS[c.currentPhase] || c.currentPhase}</td>
-                      <td className="p-3 text-body-md text-on-surface">{c.Recipe?.name || '—'}</td>
-                      <td className="p-3 text-data-sm font-mono text-on-surface-variant">
-                        {c.endDate ? new Date(c.endDate).toLocaleDateString() : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
       )}
 
+      {/* Create Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6" style={{ background: 'color-mix(in srgb, var(--surface-dim) 85%, transparent)', backdropFilter: 'blur(4px)' }}>
-          <div className="relative bg-surface border border-outline-variant rounded-xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
-            <div className="px-6 py-4 border-b border-outline-variant flex justify-between items-center">
-              <h2 className="text-headline-md text-on-surface">New Cycle</h2>
-              <button
-                onClick={() => setShowForm(false)}
-                className="btn btn-ghost"
-              >
-                <span className="material-symbols-outlined">close</span>
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="glass-card modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', maxHeight: '85vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--outline-variant)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--on-surface)' }}>New Cycle</h2>
+              <button onClick={() => setShowForm(false)} className="btn btn-ghost btn-sm">
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
               </button>
             </div>
-            <form onSubmit={handleCreate} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            <form onSubmit={handleCreate} style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
-                <label className="font-label-caps text-9px text-on-surface-variant block mb-1">Recipe</label>
-                <select value={form.recipeId} onChange={e => setForm({...form, recipeId: e.target.value})} required
-                  className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 text-data-sm focus:outline-none focus:border-primary cursor-pointer">
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Recipe</label>
+                <select value={form.recipeId} onChange={e => setForm({...form, recipeId: e.target.value})} required className="form-select">
                   <option value="">— Select Recipe —</option>
                   {recipes.map(r => <option key={r.id} value={r.id}>{r.name} ({r.species})</option>)}
                 </select>
               </div>
               <div>
-                <label className="font-label-caps text-9px text-on-surface-variant block mb-1">Device / Chamber</label>
-                <select value={form.deviceId} onChange={e => setForm({...form, deviceId: e.target.value})}
-                  className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 text-data-sm focus:outline-none focus:border-primary cursor-pointer">
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Device / Chamber</label>
+                <select value={form.deviceId} onChange={e => setForm({...form, deviceId: e.target.value})} className="form-select">
                   <option value="">— No device (manual) —</option>
                   {devices.map(d => (
                     <option key={d.id} value={d.id}>
@@ -258,29 +255,20 @@ function Cycles() {
                 </select>
               </div>
               <div>
-                <label className="font-label-caps text-9px text-on-surface-variant block mb-1">Species</label>
-                <input value={form.species} onChange={e => setForm({...form, species: e.target.value})} required
-                  className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 text-data-sm focus:outline-none focus:border-primary" />
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Species</label>
+                <input value={form.species} onChange={e => setForm({...form, species: e.target.value})} required className="form-input" />
               </div>
               <div>
-                <label className="font-label-caps text-9px text-on-surface-variant block mb-1">Strain</label>
-                <input value={form.strain} onChange={e => setForm({...form, strain: e.target.value})}
-                  className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 text-data-sm focus:outline-none focus:border-primary" />
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Strain</label>
+                <input value={form.strain} onChange={e => setForm({...form, strain: e.target.value})} className="form-input" />
               </div>
               <div>
-                <label className="font-label-caps text-9px text-on-surface-variant block mb-1">Start Date</label>
-                <input type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} required
-                  className="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 text-data-sm focus:outline-none focus:border-primary" />
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '4px' }}>Start Date</label>
+                <input type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} required className="form-input" />
               </div>
-              <div className="flex justify-end gap-3 pt-2 pb-4">
-                <button type="button" onClick={() => setShowForm(false)}
-                  className="btn btn-secondary">
-                  Cancel
-                </button>
-                <button type="submit" disabled={submitting}
-                  className="btn btn-primary">
-                  {submitting ? 'Creating...' : 'Create Cycle'}
-                </button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', paddingTop: '8px', borderTop: '1px solid var(--outline-variant)' }}>
+                <button type="button" onClick={() => setShowForm(false)} className="btn btn-secondary" style={{ fontSize: '11px' }}>Cancel</button>
+                <button type="submit" disabled={submitting} className="btn btn-glow" style={{ fontSize: '11px' }}>{submitting ? 'Creating...' : 'Create Cycle'}</button>
               </div>
             </form>
           </div>

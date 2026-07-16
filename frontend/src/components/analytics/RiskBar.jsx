@@ -1,26 +1,33 @@
-function RiskBar({ label, value, icon, severity }) {
-  const colorMap = {
-    low: 'bg-primary',
-    moderate: 'bg-tertiary',
-    high: 'bg-warning',
-    critical: 'bg-error',
+function RiskBar({ label, value, icon }) {
+  const getColor = (v) => {
+    if (v <= 25) return { bar: 'var(--spore-green)', text: 'var(--spore-green)', label: 'Low' }
+    if (v <= 50) return { bar: 'var(--accent-blue, #60a5fa)', text: 'var(--accent-blue, #60a5fa)', label: 'Moderate' }
+    if (v <= 75) return { bar: 'var(--amber)', text: 'var(--amber)', label: 'High' }
+    return { bar: 'var(--error-red)', text: 'var(--error-red)', label: 'Critical' }
   }
-  const severityMap = value <= 25 ? 'low' : value <= 50 ? 'moderate' : value <= 75 ? 'high' : 'critical'
-  const barColor = colorMap[severity || severityMap]
+  const c = getColor(value)
+  const pct = Math.min(100, Math.max(0, value))
 
   return (
-    <div className="mb-3">
-      <div className="flex items-center justify-between mb-1.5">
-        <div className="flex items-center gap-2">
-          {icon && <span className="material-symbols-outlined text-16px text-on-surface-variant">{icon}</span>}
-          <span className="font-label-caps text-10px text-on-surface-variant">{label}</span>
+    <div style={{ marginBottom: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {icon && <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--outline)' }}>{icon}</span>}
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
         </div>
-        <span className={`font-label-caps text-10px ${barColor.replace('bg-', 'text-')}`}>{value}%</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 700, color: c.text }}>{c.label}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--on-surface-variant)' }}>{value}%</span>
+        </div>
       </div>
-      <div className="h-2 bg-surface-dim rounded-full overflow-hidden">
+      <div style={{ height: '8px', background: 'rgba(var(--surface-dim-rgb, 28, 27, 31), 0.6)', borderRadius: '9999px', overflow: 'hidden', border: '1px solid var(--outline-variant)' }}>
         <div
-          className={`h-full rounded-full transition-all duration-500 ${barColor}`}
-          style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
+          style={{
+            height: '100%', width: `${pct}%`, borderRadius: '9999px',
+            background: `linear-gradient(90deg, ${c.bar}, ${c.bar}aa)`,
+            transition: 'width 0.5s ease',
+            boxShadow: pct > 50 ? `0 0 8px ${c.bar}40` : 'none',
+          }}
         />
       </div>
     </div>
