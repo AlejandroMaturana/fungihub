@@ -7,7 +7,7 @@ const Telemetry = sequelize.define('Telemetry', {
   sensorId: { type: DataTypes.INTEGER },
   value: { type: DataTypes.DECIMAL(8, 2), allowNull: false },
   sensorType: {
-    type: DataTypes.ENUM('TEMPERATURE', 'HUMIDITY', 'CO2', 'VOC'),
+    type: DataTypes.ENUM('TEMPERATURE', 'HUMIDITY', 'CO2', 'VOC', 'AQI'),
     allowNull: false,
   },
   unit: { type: DataTypes.STRING(10) },

@@ -22,6 +22,11 @@ const Device = sequelize.define('Device', {
   thingSpeakReadKey: { type: DataTypes.STRING(32), allowNull: true },
   thingSpeakWriteKey: { type: DataTypes.STRING(32), allowNull: true },
   thingSpeakSyncInterval: { type: DataTypes.INTEGER, defaultValue: 300000 },
+  controlMode: {
+    type: DataTypes.ENUM('LOCAL', 'REMOTE', 'OFF', 'AUTO'),
+    defaultValue: 'AUTO',
+  },
+  lastFirmwareState: { type: DataTypes.STRING(30), allowNull: true },
 }, {
   tableName: 'devices',
   timestamps: true,
