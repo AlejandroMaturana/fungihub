@@ -11,7 +11,7 @@ export async function createCycle(payload) {
 }
 
 export async function updateCycle(id, payload) {
-  const { data } = await client.put(`/cycles/${id}`, payload)
+  const { data } = await client.patch(`/cycles/${id}`, payload)
   return data
 }
 
