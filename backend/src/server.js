@@ -63,7 +63,19 @@ async function start() {
       if (!data.deviceId || !data.actuatorCommands) return;
       const cmds = data.actuatorCommands.map(c => ({ channel: c.channel, state: c.command, mode: 'REMOTE' }));
       sendActuatorUpdate(data.deviceId, cmds);
-      publishActuatorCommand(data.deviceId, cmds);
+      const config = {};
+      if (data.phase) config.phase = data.phase;
+      if (data.thresholds) {
+        config.setpoints = {
+          tempMin: data.thresholds.tempMin,
+          tempMax: data.thresholds.tempMax,
+          humMin: data.thresholds.humMin,
+          humMax: data.thresholds.humMax,
+          co2Max: data.thresholds.co2Max,
+        };
+      }
+      if (data.readings) config.readings = data.readings;
+      publishActuatorCommand(data.deviceId, cmds, Object.keys(config).length > 0 ? config : null);
     };
 
     events.on('control_eval', publishActuators);

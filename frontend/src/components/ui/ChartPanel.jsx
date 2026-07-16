@@ -123,7 +123,18 @@ const CHART_OPTS = {
   },
 }
 
-function ChartPanel({ deviceId, telemetry, has }) {
+const DEFAULT_CHART1_BANDS = [
+  { ax: 'y1', min: 22, max: 28, fill: 'rgba(245,158,11,0.15)', stroke: 'rgba(245,158,11,0.40)' },
+  { ax: 'y2', min: 70, max: 90, fill: 'rgba(56,189,248,0.15)', stroke: 'rgba(56,189,248,0.40)' },
+]
+const DEFAULT_CHART2_BANDS = [
+  { ax: 'y1', min: 800, max: 2000, fill: 'rgba(167,139,250,0.15)', stroke: 'rgba(167,139,250,0.40)' },
+  { ax: 'y2', min: 0, max: 500, fill: 'rgba(251,113,133,0.15)', stroke: 'rgba(251,113,133,0.40)' },
+]
+
+function ChartPanel({ deviceId, telemetry, has, optimalBands }) {
+  const chart1Bands = optimalBands?.chart1 || DEFAULT_CHART1_BANDS
+  const chart2Bands = optimalBands?.chart2 || DEFAULT_CHART2_BANDS
   const [timeRange, setTimeRange] = useState('6h')
   const [labels, setLabels] = useState([])
   const [data1, setData1] = useState({ temp: [], hum: [] })
@@ -150,15 +161,6 @@ function ChartPanel({ deviceId, telemetry, has }) {
     eco2: '#a78bfa',
     tvoc: '#fb7185',
   }
-
-  const chart1Bands = [
-    { ax: 'y1', min: 22, max: 28, fill: 'rgba(245,158,11,0.15)', stroke: 'rgba(245,158,11,0.40)' },
-    { ax: 'y2', min: 70, max: 90, fill: 'rgba(56,189,248,0.15)', stroke: 'rgba(56,189,248,0.40)' },
-  ]
-  const chart2Bands = [
-    { ax: 'y1', min: 800, max: 2000, fill: 'rgba(167,139,250,0.15)', stroke: 'rgba(167,139,250,0.40)' },
-    { ax: 'y2', min: 0, max: 500, fill: 'rgba(251,113,133,0.15)', stroke: 'rgba(251,113,133,0.40)' },
-  ]
 
   async function loadHistory(range) {
     if (!deviceId) return

@@ -3,7 +3,7 @@ import sequelize from '../config/database.js';
 
 class Subscription extends Model {
   static PLANS = {
-    FREE: { apiCallsPerMonth: 1000, dataRetentionDays: 30 },
+    FREE: { apiCallsPerMonth: 50000, dataRetentionDays: 30 },
     BASIC: { apiCallsPerMonth: 10000, dataRetentionDays: 90 },
     PREMIUM: { apiCallsPerMonth: 100000, dataRetentionDays: 365 },
   };

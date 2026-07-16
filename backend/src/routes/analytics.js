@@ -68,7 +68,7 @@ router.get('/:chamberId/analytics', optionalAuth, async (req, res) => {
     const risks = calcRisks(sensors.temperature, sensors.humidity, vpdResult?.vpd);
 
     const activeCycle = await CultivationCycle.findOne({
-      where: { deviceId: device.id, status: { [Op.in]: ['ACTIVE', 'RUNNING'] } },
+      where: { deviceId: device.id, status: 'ACTIVE' },
       include: [{ model: CycleState, separate: true, limit: 1, order: [['timestamp', 'DESC']] }],
     });
 

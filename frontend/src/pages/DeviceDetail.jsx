@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getDevice, getActuators, setActuatorDirect, getLatestTelemetry, getTelegramDeviceConfig, updateTelegramDeviceConfig } from '../api/client.js'
+import { getDevice, getActuators, setActuatorDirect, getLatestTelemetry, getLatestHealth, getTelegramDeviceConfig, updateTelegramDeviceConfig } from '../api/client.js'
 import { useSSE } from '../api/useSSE.js'
 import DomeGauge from '../components/ui/DomeGauge.jsx'
 import ChartPanel from '../components/ui/ChartPanel.jsx'
@@ -14,6 +14,7 @@ const SENSOR_CFG = {
   hum: { label: 'Humidity', unit: '%RH', min: 50, max: 100, optMin: 70, optMax: 90, decimals: 1, chartColor: '#38bdf8' },
   eco2: { label: 'eCO₂', unit: 'ppm', min: 400, max: 5000, optMin: 800, optMax: 2000, decimals: 0, chartColor: '#a78bfa' },
   tvoc: { label: 'TVOC', unit: 'ppb', min: 0, max: 2000, optMin: 0, optMax: 500, decimals: 0, chartColor: '#fb7185' },
+  aqi: { label: 'AQI', unit: 'AQI', min: 0, max: 500, optMin: 0, optMax: 100, decimals: 0, chartColor: '#4ade80' },
 }
 
 function DeviceDetail() {
@@ -29,6 +30,7 @@ function DeviceDetail() {
   const [pendingChannels, setPendingChannels] = useState(new Set())
   const [tgConfig, setTgConfig] = useState(null)
   const [tgSaving, setTgSaving] = useState(false)
+  const [health, setHealth] = useState(null)
 
   const prevTelemetry = useRef({})
   const sparkHistory = useRef({ temp: [], hum: [], eco2: [], tvoc: [] })
@@ -50,6 +52,10 @@ function DeviceDetail() {
 
       getTelegramDeviceConfig(id).then(cfg => {
         if (!cancelledRef.current) setTgConfig(cfg)
+      }).catch(() => {})
+
+      getLatestHealth(id).then(h => {
+        if (!cancelledRef.current && h) setHealth(h)
       }).catch(() => {})
 
       const latest = await getLatestTelemetry(id)
@@ -89,6 +95,7 @@ function DeviceDetail() {
       humidity: sensors.humidity ?? prev.humidity,
       co2: sensors.co2 ?? prev.co2,
       voc: sensors.voc ?? prev.voc,
+      aqi: sensors.aqi ?? prev.aqi,
       ts: new Date().toISOString(),
     }))
     if (!initial) pushHistory(sensors)
@@ -117,6 +124,9 @@ function DeviceDetail() {
       if (data.sensors) {
         applyTelemetry(data.sensors)
       }
+    }
+    if (type === 'health' && device && data.deviceId === device.deviceId) {
+      setHealth(prev => ({ ...prev, ...data }))
     }
     if (type === 'ack') {
       const ch = data.actuatorState?.channel
@@ -207,6 +217,7 @@ function DeviceDetail() {
     hum: telemetry.humidity != null,
     eco2: telemetry.co2 != null,
     tvoc: telemetry.voc != null,
+    aqi: telemetry.aqi != null,
   }
 
   return (
@@ -229,6 +240,46 @@ function DeviceDetail() {
           <p className="text-body-md text-on-surface-variant" style={{ marginTop: '4px' }}>
             {device.hwRevision ? `HW ${device.hwRevision} · ` : ''}Firmware {device.firmwareVersion} · {device.macAddress || 'MAC —'} · Last seen {device.lastSeen ? new Date(device.lastSeen).toLocaleString() : 'never'}
           </p>
+          {(device.controlMode || device.lastFirmwareState) && (
+            <div className="flex items-center gap-3 mt-1">
+              {device.controlMode && (
+                <span className="text-8px font-label-caps px-2 py-0.5 rounded" style={{
+                  background: device.controlMode === 'REMOTE' ? 'rgba(107,251,154,0.12)' : 'rgba(255,255,255,0.06)',
+                  color: device.controlMode === 'REMOTE' ? 'var(--spore-green)' : 'var(--on-surface-variant)',
+                  border: `1px solid ${device.controlMode === 'REMOTE' ? 'rgba(107,251,154,0.3)' : 'var(--outline-variant)'}`,
+                }}>
+                  MODE: {device.controlMode}
+                </span>
+              )}
+              {device.lastFirmwareState && (
+                <span className="text-8px font-label-caps px-2 py-0.5 rounded" style={{
+                  background: device.lastFirmwareState === 'NORMAL' ? 'rgba(107,251,154,0.12)' : 'rgba(255,200,50,0.12)',
+                  color: device.lastFirmwareState === 'NORMAL' ? 'var(--spore-green)' : 'var(--amber)',
+                  border: `1px solid ${device.lastFirmwareState === 'NORMAL' ? 'rgba(107,251,154,0.3)' : 'rgba(255,200,50,0.3)'}`,
+                }}>
+                  FW: {device.lastFirmwareState}
+                </span>
+              )}
+              {health && health.bootTestPassed === false && (
+                <span className="text-8px font-label-caps px-2 py-0.5 rounded" style={{
+                  background: 'rgba(239,68,68,0.12)',
+                  color: '#ef4444',
+                  border: '1px solid rgba(239,68,68,0.3)',
+                }}>
+                  BOOT FAIL{health.bootTestFailReason ? `: ${health.bootTestFailReason}` : ''}
+                </span>
+              )}
+              {health && health.bootTestPassed === true && (
+                <span className="text-8px font-label-caps px-2 py-0.5 rounded" style={{
+                  background: 'rgba(107,251,154,0.12)',
+                  color: 'var(--spore-green)',
+                  border: '1px solid rgba(107,251,154,0.3)',
+                }}>
+                  BOOT OK
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </section>
 

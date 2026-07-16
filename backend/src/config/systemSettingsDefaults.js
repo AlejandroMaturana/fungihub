@@ -27,6 +27,10 @@ export const SYSTEM_SETTINGS_DEFAULTS = [
   { key: 'default_cycle_status', value: 'PLANNED', type: 'string', label: 'Default Cycle Status', category: 'states' },
   { key: 'offline_threshold_seconds', value: '120', type: 'number', label: 'Offline Threshold (seconds)', category: 'states' },
 
+  // === Safety ===
+  { key: 'temp_critical', value: '32', type: 'number', label: 'Temperature Critical Threshold (°C)', category: 'safety' },
+  { key: 'temp_recovery', value: '28', type: 'number', label: 'Temperature Recovery Threshold (°C)', category: 'safety' },
+
   // === Alarms ===
   { key: 'alarm_auto_resolve_minutes', value: '0', type: 'number', label: 'Auto-Resolve Alarms After (minutes, 0=disabled)', category: 'alarms' },
   { key: 'max_alarms_per_device', value: '50', type: 'number', label: 'Max Alarms Per Device', category: 'alarms' },

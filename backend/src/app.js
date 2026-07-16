@@ -58,7 +58,7 @@ app.get('/events', (req, res) => {
     'X-Accel-Buffering': 'no',
   });
 
-  res.write('data: {"type":"connected"}\n\n');
+  res.write('event: connected\ndata: {"type":"connected"}\n\n');
 
   const onAck = (data) => {
     res.write(`event: ack
@@ -90,12 +90,33 @@ data: ${JSON.stringify(data)}
 
 `);
   };
+  const onHealth = (data) => {
+    res.write(`event: health
+data: ${JSON.stringify(data)}
+
+`);
+  };
+  const onMaintenance = (data) => {
+    res.write(`event: maintenance
+data: ${JSON.stringify(data)}
+
+`);
+  };
+  const onPhaseTransition = (data) => {
+    res.write(`event: phase_transition
+data: ${JSON.stringify(data)}
+
+`);
+  };
 
   events.on('ack', onAck);
   events.on('state', onState);
   events.on('telemetry', onTelemetry);
   events.on('alarm', onAlarm);
   events.on('control_eval', onControlEval);
+  events.on('health', onHealth);
+  events.on('maintenance', onMaintenance);
+  events.on('phase_transition', onPhaseTransition);
 
   const keepAlive = setInterval(() => {
     res.write(':keepalive\n\n');
@@ -107,6 +128,9 @@ data: ${JSON.stringify(data)}
     events.off('telemetry', onTelemetry);
     events.off('alarm', onAlarm);
     events.off('control_eval', onControlEval);
+    events.off('health', onHealth);
+    events.off('maintenance', onMaintenance);
+    events.off('phase_transition', onPhaseTransition);
     clearInterval(keepAlive);
   });
 });
