@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 import express from 'express';
-import { Device, Telemetry, Actuator, UserChamberAccess, CultivationCycle, Recipe, IntegrationCredentials, DeviceHealth, DeviceMaintenance } from '../models/index.js';
+import { Device, Telemetry, Actuator, UserChamberAccess, CultivationCycle, CycleState, Recipe, IntegrationCredentials, DeviceHealth, DeviceMaintenance } from '../models/index.js';
 import { checkDeviceAccess } from '../middlewares/tenant.js';
 import { logAudit } from '../services/auditService.js';
 import { sendActuatorUpdate } from '../services/webSocketServer.js';
@@ -387,8 +387,18 @@ router.patch('/devices/:id/actuators/:channel', checkDeviceAccess, async (req, r
 router.delete('/devices/:id', checkDeviceAccess, async (req, res) => {
   try {
     const device = req.device;
+
+    const cycles = await CultivationCycle.findAll({ where: { deviceId: device.id }, attributes: ['id'] });
+    for (const cycle of cycles) {
+      await CycleState.destroy({ where: { cycleId: cycle.id } });
+    }
+    await CultivationCycle.destroy({ where: { deviceId: device.id } });
     await Actuator.destroy({ where: { deviceId: device.id } });
     await Telemetry.destroy({ where: { deviceId: device.id } });
+    await DeviceHealth.destroy({ where: { deviceId: device.id } });
+    await DeviceMaintenance.destroy({ where: { deviceId: device.id } });
+    await IntegrationCredentials.destroy({ where: { deviceId: device.id } });
+    await UserChamberAccess.destroy({ where: { deviceId: device.id } });
     await device.destroy();
 
     if (req.user) {
