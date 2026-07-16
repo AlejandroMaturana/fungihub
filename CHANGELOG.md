@@ -2,6 +2,26 @@
 
 ## 2026-07-16
 
+### Backend — Fixed - v0.23.1
+
+Al cambiar el estado de un ciclo a `ACTIVE` (START), ahora se cargan los setpoints de la fase actual de la receta y se publican inmediatamente vía MQTT al dispositivo correspondiente.
+Eliminados prefijos duplicados `/cycles/cycles/` en todas las rutas del backend.
+Eliminadas rutas legacy duplicadas en `recipes.js` que interferían con las rutas de `cycles.js`.
+Exportada función `getPhaseThresholds` en `ControlEngine.js` para su uso desde otros módulos.
+
+### Frontend — Fixed - v1.10.1
+
+Corregida alternancia de temas claro/oscuro: el `useEffect` ahora alterna correctamente entre las clases `light` y `dark`.
+Corregido uso de `client.put()` por `client.patch()` al actualizar ciclos.
+Corregido manejo de respuesta de `actuators` (ahora retorna `data.data ?? data`).
+Corregido componente `<Navigate>` en `routes.jsx` (ahora envuelto correctamente como componente).
+Corregidas varias rutas de API:
+`/analytics/chamber/:id` → `/chambers/:id/analytics`
+`/audit-logs` → `/admin/audit-logs`
+`/devices/:id/telegram` → `/telegram/device/:id`
+
+## 2026-07-16
+
 ### Backend — v0.23.0
 
 - Device: +lastFirmwareState, +controlMode (ENUM)
