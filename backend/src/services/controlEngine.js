@@ -31,7 +31,7 @@ function getActuatorState(deviceId) {
   return actuatorState[deviceId];
 }
 
-function getPhaseThresholds(recipe, phase) {
+export function getPhaseThresholds(recipe, phase) {
   switch (phase) {
     case 'INCUBATION':
       return {
