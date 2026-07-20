@@ -7,12 +7,12 @@ export async function getProfile() {
 }
 
 export async function updateProfileSettings(payload) {
-  const { data } = await client.put('/settings/profile', payload)
+  const { data } = await client.patch('/settings/profile', payload)
   return data
 }
 
 export async function changePassword(payload) {
-  const { data } = await client.put('/settings/password', payload)
+  const { data } = await client.post('/settings/change-password', payload)
   return data
 }
 
@@ -60,7 +60,7 @@ export async function getSystemSettings() {
 }
 
 export async function updateSystemSettings(payload) {
-  const { data } = await client.put('/settings/system', payload)
+  const { data } = await client.patch('/settings/system', payload)
   return data
 }
 
@@ -80,8 +80,8 @@ export async function getTelegramBotStatus() {
 }
 
 // ThingSpeak
-export async function validateThingSpeak(payload) {
-  const { data } = await client.post('/settings/thingspeak/validate', payload)
+export async function validateThingSpeak(deviceId, apiKey) {
+  const { data } = await client.post(`/devices/${deviceId}/thingSpeak/validate`, { apiKey })
   return data
 }
 

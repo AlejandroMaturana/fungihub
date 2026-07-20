@@ -16,7 +16,7 @@ export async function createDevice(payload) {
 }
 
 export async function updateDevice(id, payload) {
-  const { data } = await client.put(`/devices/${id}`, payload)
+  const { data } = await client.patch(`/devices/${id}`, payload)
   return data
 }
 
@@ -25,7 +25,7 @@ export async function getActuators(deviceId) {
   return data.data ?? data
 }
 
-export async function setActuatorDirect(deviceId, actuatorId, value) {
-  const { data } = await client.post(`/devices/${deviceId}/actuators/${actuatorId}/direct`, { value })
+export async function setActuatorDirect(deviceId, channel, value) {
+  const { data } = await client.patch(`/devices/${deviceId}/actuators/${channel}`, { command: value })
   return data
 }

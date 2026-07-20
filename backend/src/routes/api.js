@@ -542,4 +542,21 @@ router.get('/devices/:id/maintenance/latest', checkDeviceAccess, async (req, res
   }
 });
 
+router.post('/devices/:id/maintenance', checkDeviceAccess, async (req, res) => {
+  try {
+    const { type, component, notes, health, estimatedFailure } = req.body;
+    const record = await DeviceMaintenance.create({
+      deviceId: parseInt(req.params.id, 10),
+      component: component || type || 'GENERAL',
+      health: health || 100,
+      estimatedFailure: estimatedFailure || null,
+      reason: notes || null,
+      timestamp: new Date(),
+    });
+    res.status(201).json(record);
+  } catch (err) {
+    res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+});
+
 export default router;

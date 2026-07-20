@@ -6,6 +6,6 @@ export async function getTelegramDeviceConfig(deviceId) {
 }
 
 export async function updateTelegramDeviceConfig(deviceId, payload) {
-  const { data } = await client.put(`/telegram/device/${deviceId}`, payload)
+  const { data } = await client.patch(`/telegram/device/${deviceId}`, payload)
   return data
 }
