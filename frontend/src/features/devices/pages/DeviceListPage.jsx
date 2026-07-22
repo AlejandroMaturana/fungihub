@@ -1,0 +1,224 @@
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { getDevices, deleteDevice } from '../../../api/client.js'
+import LoadingState from '../../../shared/components/LoadingState.jsx'
+import EmptyState from '../../../shared/components/EmptyState.jsx'
+import EntityHeader from '../../../shared/components/EntityHeader.jsx'
+
+const STATUS_COLORS = {
+  ONLINE: { color: 'var(--spore-green)', bg: 'rgba(var(--spore-green-rgb),0.1)', border: 'rgba(var(--spore-green-rgb),0.3)' },
+  DEGRADED: { color: 'var(--amber)', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)' },
+  STALE: { color: 'var(--amber)', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)' },
+  OFFLINE: { color: 'var(--error-red)', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)' },
+  MAINTENANCE: { color: 'var(--info)', bg: 'rgba(59,130,246,0.1)', border: 'rgba(59,130,246,0.3)' },
+  PROVISIONING: { color: 'var(--outline)', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' },
+  RETIRED: { color: 'var(--outline)', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' },
+  ERROR: { color: 'var(--error-red)', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)' },
+}
+
+function formatTimeAgo(seconds) {
+  if (seconds == null) return 'Never'
+  if (seconds < 5) return 'Just now'
+  if (seconds < 60) return `${seconds}s`
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  return `${h}h ${m}m`
+}
+
+function DeviceList() {
+  const navigate = useNavigate()
+  const [devices, setDevices] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [showDeleteModal, setShowDeleteModal] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
+  async function load() {
+    try {
+      setError(null)
+      const data = await getDevices()
+      setDevices(data)
+    } catch (err) {
+      setError(err.message || 'Error loading devices')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+
+  async function handleDelete() {
+    if (!showDeleteModal) return
+    setDeleting(true)
+    try {
+      await deleteDevice(showDeleteModal.id)
+      setShowDeleteModal(null)
+      await load()
+    } catch (err) {
+      setError(err.message || 'Error deleting device')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const filtered = devices.filter(d => {
+    if (statusFilter && d.status !== statusFilter) return false
+    if (search) {
+      const q = search.toLowerCase()
+      return (
+        (d.deviceId || '').toLowerCase().includes(q) ||
+        (d.chamberName || '').toLowerCase().includes(q) ||
+        (d.macAddress || '').toLowerCase().includes(q)
+      )
+    }
+    return true
+  })
+
+  const onlineCount = devices.filter(d => d.status === 'ONLINE').length
+  const staleCount = devices.filter(d => d.status === 'STALE' || d.status === 'DEGRADED').length
+  const offlineCount = devices.filter(d => d.status === 'OFFLINE').length
+
+  if (loading) return <LoadingState message="Loading devices..." icon="devices" />
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <EntityHeader
+        title="Device Fleet"
+        subtitle={`${devices.length} device${devices.length !== 1 ? 's' : ''} · ${onlineCount} online${staleCount > 0 ? ` · ${staleCount} stale` : ''}${offlineCount > 0 ? ` · ${offlineCount} offline` : ''}`}
+        actions={
+          <Link to="/fleet/provision" className="btn btn-glow" style={{ fontSize: '11px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>bluetooth</span>
+            PROVISION
+          </Link>
+        }
+      />
+
+      {error && (
+        <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--error-red)' }}>warning</span>
+          <span style={{ fontSize: '12px', color: 'var(--error-red)', fontWeight: 600 }}>{error}</span>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search by ID, name, or MAC..."
+          className="form-input"
+          style={{ flex: 1, minWidth: '200px', fontSize: '12px' }}
+        />
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="form-select" style={{ fontSize: '11px' }}>
+          <option value="">All statuses</option>
+          <option value="ONLINE">Online</option>
+          <option value="DEGRADED">Degraded</option>
+          <option value="STALE">Stale</option>
+          <option value="OFFLINE">Offline</option>
+          <option value="MAINTENANCE">Maintenance</option>
+        </select>
+      </div>
+
+      {devices.length === 0 ? (
+        <EmptyState
+          icon="devices"
+          title="No devices"
+          message="No devices registered yet. Start by provisioning a new device."
+          action={{ label: 'PROVISION DEVICE', onClick: () => navigate('/fleet/provision') }}
+        />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon="search_off"
+          title="No matches"
+          message="No devices match your search criteria."
+        />
+      ) : (
+        <div className="glass-card" style={{ overflow: 'hidden' }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Device ID</th>
+                <th>Chamber</th>
+                <th>Status</th>
+                <th>Firmware</th>
+                <th>Last Seen</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(d => {
+                const st = STATUS_COLORS[d.status] || STATUS_COLORS.OFFLINE
+                return (
+                  <tr key={d.id}>
+                    <td>
+                      <Link to={`/fleet/devices/${d.id}`} style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--spore-green)', textDecoration: 'none', fontWeight: 600 }}>
+                        {d.deviceId}
+                      </Link>
+                      {d.macAddress && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--outline)', display: 'block' }}>{d.macAddress}</span>}
+                    </td>
+                    <td style={{ fontSize: '13px', color: 'var(--on-surface)' }}>{d.chamberName || '—'}</td>
+                    <td>
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '4px',
+                        padding: '2px 8px', borderRadius: '4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
+                        border: `1px solid ${st.border}`,
+                        background: st.bg,
+                        color: st.color,
+                      }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: st.color }} />
+                        {d.status || 'UNKNOWN'}
+                      </span>
+                    </td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--on-surface-variant)' }}>
+                      {d.firmwareVersion || '—'}
+                    </td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--on-surface-variant)' }}>
+                      <span title={d.lastSeen ? new Date(d.lastSeen).toLocaleString() : 'Never'}>
+                        {formatTimeAgo(d.secondsSinceLastSeen)}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <Link to={`/fleet/devices/${d.id}`} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', borderRadius: '4px', display: 'flex', alignItems: 'center' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-container)'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--outline)' }}>visibility</span>
+                        </Link>
+                        <button onClick={() => setShowDeleteModal(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', borderRadius: '4px', display: 'flex', alignItems: 'center' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-container)'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--error-red)' }}>delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="modal-overlay" onClick={() => !deleting && setShowDeleteModal(null)}>
+          <div className="glass-card modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--error-red)' }}>warning</span>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--on-surface)', textAlign: 'center' }}>Delete Device</h2>
+              <p style={{ fontSize: '13px', color: 'var(--outline)', textAlign: 'center', lineHeight: 1.5 }}>
+                Are you sure you want to delete <strong style={{ color: 'var(--on-surface)' }}>{showDeleteModal.chamberName || showDeleteModal.deviceId}</strong>?
+                This will remove all associated data including cycles, telemetry, and actuator history.
+              </p>
+              <div style={{ display: 'flex', gap: '8px', width: '100%', marginTop: '8px' }}>
+                <button onClick={() => setShowDeleteModal(null)} disabled={deleting} className="btn btn-secondary" style={{ flex: 1, fontSize: '12px' }}>Cancel</button>
+                <button onClick={handleDelete} disabled={deleting} className="btn btn-danger" style={{ flex: 1, fontSize: '12px' }}>
+                  {deleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default DeviceList
