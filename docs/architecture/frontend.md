@@ -2,101 +2,120 @@
 
 ## Stack
 
-| Capa          | Tecnología                     |
-| ------------- | ------------------------------ |
-| Framework     | React 18                       |
-| Build tool    | Vite                           |
-| Routing       | React Router v6                |
-| Estado global | Context API + useReducer       |
-| HTTP          | axios                          |
-| Tiempo real   | EventSource (SSE)              |
-| Gráficos      | Chart.js + react-chartjs-2     |
-| Estilos       | CSS Modules                    |
-| Pruebas       | Vitest + React Testing Library |
-| Linting       | ESLint + Prettier              |
+| Capa          | Tecnología                          |
+| ------------- | ----------------------------------- |
+| Framework     | React 18                            |
+| Build tool    | Vite                                |
+| Routing       | React Router v6                     |
+| Estado global | Context API + useReducer            |
+| HTTP          | axios (instancia compartida)        |
+| Tiempo real   | EventSource (SSE)                   |
+| Gráficos      | Chart.js + react-chartjs-2          |
+| Estilos       | CSS globales + design tokens        |
+| Pruebas       | Vitest + React Testing Library      |
+| Linting       | ESLint + Prettier                   |
+| Tema          | CSS variables + clase `.light`      |
 
 ## Estructura de Directorios
 
 ```
-frontend/
+frontend/src/
+│   App.jsx                         # Layout + Routing (BrowserRouter)
+│   index.css                       # Legacy (no importado)
+│   main.jsx                        # Punto de entrada
 │
-├───dist
-│   │   favicon.ico
-│   │   index.html
-│   │   preview.svg
+├───app/
+│   ├───providers/
+│   │       AuthProvider.jsx        # Contexto de autenticación + JWT refresh
+│   │       AlarmProvider.jsx       # Contexto global de alarmas
+│   │       ThemeProvider.jsx       # Contexto de tema (dark/light)
+│   │
+│   └───routes.jsx                  # Definición de rutas públicas/protégées
 │
-├───public
-│       favicon.ico
-│       preview.svg
+├───api/
+│       AuthContext.jsx             # Re-export de AuthProvider
+│       client.js                   # Barrel: re-exporta todas las APIs de features
+│       useSSE.js                   # Hook SSE principal (ack, telemetry, alarm, etc.)
 │
-└───src
-    │   App.jsx                     # Layout + Routing
-    │   index.css                   # Estilos globales
-    │   main.jsx                    # Punto de entrada (renderiza App)
-    │
-    ├───api
-    │       AuthContext.jsx         # Contexto de autenticación
-    │       client.js               # Instancia axios con interceptors JWT
-    │       useSSE.js               # Hook para Server-Sent Events
-    │
-    ├───components
-    │   ├───auth
-    │   │       AuthModal.jsx       # Modal de login/registro
-    │   │
-    │   ├───dashboard
-    │   │       MetricCard.jsx      # Tarjeta de métricas del dashboard
-    │   │
-    │   ├───device
-    │   │       ActuatorControl.jsx # Control de actuadores (relés, etc.)
-    │   │
-    │   ├───layout
-    │   │       AppShell.jsx        # Contenedor principal de la app
-    │   │       BottomNav.jsx       # Navegación inferior (mobile)
-    │   │       Sidebar.jsx         # Sidebar de navegación (desktop)
-    │   │       StatusFooter.jsx    # Footer con estado del sistema
-    │   │       TopBar.jsx          # Barra superior con usuario, notificaciones, etc.
-    │   │
-    │   └───ui
-    │           ArcGauge.jsx        # Gauge circular
-    │           ChartPanel.jsx       # Panel contenedor para gráficos
-    │           DeviceHistoryChart.jsx # Gráfico histórico de dispositivo
-    │           DevicesEmptyState.jsx # Estado vacío para lista de dispositivos
-    │           DomeGauge.jsx        # Gauge específico (ej. cúpula/temperatura)
-    │           EmptyState.jsx       # Componente genérico de estado vacío
-    │           ErrorBoundary.jsx    # Captura de errores en React
-    │           ErrorState.jsx       # UI de error
-    │           Gauge.jsx            # Componente base de gauge
-    │           LoadingState.jsx     # Estados de carga
-    │           MetricCard.jsx       # Tarjeta de métrica reutilizable
-    │           OfflineBanner.jsx    # Banner de conexión perdida
-    │           OfflineOverlay.jsx   # Overlay cuando está offline
-    │           RecipesEmptyState.jsx # Estado vacío para recetas
-    │           SegmentedBar.jsx     # Barra segmentada (ej. progreso)
-    │           Skeleton.jsx         # Skeleton loaders
-    │           StatusBadge.jsx      # Badge de estado (online/offline, error, etc.)
-    │           SystemAlert.jsx      # Alertas del sistema
-    │           TerminalLog.jsx      # Visualizador de logs tipo terminal
-    │           ToggleSwitch.jsx     # Interruptor on/off
-    │
-    └───pages
-            Cycles.jsx              # Página de ciclos / historial
-            Dashboard.jsx           # Dashboard principal
-            DeviceDetail.jsx        # Detalle de dispositivo
-            Home.jsx                # Página de inicio (post-login)
-            Landing.jsx             # Landing page pública
-            Login.jsx               # Página de login
-            Provisioning.jsx        # Página de aprovisionamiento de dispositivos
-            Recipes.jsx             # Gestión de recetas
-            Settings.jsx            # Configuración de la aplicación
+├───layouts/
+│   ├───AppShell/                   # Contenedor principal (sidebar + topbar + content)
+│   ├───BottomNav/                  # Navegación inferior (mobile)
+│   ├───Sidebar/                    # Sidebar de navegación (desktop)
+│   ├───StatusFooter/               # Footer con versión y estado del sistema
+│   └───TopBar/                     # Barra superior + toggle tema + usuario
 │
-├─── index.html                     # Plantilla HTML principal (Vite)
-├─── package.json                   # Dependencias y scripts del proyecto
-├─── README.md                      # Documentación del frontend
-├─── VERSION                        # Archivo de versión actual
-├─── vite-dev.err.log               # Log de errores en desarrollo
-├─── vite-dev.log                   # Log de desarrollo
-└─── vite.config.js                 # Configuración de Vite (plugins, proxy, etc.)
-
+├───shared/
+│   ├───api/
+│   │       axiosInstance.js        # Instancia axios con baseURL /api/v1 + interceptors JWT
+│   │
+│   ├───components/
+│   │       ChartPanel.jsx          # Panel de gráficos reutilizable (Chart.js)
+│   │       LoadingState.jsx        # Skeletons y estados de carga
+│   │       ErrorBoundary.jsx       # Captura de errores React
+│   │       OfflineBanner.jsx       # Banner de conexión perdida
+│   │       ...
+│   │
+│   ├───constants/                  # Constantes compartidas
+│   ├───hooks/                      # Hooks compartidos (useSSE legacy)
+│   └───utils/                      # Utilidades (formatDate, etc.)
+│
+├───styles/
+│       index.css                   # Design tokens (:root dark, .light overrides)
+│
+├───features/
+│   ├───auth/
+│   │   ├───api/auth.js             # login, register
+│   │   └───pages/                  # LandingPage, HomeRedirect
+│   │
+│   ├───devices/
+│   │   ├───api/devices.js          # CRUD dispositivos + actuadores
+│   │   ├───api/telemetry.js        # Telemetry + health endpoints
+│   │   ├───api/telegram.js         # Config Telegram por dispositivo
+│   │   ├───components/             # DeviceHealthPanel, DeviceMaintenancePanel
+│   │   ├───constants/              # Sensor configs, rangos
+│   │   ├───hooks/useDevice.js      # Hook para detalle de dispositivo
+│   │   └───pages/                  # DeviceDetailPage, ProvisioningPage
+│   │
+│   ├───cultivation/
+│   │   ├───api/cycles.js           # CRUD ciclos + bioactives
+│   │   ├───api/recipes.js          # CRUD recetas
+│   │   ├───api/species.js          # CRUD especies
+│   │   ├───components/             # CycleCard, CycleForm, RecipeCard
+│   │   └───pages/                  # CyclesPage, RecipesPage, SpeciesLibraryPage,
+│   │                               # RecipeComparatorPage, BioactiveDashboardPage
+│   │
+│   ├───dashboard/
+│   │   └───pages/DashboardPage.jsx # Dashboard principal
+│   │
+│   ├───alarms/
+│   │   ├───api/alarms.js           # CRUD alarmas + stats
+│   │   └───pages/AlarmsPage.jsx
+│   │
+│   ├───analytics/
+│   │   ├───api/analytics.js        # Analytics por chamber
+│   │   └───pages/AnalyticsPage.jsx
+│   │
+│   ├───diagnostics/
+│   │   ├───api/mqtt.js             # Diagnósticos MQTT
+│   │   └───pages/DiagnosticsPage.jsx
+│   │
+│   ├───logs/
+│   │   ├───api/audit.js            # Audit logs
+│   │   └───pages/LogsPage.jsx
+│   │
+│   └───settings/
+│       ├───api/settings.js         # Profile, password, telegram, api-keys, system,
+│       │                           # subscription, thingSpeak
+│       └───pages/                  # SettingsHub, UserSettings, DeviceSettings,
+│                                   # CultivationSettings, ApiKeysSettings,
+│                                   # SystemSettings, SubscriptionSettings
+│
+└───pages/                          # Páginas legacy (algunas aún activas)
+        DeviceDetail.jsx
+        Cycles.jsx
+        BioactiveDashboard.jsx
+        Login.jsx
+        Landing.jsx
 ```
 
 ## Flujo de Autenticación
@@ -115,61 +134,93 @@ Token expirado (401)
   → Si fail: redirige a Login
 ```
 
+## API Client
+
+Todas las llamadas HTTP pasan por una instancia axios compartida:
+
+```
+shared/api/axiosInstance.js
+  baseURL: '/api/v1'
+  Interceptor: agrega Authorization: Bearer <token>
+  Interceptor 401: intenta refresh → si falla, redirige a login
+```
+
+Cada feature define sus funciones API en `features/<name>/api/<name>.js` y son re-exportadas por `api/client.js` para backward compatibility.
+
 ## Tiempo Real (SSE)
 
 ```javascript
-// hooks/useSSE.js
-const useSSE = (url) => {
-  const [data, setData] = useState(null);
-  const [connected, setConnected] = useState(false);
+// api/useSSE.js
+EventSource('/events?token=<jwt>')
 
-  useEffect(() => {
-    const token = getToken();
-    const eventSource = new EventSource(`${url}?token=${token}`);
-
-    eventSource.onopen = () => setConnected(true);
-    eventSource.onerror = () => setConnected(false);
-
-    eventSource.addEventListener("telemetry", (e) => {
-      setData(JSON.parse(e.data));
-    });
-
-    eventSource.addEventListener("actuator", (e) => {
-      // Actualizar estado actuador en UI
-    });
-
-    eventSource.addEventListener("alarm", (e) => {
-      // Mostrar notificación
-    });
-
-    return () => eventSource.close();
-  }, [url]);
-
-  return { data, connected };
-};
+Eventos escuchados:
+  - ack            → Confirmación de comandos
+  - state          → Cambios de estado de actuadores
+  - telemetry      → Datos de sensores en tiempo real
+  - alarm          → Alarmas del sistema
+  - control_eval   → Evaluaciones del control engine
+  - health         → Reportes de salud del dispositivo
+  - maintenance    → Eventos de mantenimiento
+  - phase_transition → Transiciones de fase del ciclo
 ```
 
 ## Routing
 
+Rutas protegidas (requieren autenticación):
+
 ```
-/login              → Login (público)
-/register           → Register (público)
-/                   → Dashboard (protegido)
-/devices            → Lista dispositivos (protegido)
-/devices/:id        → Detalle + control (protegido)
-/recipes            → Recetas (protegido)
-/recipes/new        → Nueva receta (protegido)
-/recipes/:id/edit   → Editar receta (protegido)
-/cycles             → Ciclos de cultivo (protegido)
-/alarms             → Alarmas (protegido)
-/analytics          → Analytics (protegido)
-/settings           → Perfil / Suscripción (protegido)
-*                   → 404
+/                                       → HomeRedirect
+/overview                               → Dashboard
+/fleet/provision                        → Provisioning
+/fleet/devices/:id                      → DeviceDetail
+/cultivation/recipes                    → Recipes
+/cultivation/recipes/compare            → RecipeComparator
+/cultivation/species                    → SpeciesLibrary
+/cultivation/cycles                     → Cycles
+/cultivation/cycles/:id/bioactives      → BioactiveDashboard
+/operations/analytics                   → Analytics
+/operations/alarms                      → Alarms
+/operations/logs                        → Logs
+/operations/diagnostics                 → Diagnostics
+/system/settings                        → Settings (layout con children)
+/system/settings/user                   → UserSettings
+/system/settings/device                 → DeviceSettings
+/system/settings/cultivation            → CultivationSettings
+/system/settings/api-keys               → ApiKeysSettings
+/system/settings/system                 → SystemSettings
+/system/settings/subscription           → SubscriptionSettings
 ```
+
+Aliases de ruta (redirects):
+
+```
+/dashboard          → /overview
+/recipes            → /cultivation/recipes
+/species            → /cultivation/species
+/cycles             → /cultivation/cycles
+/analytics          → /operations/analytics
+/alarms             → /operations/alarms
+/logs               → /operations/logs
+/diagnostics        → /operations/diagnostics
+/settings           → /system/settings
+/provisioning       → /fleet/provision
+/devices/:id        → /fleet/devices/:id
+```
+
+## Tema (Dark/Light)
+
+- **Tokens**: definidos en `styles/index.css` como CSS variables
+  - `:root` → tema dark (default)
+  - `.light` → overrides para tema claro
+- **Estado**: `ThemeProvider` maneja `theme` en context
+- **Aplicación**: `useEffect` alterna clases `dark`/`light` en `document.documentElement`
+- **Persistencia**: `localStorage.setItem('mush2_theme', theme)`
 
 ## Decisiones de Diseño
 
-1. **SSE vs WebSocket**: Se elige SSE por simplicidad (unidireccional servidor→cliente). El frontend solo necesita recibir eventos en tiempo real, no enviar.
-2. **Context API vs Redux**: Se usa Context API + useReducer para evitar dependencias pesadas. Si el estado crece demasiado, se migrará a Zustand.
-3. **CSS Modules vs Tailwind**: Se parte con CSS Modules por tipado explícito. Se evaluará Tailwind en fase de diseño de componentes si la velocidad de prototipado lo requiere.
+1. **SSE vs WebSocket**: SSE por simplicidad (unidireccional servidor→cliente). El frontend solo recibe eventos en tiempo real.
+2. **Context API vs Redux**: Context API + useReducer para evitar dependencias pesadas.
+3. **Feature-based architecture**: Código organizado por dominio (`features/<name>/`), no por tipo (`components/`, `api/`).
 4. **Lazy Loading**: Cada página se carga con `React.lazy()` + `Suspense` para reducir bundle inicial.
+5. **Barrel exports**: `api/client.js` re-exporta funciones API de todas las features para backward compatibility con imports legacy.
+6. **Design tokens**: Variables CSS para colores, espaciado, tipografía. Tema dark/light vía clases en `<html>`.
