@@ -5,6 +5,8 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Device, Telemetry, Event, User, CultivationCycle, AuditLog } from '../models/index.js';
 import sequelize from '../config/database.js';
+import { getReadiness } from '../config/readiness.js';
+import { getStatusFromDevice } from '../services/deviceHealthService.js';
 import os from 'os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -15,8 +17,10 @@ const router = Router();
 
 router.get('/metrics', async (req, res) => {
   try {
+    const readiness = getReadiness();
     const deviceCount = await Device.count();
-    const onlineDevices = await Device.count({ where: { status: 'ONLINE' } });
+    const devices = await Device.findAll({ attributes: ['status', 'lastSeen', 'heartbeatInterval', 'staleMultiplier', 'offlineMultiplier', 'maintenanceMode'] });
+    const onlineDevices = devices.filter(d => getStatusFromDevice(d) === 'ONLINE').length;
     const telemetryCount = await Telemetry.count();
     const eventCount = await Event.count();
     const activeCycles = await CultivationCycle.count({ where: { status: 'ACTIVE' } });
@@ -25,7 +29,7 @@ router.get('/metrics', async (req, res) => {
 
     const now = new Date();
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const telemetry24h = await Telemetry.count({ where: { createdAt: { [Op.gte]: last24h } } });
+    const telemetry24h = await Telemetry.count({ where: { timestamp: { [Op.gte]: last24h } } });
 
     res.json({
       timestamp: now.toISOString(),
@@ -34,6 +38,12 @@ router.get('/metrics', async (req, res) => {
       versions: {
         backend: backendPkg.version,
         os: rootPkg.version,
+      },
+      readiness: {
+        status: readiness.status,
+        startedAt: readiness.startedAt,
+        readyAt: readiness.readyAt,
+        services: readiness.services,
       },
       system: {
         memory: process.memoryUsage(),

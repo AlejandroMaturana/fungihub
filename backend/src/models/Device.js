@@ -8,10 +8,22 @@ const Device = sequelize.define('Device', {
   firmwareVersion: { type: DataTypes.STRING(20), defaultValue: '0.0.0' },
   hwRevision: { type: DataTypes.STRING(10), defaultValue: '' },
   status: {
-    type: DataTypes.ENUM('ONLINE', 'OFFLINE', 'MAINTENANCE', 'ERROR'),
+    type: DataTypes.ENUM('ONLINE', 'OFFLINE', 'MAINTENANCE', 'ERROR', 'STALE', 'DEGRADED', 'RETIRED'),
     defaultValue: 'OFFLINE',
   },
   lastSeen: { type: DataTypes.DATE },
+
+  // ── Connectivity evidence (written only by DeviceHealthService) ────
+  lastTelemetryAt: { type: DataTypes.DATE, allowNull: true },
+  lastCommandAt: { type: DataTypes.DATE, allowNull: true },
+  lastAckAt: { type: DataTypes.DATE, allowNull: true },
+
+  // ── Health config (per-device thresholds) ──────────────────────────
+  heartbeatInterval: { type: DataTypes.INTEGER, defaultValue: 10 },
+  staleMultiplier: { type: DataTypes.INTEGER, defaultValue: 3 },
+  offlineMultiplier: { type: DataTypes.INTEGER, defaultValue: 6 },
+  maintenanceMode: { type: DataTypes.BOOLEAN, defaultValue: false },
+
   userId: { type: DataTypes.UUID, allowNull: true },
   chamberId: { type: DataTypes.INTEGER, allowNull: true },
   chamberName: { type: DataTypes.STRING(128) },

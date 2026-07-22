@@ -71,8 +71,7 @@ Device.belongsTo(Chamber, { foreignKey: 'chamberId' });
 Chamber.hasMany(CultivationCycle, { foreignKey: 'chamberId' });
 CultivationCycle.belongsTo(Chamber, { foreignKey: 'chamberId' });
 
-Chamber.hasMany(UserChamberAccess, { foreignKey: 'chamberId' });
-UserChamberAccess.belongsTo(Chamber, { foreignKey: 'chamberId' });
+
 
 Device.hasOne(TelegramDeviceConfig, { foreignKey: 'deviceId' });
 TelegramDeviceConfig.belongsTo(Device, { foreignKey: 'deviceId' });

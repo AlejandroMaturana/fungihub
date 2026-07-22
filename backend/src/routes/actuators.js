@@ -3,39 +3,9 @@ import express from 'express';
 import { Device, Actuator, CultivationCycle, Recipe } from '../models/index.js';
 import { sendActuatorUpdate } from '../services/webSocketServer.js';
 import { publishActuatorCommand } from '../services/mqttBridge.js';
+import { getPhaseThresholds } from '../services/controlEngine.js';
 
 const PHASE_SEQUENCE = ['INCUBATION', 'FRUITING', 'MAINTENANCE', 'COMPLETED'];
-
-function getPhaseThresholds(recipe, phase) {
-  switch (phase) {
-    case 'INCUBATION':
-      return {
-        tempMin: parseFloat(recipe.incubationTempMin),
-        tempMax: parseFloat(recipe.incubationTempMax),
-        humMin: parseFloat(recipe.incubationHumMin),
-        humMax: parseFloat(recipe.incubationHumMax),
-        co2Max: recipe.incubationCo2Max,
-      };
-    case 'FRUITING':
-      return {
-        tempMin: parseFloat(recipe.fruitingTempMin),
-        tempMax: parseFloat(recipe.fruitingTempMax),
-        humMin: parseFloat(recipe.fruitingHumMin),
-        humMax: parseFloat(recipe.fruitingHumMax),
-        co2Max: recipe.fruitingCo2Max,
-      };
-    case 'MAINTENANCE':
-      return {
-        tempMin: parseFloat(recipe.maintenanceTempMin),
-        tempMax: parseFloat(recipe.maintenanceTempMax),
-        humMin: parseFloat(recipe.maintenanceHumMin),
-        humMax: parseFloat(recipe.maintenanceHumMax),
-        co2Max: recipe.maintenanceCo2Max,
-      };
-    default:
-      return null;
-  }
-}
 
 const router = express.Router();
 
@@ -110,7 +80,7 @@ router.patch('/:channel', async (req, res) => {
 
     const device = await Device.findOrCreate({
       where: { deviceId },
-      defaults: { deviceId, status: 'ONLINE' },
+      defaults: { deviceId },
     }).then(([d]) => d);
 
     const [actuator] = await Actuator.findOrCreate({
