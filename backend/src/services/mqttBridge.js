@@ -2,6 +2,7 @@ import mqtt from 'mqtt';
 import { Device, Telemetry, Actuator, DeviceHealth, DeviceMaintenance } from '../models/index.js';
 import { events } from './eventBus.js';
 import { sendActuatorUpdate } from './webSocketServer.js';
+import { recordEvent, getStatusFromDevice } from './deviceHealthService.js';
 
 const TOPIC_PREFIX = 'mush2';
 
@@ -59,7 +60,7 @@ function createClient(broker, isFallback) {
         connectedDevices.add(deviceId);
         events.emit('state', { deviceId, ...data });
         if (data.mac || data.fwVer || data.hwRev || data.state || data.mode) {
-          Device.findOrCreate({ where: { deviceId }, defaults: { deviceId, status: 'ONLINE' } })
+          Device.findOrCreate({ where: { deviceId }, defaults: { deviceId } })
             .then(([device]) => {
               const updates = {};
               if (data.mac) updates.macAddress = data.mac;
@@ -67,11 +68,12 @@ function createClient(broker, isFallback) {
               if (data.hwRev) updates.hwRevision = data.hwRev;
               if (data.state) {
                 updates.lastFirmwareState = data.state;
-                const stateMap = { NORMAL: 'ONLINE', DEGRADED: 'MAINTENANCE', ERROR: 'ERROR', SAFE: 'MAINTENANCE', OTA_UPDATING: 'MAINTENANCE' };
-                updates.status = stateMap[data.state] || device.status;
               }
               if (data.mode) updates.controlMode = data.mode;
-              device.update(updates).catch(() => {});
+              if (Object.keys(updates).length > 0) {
+                device.update(updates).catch(() => {});
+              }
+              recordEvent(deviceId, 'status').catch(() => {});
             })
             .catch(() => {});
         }
@@ -183,10 +185,11 @@ async function handleTelemetry(deviceId, data) {
   try {
     const [device] = await Device.findOrCreate({
       where: { deviceId },
-      defaults: { deviceId, status: 'ONLINE' },
+      defaults: { deviceId },
     });
 
-    const ts = new Date(data.ts || Date.now());
+    const rawTs = data.ts || Date.now();
+    const ts = new Date(rawTs < 1e12 ? rawTs * 1000 : rawTs);
     const sensors = [
       { type: 'TEMPERATURE', value: data.temp, unit: '°C' },
       { type: 'HUMIDITY', value: data.hum, unit: '%' },
@@ -206,7 +209,7 @@ async function handleTelemetry(deviceId, data) {
       });
     }
 
-    await device.update({ lastSeen: ts, status: 'ONLINE' });
+    await recordEvent(deviceId, 'telemetry');
 
     events.emit('telemetry', {
       deviceId,
@@ -227,7 +230,7 @@ async function handleHealth(deviceId, data) {
   try {
     const [device] = await Device.findOrCreate({
       where: { deviceId },
-      defaults: { deviceId, status: 'ONLINE' },
+      defaults: { deviceId },
     });
 
     const ts = new Date(data.ts || Date.now());
@@ -256,7 +259,7 @@ async function handleHealth(deviceId, data) {
       timestamp: ts,
     });
 
-    await device.update({ lastSeen: ts, status: 'ONLINE' });
+    await recordEvent(deviceId, 'health');
 
     events.emit('health', { deviceId, ...data });
   } catch (err) {
@@ -268,7 +271,7 @@ async function handleMaintenance(deviceId, data) {
   try {
     const [device] = await Device.findOrCreate({
       where: { deviceId },
-      defaults: { deviceId, status: 'ONLINE' },
+      defaults: { deviceId },
     });
 
     const ts = new Date(data.ts || Date.now());
@@ -282,7 +285,7 @@ async function handleMaintenance(deviceId, data) {
       timestamp: ts,
     });
 
-    await device.update({ lastSeen: ts, status: 'ONLINE' });
+    await recordEvent(deviceId, 'maintenance');
 
     events.emit('maintenance', { deviceId, ...data });
   } catch (err) {

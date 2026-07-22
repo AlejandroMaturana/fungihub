@@ -29,3 +29,23 @@ export async function setActuatorDirect(deviceId, channel, value) {
   const { data } = await client.patch(`/devices/${deviceId}/actuators/${channel}`, { command: value })
   return data
 }
+
+export async function deleteDevice(id) {
+  const { data } = await client.delete(`/devices/${id}`)
+  return data
+}
+
+export async function getDeviceConnectivity(id) {
+  const { data } = await client.get(`/devices/${id}/connectivity`)
+  return data.data ?? data
+}
+
+export async function setMaintenanceMode(id, enabled) {
+  const { data } = await client.patch(`/devices/${id}/maintenance`, { enabled })
+  return data.data ?? data
+}
+
+export async function updateHealthConfig(id, config) {
+  const { data } = await client.patch(`/devices/${id}/health-config`, config)
+  return data.data ?? data
+}

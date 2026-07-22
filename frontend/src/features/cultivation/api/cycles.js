@@ -5,6 +5,11 @@ export async function getCycles(params = {}) {
   return data.data ?? data
 }
 
+export async function getCycle(id) {
+  const { data } = await client.get(`/cycles/${id}`)
+  return data
+}
+
 export async function createCycle(payload) {
   const { data } = await client.post('/cycles', payload)
   return data
@@ -13,6 +18,26 @@ export async function createCycle(payload) {
 export async function updateCycle(id, payload) {
   const { data } = await client.patch(`/cycles/${id}`, payload)
   return data
+}
+
+export async function transitionCycle(id, payload) {
+  const { data } = await client.post(`/cycles/${id}/transition`, payload)
+  return data
+}
+
+export async function abortCycle(id) {
+  const { data } = await client.post(`/cycles/${id}/abort`)
+  return data
+}
+
+export async function getCycleTransitions(id) {
+  const { data } = await client.get(`/cycles/${id}/transitions`)
+  return data.data ?? data
+}
+
+export async function getCycleStates(id) {
+  const { data } = await client.get(`/cycles/${id}/states`)
+  return data.data ?? data
 }
 
 export async function getBioactives(cycleId) {

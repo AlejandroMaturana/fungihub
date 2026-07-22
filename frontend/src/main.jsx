@@ -4,7 +4,6 @@ import App from './App.jsx'
 import ErrorBoundary from './shared/components/ErrorBoundary.jsx'
 import { AuthProvider } from './app/providers/AuthProvider'
 import { ThemeProvider } from './app/providers/ThemeProvider'
-import { ToastProvider } from './shared/components/Toast'
 import './styles/index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -12,9 +11,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <AuthProvider>
         <ThemeProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
+          <App />
         </ThemeProvider>
       </AuthProvider>
     </ErrorBoundary>

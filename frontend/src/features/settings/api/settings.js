@@ -23,12 +23,12 @@ export async function linkTelegram(payload) {
 }
 
 export async function getTelegramStatus() {
-  const { data } = await client.get('/settings/telegram/status')
+  const { data } = await client.get('/settings/telegram/link')
   return data
 }
 
 export async function unlinkTelegram() {
-  const { data } = await client.delete('/settings/telegram')
+  const { data } = await client.post('/settings/telegram/unlink')
   return data
 }
 
@@ -70,12 +70,12 @@ export async function seedSystemSettings() {
 }
 
 export async function configureTelegramBot(payload) {
-  const { data } = await client.post('/settings/telegram-bot', payload)
+  const { data } = await client.post('/settings/telegram/configure', payload)
   return data
 }
 
 export async function getTelegramBotStatus() {
-  const { data } = await client.get('/settings/telegram-bot/status')
+  const { data } = await client.get('/settings/telegram/bot-status')
   return data
 }
 

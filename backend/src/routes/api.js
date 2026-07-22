@@ -5,6 +5,7 @@ import { checkDeviceAccess } from '../middlewares/tenant.js';
 import { logAudit } from '../services/auditService.js';
 import { sendActuatorUpdate } from '../services/webSocketServer.js';
 import { publishActuatorCommand } from '../services/mqttBridge.js';
+import { getHealthInfo, setMaintenanceMode, getStatusFromDevice, buildHealthPayload, getSecondsSinceLastSeen } from '../services/deviceHealthService.js';
 
 const router = express.Router();
 
@@ -18,7 +19,13 @@ router.get('/devices', async (req, res) => {
       ];
     }
     const devices = await Device.findAll({ where, order: [['updatedAt', 'DESC']] });
-    res.json({ data: devices });
+    const enriched = devices.map(d => {
+      const json = d.toJSON();
+      json.status = getStatusFromDevice(d);
+      json.secondsSinceLastSeen = getSecondsSinceLastSeen(d);
+      return json;
+    });
+    res.json({ data: enriched });
   } catch (err) {
     console.error('[DEVICES] Error:', err);
     res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
@@ -38,7 +45,7 @@ router.post('/devices', async (req, res) => {
 
     const [device, created] = await Device.findOrCreate({
       where: { deviceId },
-      defaults: { deviceId, macAddress, userId: req.user.id, chamberName, chamberLocation, chamberId, firmwareVersion, hwRevision, status: 'ONLINE' },
+      defaults: { deviceId, macAddress, userId: req.user.id, chamberName, chamberLocation, chamberId, firmwareVersion, hwRevision },
     });
 
     if (!created) {
@@ -88,13 +95,12 @@ router.post('/devices/register', async (req, res) => {
         macAddress: macAddress || deviceId,
         firmwareVersion: firmwareVersion || '0.0.0',
         hwRevision: hwRevision || '',
-        status: 'ONLINE',
         lastSeen: new Date(),
       },
     });
 
     if (!created) {
-      const updates = { status: 'ONLINE', lastSeen: new Date() };
+      const updates = { lastSeen: new Date() };
       if (macAddress) updates.macAddress = macAddress;
       if (firmwareVersion) updates.firmwareVersion = firmwareVersion;
       if (hwRevision) updates.hwRevision = hwRevision;
@@ -159,7 +165,10 @@ router.get('/devices/:id', checkDeviceAccess, async (req, res) => {
       include: [{ model: Actuator }],
     });
     if (!device) return res.status(404).json({ error: 'NOT_FOUND', message: 'Dispositivo no encontrado' });
-    res.json(device);
+    const json = device.toJSON();
+    json.status = getStatusFromDevice(device);
+    json.secondsSinceLastSeen = getSecondsSinceLastSeen(device);
+    res.json(json);
   } catch (err) {
     res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
   }
@@ -168,7 +177,7 @@ router.get('/devices/:id', checkDeviceAccess, async (req, res) => {
 router.patch('/devices/:id', checkDeviceAccess, async (req, res) => {
   try {
     const device = req.device;
-    const allowed = ['chamberName', 'chamberLocation', 'chamberId', 'ssrActiveLow', 'firmwareVersion', 'hwRevision', 'thingSpeakEnabled', 'thingSpeakChannelId', 'thingSpeakReadKey', 'thingSpeakWriteKey', 'thingSpeakSyncInterval'];
+    const allowed = ['chamberName', 'chamberLocation', 'chamberId', 'ssrActiveLow', 'firmwareVersion', 'hwRevision', 'thingSpeakEnabled', 'thingSpeakChannelId', 'thingSpeakReadKey', 'thingSpeakWriteKey', 'thingSpeakSyncInterval', 'heartbeatInterval', 'staleMultiplier', 'offlineMultiplier'];
     const updates = {};
     for (const field of allowed) {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
@@ -380,6 +389,61 @@ router.patch('/devices/:id/actuators/:channel', checkDeviceAccess, async (req, r
     res.json(actuator);
   } catch (err) {
     console.error('[ACTUATOR] Error:', err.message);
+    res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+});
+
+router.get('/devices/:id/connectivity', checkDeviceAccess, async (req, res) => {
+  try {
+    const healthInfo = await getHealthInfo(req.device.deviceId);
+    if (!healthInfo) return res.status(404).json({ error: 'NOT_FOUND' });
+    res.json({ data: healthInfo });
+  } catch (err) {
+    res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+});
+
+router.patch('/devices/:id/maintenance', checkDeviceAccess, async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ error: 'enabled boolean required' });
+    }
+    const device = await setMaintenanceMode(req.device.deviceId, enabled);
+    if (!device) return res.status(404).json({ error: 'NOT_FOUND' });
+
+    if (req.user) {
+      await logAudit({
+        userId: req.user.id,
+        action: enabled ? 'MAINTENANCE_ENABLE' : 'MAINTENANCE_DISABLE',
+        resource: 'device',
+        resourceId: device.id,
+        details: { deviceId: device.deviceId, maintenanceMode: enabled },
+      });
+    }
+
+    res.json({ data: { deviceId: device.deviceId, maintenanceMode: enabled, status: device.status } });
+  } catch (err) {
+    res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
+  }
+});
+
+router.patch('/devices/:id/health-config', checkDeviceAccess, async (req, res) => {
+  try {
+    const { heartbeatInterval, staleMultiplier, offlineMultiplier } = req.body;
+    const device = req.device;
+    const updates = {};
+    if (heartbeatInterval !== undefined) updates.heartbeatInterval = parseInt(heartbeatInterval, 10);
+    if (staleMultiplier !== undefined) updates.staleMultiplier = parseInt(staleMultiplier, 10);
+    if (offlineMultiplier !== undefined) updates.offlineMultiplier = parseInt(offlineMultiplier, 10);
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    await device.update(updates);
+    res.json({ data: { deviceId: device.deviceId, ...updates } });
+  } catch (err) {
     res.status(500).json({ error: 'SERVER_ERROR', message: err.message });
   }
 });

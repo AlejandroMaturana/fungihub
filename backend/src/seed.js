@@ -236,7 +236,7 @@ async function seed() {
       });
       createdUsers[u.role] = user;
       if (userCreated) {
-        console.log(`[Seed] Creado usuario ${u.username} (${u.role}, pass: ${u.password})`);
+        console.log(`[Seed] Creado usuario ${u.username} (${u.role})`);
       } else {
         console.log(`[Seed] Usuario ${u.username} ya existe`);
       }
@@ -271,7 +271,6 @@ async function seed() {
             defaults: {
               userId: rule.user.id,
               deviceId: device.id,
-              chamberId: chamber.id,
               role: rule.role,
               invitedBy: adminUser.id,
               acceptedAt: new Date(),

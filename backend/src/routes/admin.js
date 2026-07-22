@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Op } from 'sequelize';
+import { Op, fn, col, where, literal } from 'sequelize';
 import { authenticate } from '../middlewares/auth.js';
 import { requireMinRole } from '../middlewares/rbac.js';
 import { User, AuditLog } from '../models/index.js';
@@ -91,7 +91,7 @@ router.get('/audit-logs', authenticate, requireMinRole('ADMIN'), async (req, res
     }
     if (search) {
       where[Op.or] = [
-        { details: { [Op.iLike]: `%${search}%` } },
+        where(fn('CAST', col('details'), literal('AS TEXT')), { [Op.iLike]: `%${search}%` }),
         { action: { [Op.iLike]: `%${search}%` } },
         { resource: { [Op.iLike]: `%${search}%` } },
         { resourceId: { [Op.iLike]: `%${search}%` } },
