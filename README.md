@@ -14,16 +14,15 @@
 </div>
 
 <div align="center">
-
 <table>
   <tr>
     <td align="center">
-      <a href="https://mush2.onrender.com">
+      <a href="https://mush2.onrender.com" target="_blank" rel="noopener noreferrer">
         <img src="frontend/public/r1_page.svg" alt="Preview" width="320">
       </a>
     </td>
     <td align="center">
-      <a href="https://alejandromaturana.github.io/mush2/">
+      <a href="https://alejandromaturana.github.io/mush2/" target="_blank" rel="noopener noreferrer">
         <img src="frontend/public/r2_docs.svg" alt="Documentation" width="320">
       </a>
     </td>
@@ -39,7 +38,6 @@
     </td>
   </tr>
 </table>
-
 </div>
 
 ## Características Principales
