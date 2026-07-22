@@ -5,14 +5,17 @@ const Landing = lazy(() => import('../features/auth/pages/LandingPage.jsx'))
 const Home = lazy(() => import('../features/auth/pages/HomeRedirect.jsx'))
 const Dashboard = lazy(() => import('../features/dashboard/pages/DashboardPage.jsx'))
 const DeviceDetail = lazy(() => import('../features/devices/pages/DeviceDetailPage.jsx'))
+const DeviceList = lazy(() => import('../features/devices/pages/DeviceListPage.jsx'))
 const Recipes = lazy(() => import('../features/cultivation/pages/RecipesPage.jsx'))
 const RecipeComparator = lazy(() => import('../features/cultivation/pages/RecipeComparatorPage.jsx'))
 const SpeciesLibrary = lazy(() => import('../features/cultivation/pages/SpeciesLibraryPage.jsx'))
 const Cycles = lazy(() => import('../features/cultivation/pages/CyclesPage.jsx'))
+const CycleDetail = lazy(() => import('../features/cultivation/pages/CycleDetailPage.jsx'))
 const BioactiveDashboard = lazy(() => import('../features/cultivation/pages/BioactiveDashboardPage.jsx'))
 const Alarms = lazy(() => import('../features/alarms/pages/AlarmsPage.jsx'))
 const Logs = lazy(() => import('../features/logs/pages/LogsPage.jsx'))
 const Diagnostics = lazy(() => import('../features/diagnostics/pages/DiagnosticsPage.jsx'))
+const Events = lazy(() => import('../features/events/pages/EventsPage.jsx'))
 const Analytics = lazy(() => import('../features/analytics/pages/AnalyticsPage.jsx'))
 const Settings = lazy(() => import('../features/settings/pages/SettingsPage.jsx'))
 const SettingsHub = lazy(() => import('../features/settings/pages/SettingsHub.jsx'))
@@ -33,16 +36,19 @@ export const protectedRoutes = [
   { path: '/overview', element: Dashboard },
 
   { path: '/fleet/provision', element: Provisioning },
+  { path: '/fleet/devices', element: DeviceList },
   { path: '/fleet/devices/:id', element: DeviceDetail },
 
   { path: '/cultivation/recipes', element: Recipes },
   { path: '/cultivation/recipes/compare', element: RecipeComparator },
   { path: '/cultivation/species', element: SpeciesLibrary },
   { path: '/cultivation/cycles', element: Cycles },
+  { path: '/cultivation/cycles/:id', element: CycleDetail },
   { path: '/cultivation/cycles/:id/bioactives', element: BioactiveDashboard },
 
   { path: '/operations/analytics', element: Analytics },
   { path: '/operations/alarms', element: Alarms },
+  { path: '/operations/events', element: Events },
   { path: '/operations/logs', element: Logs },
   { path: '/operations/diagnostics', element: Diagnostics },
 

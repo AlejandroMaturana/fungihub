@@ -1,4 +1,4 @@
-import ToggleSwitch from '../ui/ToggleSwitch.jsx'
+import ToggleSwitch from '../../../shared/components/ToggleSwitch.jsx'
 
 const DEFAULT_META = {
   1: { label: 'AIR EXCHANGE', icon: 'air', sublabel: 'FAN_SPEED' },

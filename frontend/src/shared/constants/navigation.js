@@ -13,6 +13,7 @@ export const NAV_SECTIONS = [
     icon: 'devices',
     collapsible: true,
     items: [
+      { to: '/fleet/devices', icon: 'devices', label: 'Devices' },
       { to: '/fleet/provision', icon: 'bluetooth', label: 'Provisioning' },
     ],
   },
@@ -35,6 +36,7 @@ export const NAV_SECTIONS = [
     items: [
       { to: '/operations/analytics', icon: 'analytics', label: 'Analytics' },
       { to: '/operations/alarms', icon: 'warning', label: 'Alarms', hasBadge: true },
+      { to: '/operations/events', icon: 'bolt', label: 'Events' },
       { to: '/operations/logs', icon: 'history', label: 'Audit Log' },
       { to: '/operations/diagnostics', icon: 'diagnosis', label: 'Diagnostics' },
     ],

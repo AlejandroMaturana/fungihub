@@ -1,17 +1,19 @@
 function MetricCard({ icon, label, value, unit, trend, className, children }) {
+  const classes = ['metric-card', className].filter(Boolean).join(' ')
+
   return (
-    <div className={`glass-card p-4 rounded-xl flex flex-col gap-3 ${className || ''}`}>
+    <div className={classes}>
       {(icon || label) && (
-        <div className="flex items-center gap-2">
-          {icon && <span className="material-symbols-outlined text-18px text-on-surface-variant">{icon}</span>}
-          <span className="text-label-caps text-on-surface-variant">{label}</span>
+        <div className="metric-card-header">
+          {icon && <span className="material-symbols-outlined metric-card-icon">{icon}</span>}
+          <span className="metric-card-label">{label}</span>
         </div>
       )}
-      <div className="flex items-baseline gap-1">
-        <span className="text-display-data text-32px leading-none text-on-surface">{value}</span>
-        {unit && <span className="font-mono text-xs text-on-surface-variant">{unit}</span>}
+      <div className="metric-card-value-row">
+        <span className="metric-card-value">{value}</span>
+        {unit && <span className="metric-card-unit">{unit}</span>}
         {trend && (
-          <span className={`text-data-sm ml-auto ${trend > 0 ? 'text-spore-green' : 'text-error-red'}`}>
+          <span className={`metric-card-trend ${trend > 0 ? 'positive' : 'negative'}`}>
             {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}
           </span>
         )}
