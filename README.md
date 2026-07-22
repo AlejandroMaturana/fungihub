@@ -12,7 +12,7 @@
 ![FreeRTOS](https://img.shields.io/badge/FreeRTOS-Real%20Time-00979D?logo=freertos&logoColor=white)
 
 </div>
----
+
 <div align="center">
 
 <table>
@@ -41,7 +41,6 @@
 </table>
 
 </div>
----
 
 ## Características Principales
 
