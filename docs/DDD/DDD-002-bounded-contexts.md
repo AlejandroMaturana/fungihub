@@ -1,4 +1,4 @@
-# DDD-002: Bounded Contexts - Mush2 LabTech
+# DDD-002: Bounded Contexts - Mush2
 
 ---
 
@@ -7,7 +7,7 @@
 | Campo | Valor |
 |-------|-------|
 | **ID** | DDD-002 |
-| **Nombre** | Contextos Limitados de Mush2 LabTech |
+| **Nombre** | Contextos Limitados de Mush2 |
 | **Fecha** | 2026-07-14 |
 | **Versión** | 1.0 |
 | **Estado** | Borrador |
@@ -19,7 +19,7 @@
 
 Los **Bounded Contexts** definen fronteras semánticas donde un término del dominio tiene un significado preciso y consistente. Dentro de un contexto, el lenguaje es claro y sin ambigüedad. Entre contextos, la comunicación se realiza mediante **Eventos de Dominio** y **Referencias de Identidad**.
 
-Este documento detalla los 4 contextos identificados en Mush2 LabTech, sus responsabilidades, entidades, dependencias y reglas de integración.
+Este documento detalla los 4 contextos identificados en Mush2, sus responsabilidades, entidades, dependencias y reglas de integración.
 
 ---
 
@@ -27,7 +27,7 @@ Este documento detalla los 4 contextos identificados en Mush2 LabTech, sus respo
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                            MUSH2 LABTECH                                        │
+│                            MUSH2                                        │
 │              Plataforma IoT de Cultivo Micológico Inteligente                   │
 ├───────────────────┬───────────────────┬───────────────────┬─────────────────────┤
 │                   │                   │                   │                     │
@@ -570,4 +570,4 @@ La comunicación entre contextos vía eventos es **eventualmente consistente**:
 
 ---
 
-*Documento generado como parte del proceso de Domain-Driven Design de Mush2 LabTech.*
+*Documento generado como parte del proceso de Domain-Driven Design de Mush2.*

@@ -1,4 +1,4 @@
-# DDD-006: Eventos de Dominio - Mush2 LabTech
+# DDD-006: Eventos de Dominio - Mush2
 
 ---
 
@@ -7,7 +7,7 @@
 | Campo | Valor |
 |-------|-------|
 | **ID** | DDD-006 |
-| **Nombre** | Eventos de Dominio de Mush2 LabTech |
+| **Nombre** | Eventos de Dominio de Mush2 |
 | **Fecha** | 2026-07-14 |
 | **Versión** | 1.0 |
 | **Estado** | Borrador |
@@ -640,4 +640,4 @@ app.get('/events', (req, res) => {
 
 ---
 
-*Documento generado como parte del proceso de Domain-Driven Design de Mush2 LabTech.*
+*Documento generado como parte del proceso de Domain-Driven Design de Mush2.*

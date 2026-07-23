@@ -66,4 +66,4 @@
 
 > ¿Por qué se tomó esta decisión?
 
-**ADR generado:** [ADR-NNN](../ADR/ADR-NNN-descripcion.md) _(si ACCEPTED)_
+**ADR generado:** según correlativo

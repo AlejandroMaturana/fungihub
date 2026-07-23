@@ -1,4 +1,4 @@
-# DDD-003: Agregados y Raíces de Agregado - Mush2 LabTech
+# DDD-003: Agregados y Raíces de Agregado - Mush2
 
 ---
 
@@ -7,7 +7,7 @@
 | Campo | Valor |
 |-------|-------|
 | **ID** | DDD-003 |
-| **Nombre** | Agregados de Mush2 LabTech |
+| **Nombre** | Agregados de Mush2 |
 | **Fecha** | 2026-07-14 |
 | **Versión** | 1.0 |
 | **Estado** | Borrador |
@@ -19,7 +19,7 @@
 
 Un **Agregado** es un cluster de entidades y value objects tratados como unidad para cambios de datos. La **Raíz de Agregado** es la única entrada al agregado, garantizando la consistencia transaccional y definiendo los límites de las invariantes.
 
-Este documento detalla cada agregado identificado en Mush2 LabTech, sus entidades internas, invariantes y reglas de consistencia.
+Este documento detalla cada agregado identificado en Mush2, sus entidades internas, invariantes y reglas de consistencia.
 
 ---
 
@@ -37,7 +37,7 @@ Este documento detalla cada agregado identificado en Mush2 LabTech, sus entidade
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                         MUSH2 LABTECH                                   │
+│                         MUSH2                                   │
 ├─────────────────┬─────────────────┬─────────────────┬───────────────────┤
 │                 │                 │                 │                   │
 │  ┌────────────┐ │  ┌────────────┐ │  ┌────────────┐ │  ┌────────────┐  │
@@ -509,4 +509,4 @@ User (RAÍZ)
 
 ---
 
-*Documento generado como parte del proceso de Domain-Driven Design de Mush2 LabTech.*
+*Documento generado como parte del proceso de Domain-Driven Design de Mush2.*

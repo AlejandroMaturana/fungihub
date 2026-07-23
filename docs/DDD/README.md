@@ -1,4 +1,4 @@
-# Domain-Driven Design (DDD) — Mush2 LabTech
+# Domain-Driven Design (DDD) — Mush2
 
 Los documentos DDD definen el **modelo de dominio** del proyecto Mush2 estableciendo un **Lenguaje Ubicuo**, **Contextos Limitados**, **Agregados**, **Value Objects**, **Eventos de Dominio** y **Máquinas de Estado**.
 
@@ -27,27 +27,25 @@ docs/DDD/
 ├── README.md                      # Este archivo
 ├── template.md                    # Template para nuevos documentos
 ├── DDD-001-modelo_del_dominio.md  # Documento principal
-├── DDD-002-bounded_contexts.md    # Contextos Limitados
-├── DDD-003.md                     # Agregados y Raíces
-├── DDD-004.md                     # Value Objects
-├── DDD-005.md                     # Máquinas de Estado
-├── DDD-006.md                     # Eventos de Dominio
-├── DDD-007.md                     # Roadmap de Migración
-├── firstDDD.context.md            # Contexto educativo inicial
-└── lineamientos-previos.md        # Contexto del proyecto
+├── DDD-002-bounded-contexts.md    # Contextos Limitados
+├── DDD-003-agregados-raices-de.md # Agregados y Raíces
+├── DDD-004-value-objets.md        # Value Objects
+├── DDD-005-state-machines.md      # Máquinas de Estado
+├── DDD-006-domain-event.md        # Eventos de Dominio
+├── DDD-007-migration-roadmap.md   # Roadmap de Migración
 ```
 
 ## Índice de documentos
 
 | ID | Documento | Descripción | Depende de |
 |----|-----------|-------------|------------|
-| [DDD-001](DDD-001-modelo_del_dominio.md) | Modelo de Dominio | Documento principal con Lenguaje Ubicuo, Contextos, Agregados, Value Objects, Eventos, Máquinas de Estado y Reglas de Negocio | — |
-| [DDD-002](DDD-002-bounded_contexts.md) | Bounded Contexts | 4 Contextos: Cultivo, Monitoreo, Control, Usuarios | DDD-001 |
-| [DDD-003](DDD-003.md) | Agregados | 5 Agregados con sus Raíces e invariantes | DDD-001, DDD-002 |
-| [DDD-004](DDD-004.md) | Value Objects | ~30 Value Objects de dominio, identidad y configuración | DDD-001, DDD-003 |
-| [DDD-005](DDD-005.md) | Máquinas de Estado | 7 Máquinas de Estado con diagramas y reglas | DDD-001, DDD-003 |
-| [DDD-006](DDD-006.md) | Eventos de Dominio | ~20 Eventos con flujos de secuencia | DDD-001, DDD-002, DDD-003 |
-| [DDD-007](DDD-007.md) | Roadmap de Migración | Plan de 8 fases (22-32 semanas) | Todos |
+| [DDD-001](DDD-001-domain-model.md) | Modelo de Dominio | Documento principal con Lenguaje Ubicuo, Contextos, Agregados, Value Objects, Eventos, Máquinas de Estado y Reglas de Negocio | — |
+| [DDD-002](DDD-002-bounded-contexts.md) | Bounded Contexts | 4 Contextos: Cultivo, Monitoreo, Control, Usuarios | DDD-001 |
+| [DDD-003](DDD-003-agregados-raices-de.md) | Agregados | 5 Agregados con sus Raíces e invariantes | DDD-001, DDD-002 |
+| [DDD-004](DDD-004-value-objets.md) | Value Objects | ~30 Value Objects de dominio, identidad y configuración | DDD-001, DDD-003 |
+| [DDD-005](DDD-005-state-machines.md) | Máquinas de Estado | 7 Máquinas de Estado con diagramas y reglas | DDD-001, DDD-003 |
+| [DDD-006](DDD-006-domain-event.md) | Eventos de Dominio | ~20 Eventos con flujos de secuencia | DDD-001, DDD-002, DDD-003 |
+| [DDD-007](DDD-007-migration-roadmap.md) | Roadmap de Migración | Plan de 8 fases (22-32 semanas) | Todos |
 
 ## Numeración
 
@@ -58,11 +56,3 @@ docs/DDD/
 ## Template
 
 Ver [template.md](template.md) para el template base de un nuevo documento DDD.
-
-## Relación con otros documentos
-
-| Tipo | Uso | DDD no reemplaza |
-|------|-----|------------------|
-| **ADR** | Registro de decisiones de arquitectura | DDD define el modelo, ADR registra por qué se diseñó así |
-| **RFC** | Propuestas que requieren debate | DDD documenta la decisión final del modelo |
-| **Contratos** | Especificaciones de API, MQTT, BLE | DDD define el dominio que los contratos implementan |

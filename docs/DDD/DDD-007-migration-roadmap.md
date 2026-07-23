@@ -1,4 +1,4 @@
-# DDD-007: Roadmap de Migración a DDD - Mush2 LabTech
+# DDD-007: Roadmap de Migración a DDD - Mush2
 
 ---
 
@@ -565,4 +565,4 @@ backend/src/
 
 ---
 
-*Documento generado como parte del proceso de Domain-Driven Design de Mush2 LabTech.*
+*Documento generado como parte del proceso de Domain-Driven Design de Mush2.*
