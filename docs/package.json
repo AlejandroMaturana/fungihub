@@ -5,8 +5,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "vitepress dev",
-    "build": "vitepress build",
+    "dev": "node .vitepress/scripts/fix-dead-links.js && vitepress dev",
+    "build": "node .vitepress/scripts/fix-dead-links.js && vitepress build",
     "preview": "vitepress preview"
   },
   "author": "AlejandroMaturana",

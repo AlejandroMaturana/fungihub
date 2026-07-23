@@ -1,4 +1,4 @@
-# DDD-001: Modelo de Dominio - Mush2 LabTech
+# DDD-001: Modelo de Dominio - Mush2
 
 ---
 
@@ -7,7 +7,7 @@
 | Campo | Valor |
 |-------|-------|
 | **ID** | DDD-001 |
-| **Nombre** | Modelo de Dominio Mush2 LabTech |
+| **Nombre** | Modelo de Dominio Mush2 |
 | **Fecha** | 2026-07-14 |
 | **Versión** | 1.0 |
 | **Estado** | Borrador |
@@ -17,7 +17,7 @@
 
 ## 1. Resumen Ejecutivo
 
-Este documento define el **Modelo de Dominio** de Mush2 LabTech mediante los principios de Domain-Driven Design (DDD). Establece el **Lenguaje Ubicuo**, identifica los **Contextos Limitados**, define los **Agregados**, **Objetos de Valor**, **Eventos de Dominio** y **Máquinas de Estado** que conforman la arquitectura conceptual del sistema.
+Este documento define el **Modelo de Dominio** de Mush2 mediante los principios de Domain-Driven Design (DDD). Establece el **Lenguaje Ubicuo**, identifica los **Contextos Limitados**, define los **Agregados**, **Objetos de Valor**, **Eventos de Dominio** y **Máquinas de Estado** que conforman la arquitectura conceptual del sistema.
 
 Mush2 es una plataforma IoT de cultivo micológico inteligente que combina hardware físico (cámaras biológicas con sensores y actuadores) con una aplicación web full-stack para monitoreo, control y asesoría con IA.
 
@@ -117,7 +117,7 @@ Los Contextos Limitados definen fronteras semánticas donde un término tiene un
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                         MUSH2 LABTECH                                   │
+│                         MUSH2                                   │
 │                    Plataforma IoT de Cultivo Inteligente                │
 ├─────────────────┬─────────────────┬─────────────────┬───────────────────┤
 │                 │                 │                 │                   │
@@ -989,4 +989,4 @@ sequenceDiagram
 
 ---
 
-*Documento generado como parte del proceso de Domain-Driven Design de Mush2 LabTech.*
+*Documento generado como parte del proceso de Domain-Driven Design de Mush2.*

@@ -1,4 +1,4 @@
-# DDD-004: Value Objects - Mush2 LabTech
+# DDD-004: Value Objects - Mush2
 
 ---
 
@@ -7,7 +7,7 @@
 | Campo | Valor |
 |-------|-------|
 | **ID** | DDD-004 |
-| **Nombre** | Objetos de Valor de Mush2 LabTech |
+| **Nombre** | Objetos de Valor de Mush2 |
 | **Fecha** | 2026-07-14 |
 | **Versión** | 1.0 |
 | **Estado** | Borrador |
@@ -17,7 +17,7 @@
 
 ## 1. Resumen
 
-Los **Value Objects** son objetos inmutables que se identifican por su valor, no por identidad. No tienen ciclo de vida y se reemplazan completamente cuando cambian. Este documento cataloga todos los Value Objects identificados en el dominio de Mush2 LabTech.
+Los **Value Objects** son objetos inmutables que se identifican por su valor, no por identidad. No tienen ciclo de vida y se reemplazan completamente cuando cambian. Este documento cataloga todos los Value Objects identificados en el dominio de Mush2.
 
 ---
 
@@ -483,4 +483,4 @@ Los siguientes Value Objects son compartidos entre múltiples contextos y deben 
 
 ---
 
-*Documento generado como parte del proceso de Domain-Driven Design de Mush2 LabTech.*
+*Documento generado como parte del proceso de Domain-Driven Design de Mush2.*

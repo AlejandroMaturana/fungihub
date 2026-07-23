@@ -1,4 +1,4 @@
-# DDD-005: Máquinas de Estado - Mush2 LabTech
+# DDD-005: Máquinas de Estado - Mush2
 
 ---
 
@@ -7,7 +7,7 @@
 | Campo | Valor |
 |-------|-------|
 | **ID** | DDD-005 |
-| **Nombre** | Máquinas de Estado de Mush2 LabTech |
+| **Nombre** | Máquinas de Estado de Mush2 |
 | **Fecha** | 2026-07-14 |
 | **Versión** | 1.0 |
 | **Estado** | Borrador |
@@ -17,7 +17,7 @@
 
 ## 1. Resumen
 
-Las **Máquinas de Estado** modelan el ciclo de vida de las entidades del dominio, definiendo estados válidos, transiciones permitidas y las condiciones que las gobiernan. Este documento especifica todas las máquinas de estado identificadas en Mush2 LabTech.
+Las **Máquinas de Estado** modelan el ciclo de vida de las entidades del dominio, definiendo estados válidos, transiciones permitidas y las condiciones que las gobiernan. Este documento especifica todas las máquinas de estado identificadas en Mush2.
 
 ---
 
@@ -620,4 +620,4 @@ function computeCommands(readings, recipe, phase) {
 
 ---
 
-*Documento generado como parte del proceso de Domain-Driven Design de Mush2 LabTech.*
+*Documento generado como parte del proceso de Domain-Driven Design de Mush2.*

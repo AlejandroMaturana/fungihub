@@ -10,7 +10,7 @@
 | Si eres... | Lee primero... |
 |---|---|
 | Colaborador nuevo | [`PROJECT_CONTEXT.md`](../PROJECT_CONTEXT.md) → [`docs/architecture/overview.md`](architecture/architecture.md) → [`docs/governance/contribution-guide.md`](governance/contribution-guide.md) |
-| Agente IA | [`PROJECT_CONTEXT.md`](../PROJECT_CONTEXT.md) → [`docs/contracts/`](contracts/) → ADR relevante al área de trabajo |
+| Agente IA | [`PROJECT_CONTEXT.md`](../PROJECT_CONTEXT.md) → [`docs/contracts/api-contract.md`](contracts/api-contract.md) → ADR relevante al área de trabajo |
 | Desarrollador firmware | [`docs/architecture/firmware.md`](architecture/firmware.md) → [`docs/protocol/protocol-v1.md`](protocol/protocol-v1.md) → [`docs/ADR/ADR-014-OTA-v3.md`](ADR/ADR-014-OTA-v3.md) |
 | Desarrollador backend | [`docs/architecture/backend.md`](architecture/backend.md) → [`docs/contracts/api-contract.md`](contracts/api-contract.md) → [`docs/contracts/mqtt-contract.md`](contracts/mqtt-contract.md) |
 | Desarrollador frontend | [`docs/architecture/frontend.md`](architecture/frontend.md) → [`docs/design/ui-standards.md`](design/ui-standards.md) |
@@ -86,6 +86,7 @@ Documentos de **diseño de alto nivel** para subsistemas complejos. Se crean _an
 | [`RFC-0005-BLE-Provisioning-&-Device-Bootstrap.md`](RFC/RFC-0005-BLE-Provisioning-&-Device-Bootstrap.md) | ACCEPTED | BLE Provisioning & Device Bootstrap |
 | [`RFC-0006-realtime-streaming.md`](RFC/RFC-0006-realtime-streaming.md) | DRAFT | Real-Time Streaming y QoS |
 | [`RFC-0007-device-limits.md`](RFC/RFC-0007-device-limits.md) | DRAFT | Límites de dispositivos por plan |
+| [`RFC-0008-button-interaction.md`](RFC/RFC-0008-button-interaction.md) | DRAFT | Aplicativos de botón dedicado |
 
 ### 🎨 Diseño (`docs/design/`)
 Lineamientos visuales, design tokens y decisiones de UX.
@@ -113,7 +114,6 @@ Planificación estratégica del proyecto.
 |---|---|
 | [`roadmap.md`](roadmap/roadmap.md) | **Fuente única de verdad**: fases 0–18, dependencias, skills |
 | [`milestone.md`](roadmap/milestone.md) | Detalle de milestones completados con criterios de aceptación |
-| `archive/` | Roadmaps específicos históricos (frontend, OTA, consolidación) |
 
 ### ⚙️ Operaciones (`docs/operations/`)
 Procedimientos de despliegue y operación del sistema.
@@ -122,7 +122,7 @@ Procedimientos de despliegue y operación del sistema.
 |---|---|
 | [`deployment.md`](operations/deployment.md) | Entornos, instrucciones de despliegue, CI/CD |
 
-### 📊 Diagramas (`docs/diagrams/`) — Pendiente
+### 📊 Diagramas (`docs/diagrams/`)
 Diagramas de arquitectura visual. **Contenido pendiente de definir/actualizar** — se completará en una iteración posterior.
 
 | Diagrama | Contenido |
@@ -146,7 +146,6 @@ Documentación para operadores y cultivadores.
 |---|---|
 | [`requirements.md`](requirements.md) | Requerimientos funcionales y no funcionales (con estado de implementación) |
 | [`scalability.md`](scalability.md) | Guía de escalabilidad: Nivel 1 (dev) → Nivel 5 (miles de dispositivos) |
-| [`operations.md`](operations.md) | Guía de operaciones del sistema |
 
 ---
 
