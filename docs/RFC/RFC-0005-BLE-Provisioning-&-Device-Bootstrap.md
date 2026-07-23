@@ -184,7 +184,7 @@ Ver sección GATT Profile arriba. Documento completo: `docs/contracts/ble-contra
 
 ## Roadmap de implementación
 
-Ver [RM-005](../roadmap/roadmap-ota-ble.md).
+Ver [Roadmap](../roadmap/roadmap.md) del proyecto.
 
 Resumen:
 1. M0: Contrato y diseño

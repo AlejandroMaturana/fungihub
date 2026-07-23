@@ -51,4 +51,4 @@ DRAFT → REVIEW (7 días) → ACCEPTED / REJECTED / SUPERSEDED
 
 ## Template
 
-Ver [EDD-template.md](EDD-template.md) para el template base de un nuevo EDD.
+Ver [template](template.md) para un ejemplo de EDD completo.
