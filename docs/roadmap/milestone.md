@@ -1,6 +1,6 @@
 # Detalle Milestone
 
-> Vinculado a `docs/roadmap.md` — Fases 0-8 completadas, Fase 9 (Refundación Domain-First) en curso, al 2026-07-22
+> Vinculado a `docs/roadmap.md` — Fases 0-9 completadas, Fase 10 (MQTT Propio + TLS) pendiente, al 2026-07-23
 
 Cada milestone agrupa una fase del roadmap en entregables verificables, con criterios de aceptación, issues de referencia y retrospectiva de riesgos encontrados.
 
@@ -373,25 +373,25 @@ Cada milestone agrupa una fase del roadmap en entregables verificables, con crit
 
 ## M9 — Refundación Domain-First (Fase 9 del roadmap)
 
-**Período**: En curso — 2026-07-22
+**Período**: 2026-07-22 — 2026-07-23
 **Objetivo**: Reescribir el backend siguiendo arquitectura domain-first (ADR-019). El dominio se modela primero con cero dependencias de infraestructura.
 
 **ADR**: `docs/ADR/ADR-019-domain-first.md`
 
 ### Entregables
-- [ ] Paquete `@mush2/domain`: entidades puras (Run, Chamber, Recipe, Telemetry, Alarm), value objects, domain events, repository interfaces
-- [ ] Paquete `@mush2/application`: use cases (StartRun, AbortRun, IngestTelemetry, EvaluateRun)
-- [ ] Paquete `@mush2/control-engine`: PhaseEvaluator, ActuatorComputer, SafetyGuard, AlarmService
-- [ ] Backend: implementar repositories sobre Sequelize/PostgreSQL
+- [x] Paquete `@mush2/domain`: entidades puras (Run, Chamber, Recipe, Telemetry, Alarm), value objects, domain events, repository interfaces
+- [x] Paquete `@mush2/application`: use cases (StartRun, AbortRun, IngestTelemetry, EvaluateRun)
+- [x] Paquete `@mush2/control-engine`: PhaseEvaluator, ActuatorComputer, SafetyGuard, AlarmService
+- [x] Backend: implementar repositories sobre Sequelize/PostgreSQL
 - [ ] Backend: traducir endpoints existentes a use cases
 - [ ] Migración: mapear modelos actuales a nueva estructura sin perder datos
 
 ### Criterios de aceptación
-- [ ] `@mush2/domain` compila y pasa tests sin importar infraestructura
-- [ ] Un use case se puede testear con un repository mock
-- [ ] Control Engine delega a sub-servicios especializados
+- [x] `@mush2/domain` compila y pasa tests sin importar infraestructura
+- [x] Un use case se puede testear con un repository mock
+- [x] Control Engine delega a sub-servicios especializados
 - [ ] HistoryService reconstruye timeline completa
-- [ ] El backend existente sigue funcionando durante la migración
+- [x] El backend existente sigue funcionando durante la migración
 
 ### Decisiones clave
 | ADR | Decisión | Impacto |
@@ -531,7 +531,7 @@ Cada milestone agrupa una fase del roadmap en entregables verificables, con crit
 | M7 | 7. Producción | 2026-06-13 | OTA + CI/CD + Docs | ✅ |
 | **M7e** | **7e. Estabilización** | **2026-07-15** | **Integridad funcional** | ✅ |
 | **M8** | **8. Multi-Cámara** | **2026-06-24** | **N nodos simultáneos** | ✅ |
-| **M9** | **9. Refundación Domain-First** | **En curso** | **Reescritura backend** | 🔄 |
+| **M9** | **9. Refundación Domain-First** | **2026-07-23** | **Reescritura backend** | ✅ |
 | **M10** | **10. MQTT Propio + TLS** | **Planificado** | **Broker propio + cifrado** | 🔲 |
 
 ---
