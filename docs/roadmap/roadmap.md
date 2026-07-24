@@ -1,6 +1,6 @@
 # Roadmap — Mush2
 
-> Actualizado: 2026-07-22 — Mush2 v1.7.18 — Fases 0-8 completadas, Refundación Domain-First en curso
+> Actualizado: 2026-07-23 — Mush2 v1.8.0 — Fases 0-9 completadas
 
 El orden de las fases minimiza retrabajo: primero se fijan contratos, luego se construyen slices verticales completos, después se endurece y finalmente se industrializa. Tras la refundación (ADR-019 a ADR-022), el foco está en reescribir el backend siguiendo arquitectura domain-first antes de añadir nuevas capacidades.
 
@@ -198,7 +198,7 @@ El orden de las fases minimiza retrabajo: primero se fijan contratos, luego se c
 
 ---
 
-## FASE 9 — Refundación Domain-First (EN PROGRESO 🔄)
+## FASE 9 — Refundación Domain-First (COMPLETADA ✅)
 
 **Objetivo**: Reescribir el backend siguiendo arquitectura domain-first (ADR-019). El dominio se modela primero con cero dependencias de infraestructura. La capa de persistencia, API y servicios se construye después sobre el dominio validado.
 
@@ -212,34 +212,34 @@ El orden de las fases minimiza retrabajo: primero se fijan contratos, luego se c
 **Skills**: `backend-engineer`, `context-manager`, `state-machine-design`
 
 ### Paquete @mush2/domain (prioritario)
-- [ ] Definir entidades puras: `Run`, `Chamber`, `Recipe`, `Telemetry`, `Alarm`
-- [ ] Definir value objects: `TemperatureRange`, `HumidityRange`, `CO2Target`, `Phase`
-- [ ] Definir domain events: `RunStarted`, `RunAborted`, `PhaseTransitioned`, `AlarmRaised`
-- [ ] Definir repository interfaces (sin implementación)
-- [ ] Tests unitarios del dominio (sin DB ni HTTP)
+- [x] Definir entidades puras: `Run`, `Chamber`, `Recipe`, `Telemetry`, `Alarm`
+- [x] Definir value objects: `TemperatureRange`, `HumidityRange`, `CO2Target`, `Phase`
+- [x] Definir domain events: `RunStarted`, `RunAborted`, `PhaseTransitioned`, `AlarmRaised`
+- [x] Definir repository interfaces (sin implementación)
+- [x] Tests unitarios del dominio (sin DB ni HTTP)
 
 ### Paquete @mush2/application
-- [ ] Use cases: `StartRun`, `AbortRun`, `IngestTelemetry`, `EvaluateRun`
-- [ ] Orchestration: llamar domain services + publicar events
+- [x] Use cases: `StartRun`, `AbortRun`, `IngestTelemetry`, `EvaluateRun`
+- [x] Orchestration: llamar domain services + publicar events
 
 ### Paquete @mush2/control-engine
-- [ ] `PhaseEvaluator` (transiciones por reglas de especie)
-- [ ] `ActuatorComputer` (histéresis por canal)
-- [ ] `SafetyGuard` (fail-safe: temp > 32°C)
-- [ ] `AlarmService` (deduplicación, generación, resolución)
+- [x] `PhaseEvaluator` (transiciones por reglas de especie)
+- [x] `ActuatorComputer` (histéresis por canal)
+- [x] `SafetyGuard` (fail-safe: temp > 32°C)
+- [x] `AlarmService` (deduplicación, generación, resolución)
 
 ### Backend (ensamblaje)
-- [ ] Persistencia: implementar repositories sobre Sequelize/PostgreSQL
+- [x] Persistencia: implementar repositories sobre Sequelize/PostgreSQL
 - [ ] API: traducir endpoints existentes a use cases
 - [ ] MQTT bridge: mantener compatibilidad con firmware actual
 - [ ] Migración: mapear modelos actuales a nueva estructura sin perder datos
 
 ### Criterios de aceptación
-- [ ] El paquete `@mush2/domain` compila y pasa tests sin importar infraestructura
-- [ ] Un use case como `StartRun` se puede testear con un repository mock
-- [ ] El Control Engine delega a sub-servicios (PhaseEvaluator, ActuatorComputer, SafetyGuard)
+- [x] El paquete `@mush2/domain` compila y pasa tests sin importar infraestructura
+- [x] Un use case como `StartRun` se puede testear con un repository mock
+- [x] El Control Engine delega a sub-servicios (PhaseEvaluator, ActuatorComputer, SafetyGuard)
 - [ ] HistoryService reconstruye timeline completa desde RunState + PhaseTransition + Alarm
-- [ ] El backend existente sigue funcionando durante la migración (no big-bang)
+- [x] El backend existente sigue funcionando durante la migración (no big-bang)
 
 **Referencias**: `docs/ADR/ADR-019-domain-first.md`, `docs/ADR/ADR-020-run-replaces-cultivationcycle.md`, `docs/ADR/ADR-021-control-engine-as-orchestrator.md`, `docs/ADR/ADR-022-history-as-active-service.md`, `docs/architecture/engineering-architecture.md`, `docs/architecture/mvp.md`
 

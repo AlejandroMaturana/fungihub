@@ -48,11 +48,12 @@
 ## Module (Package) Structure
 
 ```
-packages/
-  @mush2/
-    domain/          — Pure types, value objects, domain services, enums
-    application/     — Use cases (orchestrates domain with repositories)
-    control-engine/  — Control loop: PhaseEvaluator, ActuatorComputer, SafetyGuard
+backend/src/
+  shared/           — Result, Clock, UUID, EventBus, Logger (zero-dep shared kernel)
+  domain/           — Pure entities, value objects, domain events, repository interfaces
+  application/      — Use cases (orchestrates domain with repositories)
+  control-engine/   — Control loop: PhaseEvaluator, ActuatorComputer, SafetyGuard
+  persistence/      — Repository implementations over Sequelize/PostgreSQL
 
 apps/
   backend/           — Server assembly: persistence impl, API routes, MQTT bridge, scheduler
